@@ -131,6 +131,9 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
     private val _themeMode = MutableStateFlow("SYSTEM")
     val themeMode = _themeMode.asStateFlow()
 
+    private val _hasSeenOnboarding = MutableStateFlow(false)
+    val hasSeenOnboarding = _hasSeenOnboarding.asStateFlow()
+
     private val _quickToggleOrder = MutableStateFlow(listOf("WIFI", "BLUETOOTH", "DATA", "HOTSPOT"))
     val quickToggleOrder = _quickToggleOrder.asStateFlow()
 
@@ -401,6 +404,7 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
             _isMonochrome.value = dataStore.isMonochromeFlow.first()
             _selectedPalette.value = dataStore.selectedPaletteFlow.first()
             _themeMode.value = dataStore.themeModeFlow.first()
+            _hasSeenOnboarding.value = dataStore.hasSeenOnboardingFlow.first()
             val orderString = dataStore.tileOrderFlow.first()
             val savedOrder = if (orderString.isNotEmpty()) orderString.split(",") else defaultTileOrder()
             _tileOrder.value = savedOrder
@@ -418,6 +422,13 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
             com.example.utils.SettingsDataStore(context).setThemeMode(mode)
             _themeMode.value = mode
             savePref("theme_mode", mode)
+        }
+    }
+
+    fun completeOnboarding() {
+        viewModelScope.launch {
+            com.example.utils.SettingsDataStore(context).setHasSeenOnboarding(true)
+            _hasSeenOnboarding.value = true
         }
     }
     

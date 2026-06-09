@@ -17,18 +17,59 @@ import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
-import androidx.glance.background
-import androidx.glance.layout.*
-import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
+import androidx.glance.text.FontWeight
+import androidx.glance.layout.Alignment
+import androidx.glance.layout.Box
+import androidx.glance.layout.Row
+import androidx.glance.layout.padding
+import androidx.glance.layout.fillMaxSize
+import androidx.glance.layout.fillMaxWidth
+import androidx.glance.layout.Column
+import androidx.glance.layout.Spacer
+import androidx.glance.layout.width
+import androidx.glance.layout.height
 import androidx.glance.unit.ColorProvider
+import androidx.glance.action.clickable
+import androidx.glance.background
+
 import com.example.MainActivity
 import com.example.services.CaffeineWakeLockService
 import com.example.utils.FocusDataStore
 import com.example.utils.NetworkPinger
 import com.example.utils.SettingsDataStore
 import kotlinx.coroutines.flow.first
+import androidx.compose.runtime.remember
+
+class OpenBatterySettingsAction : ActionCallback {
+    override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
+        val intent = Intent(android.provider.Settings.ACTION_BATTERY_SAVER_SETTINGS).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        context.startActivity(intent)
+    }
+}
+class OpenDateSettingsAction : ActionCallback {
+    override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
+        val intent = Intent(android.provider.Settings.ACTION_DATE_SETTINGS).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        context.startActivity(intent)
+    }
+}
+class OpenSoundSettingsAction : ActionCallback {
+    override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
+        val intent = Intent("android.settings.SOUND_SETTINGS").apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }
+        context.startActivity(intent)
+    }
+}
+class OpenWifiSettingsAction : ActionCallback {
+    override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
+        val intent = Intent(android.provider.Settings.ACTION_WIFI_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }
+        context.startActivity(intent)
+    }
+}
 
 class CaffeineWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
@@ -167,4 +208,129 @@ class StartFocusAction : ActionCallback {
 
 class FocusLauncherWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget = FocusLauncherWidget()
+}
+
+class BatteryStatusWidget : GlanceAppWidget() {
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val intent = context.registerReceiver(null, android.content.IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        val level = intent?.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1) ?: -1
+        val scale = intent?.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1) ?: -1
+        val batteryPct = if (level != -1 && scale != -1) (level * 100 / scale.toFloat()).toInt() else 0
+        val isCharging = intent?.getIntExtra(android.os.BatteryManager.EXTRA_STATUS, -1) == android.os.BatteryManager.BATTERY_STATUS_CHARGING
+
+        provideContent {
+            GlanceTheme {
+                Row(
+                    modifier = GlanceModifier.fillMaxSize()
+                        .background(Color(0xFF101010))
+                        .cornerRadius(24.dp)
+                        .padding(12.dp)
+                        .clickable(actionRunCallback<OpenBatterySettingsAction>()),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = if (isCharging) "⚡" else "🔋",
+                        style = TextStyle(color = ColorProvider(Color.White), fontSize = 16.sp),
+                        modifier = GlanceModifier.padding(end = 4.dp)
+                    )
+                    Text(
+                        text = "$batteryPct%",
+                        style = TextStyle(color = ColorProvider(Color.White), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    )
+                }
+            }
+        }
+    }
+}
+
+class BatteryStatusWidgetReceiver : GlanceAppWidgetReceiver() {
+    override val glanceAppWidget = BatteryStatusWidget()
+}
+
+class ClockPillWidget : GlanceAppWidget() {
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
+        provideContent {
+            GlanceTheme {
+                Row(
+                    modifier = GlanceModifier.fillMaxSize()
+                        .background(Color(0xFF101010))
+                        .cornerRadius(24.dp)
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .clickable(actionRunCallback<OpenDateSettingsAction>()),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "20:30",
+                        style = TextStyle(color = ColorProvider(Color.White), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    )
+                    Text(
+                        text = " • MON",
+                        style = TextStyle(color = ColorProvider(Color.LightGray), fontSize = 14.sp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+class ClockPillWidgetReceiver : GlanceAppWidgetReceiver() {
+    override val glanceAppWidget = ClockPillWidget()
+}
+
+class ClipboardPurgeWidget : GlanceAppWidget() {
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
+        provideContent {
+            GlanceTheme {
+                Box(
+                    modifier = GlanceModifier.fillMaxSize()
+                        .background(Color(0xFFEA3B3B))
+                        .cornerRadius(12.dp)
+                        .clickable(actionRunCallback<ClipboardPurgeAction>()),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "PURGE",
+                        style = TextStyle(color = ColorProvider(Color.White), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    )
+                }
+            }
+        }
+    }
+}
+
+class ClipboardPurgeAction : ActionCallback {
+    override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
+        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+        if (android.os.Build.VERSION.SDK_INT >= 28) {
+            clipboard.clearPrimaryClip()
+        }
+        com.example.utils.AudioHapticEngine.triggerSuccess(context)
+    }
+}
+
+class ClipboardPurgeWidgetReceiver : GlanceAppWidgetReceiver() {
+    override val glanceAppWidget = ClipboardPurgeWidget()
+}
+
+class TileShortcutWidget : GlanceAppWidget() {
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
+        provideContent {
+            GlanceTheme {
+                Row(
+                    modifier = GlanceModifier.fillMaxSize().background(Color(0xFF101010)).cornerRadius(12.dp).padding(8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Button(text = "Ring", onClick = actionRunCallback<OpenSoundSettingsAction>(), modifier = GlanceModifier.defaultWeight())
+                    Button(text = "WiFi", onClick = actionRunCallback<OpenWifiSettingsAction>(), modifier = GlanceModifier.defaultWeight())
+                }
+            }
+        }
+    }
+}
+
+class TileShortcutWidgetReceiver : GlanceAppWidgetReceiver() {
+    override val glanceAppWidget = TileShortcutWidget()
 }

@@ -28,6 +28,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
+    onNavigateToPermissions: () -> Unit = {},
     onResetLayout: () -> Unit = {},
     onConfirm: () -> Unit = {}
 ) {
@@ -414,17 +415,46 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // PERMISSIONS
+            Button(
+                onClick = { onNavigateToPermissions() },
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("PERMISSION CENTRE", style = AppTypography.labelSmall)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             // RESET LAYOUT
+            var showResetDialog by remember { mutableStateOf(false) }
+
             Button(
                 onClick = {
                     com.example.utils.AudioHapticEngine.triggerClick(context)
-                    onResetLayout()
+                    showResetDialog = true
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                 modifier = Modifier.fillMaxWidth().height(48.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text("RESET TO DEFAULT GRID LAYOUT", style = AppTypography.labelSmall)
+            }
+
+            if (showResetDialog) {
+                com.example.ui.components.ConfirmationDialog(
+                    title = "Reset Layout",
+                    message = "Are you sure you want to reset the quick toggles layout to default?",
+                    confirmText = "RESET",
+                    isDestructive = true,
+                    onConfirm = {
+                        onResetLayout()
+                    },
+                    onDismiss = {
+                        showResetDialog = false
+                    }
+                )
             }
 
             Spacer(modifier = Modifier.height(32.dp))

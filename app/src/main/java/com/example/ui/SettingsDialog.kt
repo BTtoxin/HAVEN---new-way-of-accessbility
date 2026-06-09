@@ -41,7 +41,8 @@ fun SettingsDialog(onDismiss: () -> Unit, onResetLayout: () -> Unit = {}, onConf
     var tempDns by remember { mutableStateOf("") }
     var tempPalette by remember { mutableStateOf("NATURAL") }
     var tempThemeMode by remember { mutableStateOf("SYSTEM") }
-    
+    var tempHapticIntensity by remember { mutableIntStateOf(2) }
+
     // Add custom shortcut stuff that is supposed to be here as per step 7 
     var tempShortcutLabel by remember { mutableStateOf("") }
     var tempShortcutTarget by remember { mutableStateOf("") }
@@ -56,6 +57,7 @@ fun SettingsDialog(onDismiss: () -> Unit, onResetLayout: () -> Unit = {}, onConf
         tempDns = dataStore.privateDnsFlow.first().let { if(it=="off") "" else it }
         tempPalette = dataStore.selectedPaletteFlow.first()
         tempThemeMode = dataStore.themeModeFlow.first()
+        tempHapticIntensity = context.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE).getInt("haptic_intensity", 2)
         
         val pm = com.example.utils.QSPreferenceManager(context)
         tempShortcutLabel = pm.getCustomShortcutLabel()
@@ -239,6 +241,22 @@ fun SettingsDialog(onDismiss: () -> Unit, onResetLayout: () -> Unit = {}, onConf
                 Spacer(modifier = Modifier.height(16.dp))
                 HorizontalDivider(color = BorderDark, thickness = 0.5.dp)
                 Spacer(modifier = Modifier.height(16.dp))
+                
+                // SECTION 6.6: HAPTIC INTENSITY
+                Text("HAPTIC INTENSITY", style = AppTypography.labelSmall, color = NeutralGray)
+                Spacer(modifier = Modifier.height(8.dp))
+                val hapticLabels = listOf("Off", "Soft", "Normal", "Strong")
+                GlyphSlider(
+                    value = tempHapticIntensity.toFloat(),
+                    onValueChange = { tempHapticIntensity = it.toInt() },
+                    valueRange = 0f..3f,
+                    label = "App Vibrations",
+                    valueDisplay = hapticLabels[tempHapticIntensity]
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider(color = BorderDark, thickness = 0.5.dp)
+                Spacer(modifier = Modifier.height(16.dp))
 
                 // SECTION 7: THEMING
                 Text("COLOR PALETTE", style = AppTypography.labelSmall, color = NeutralGray)
@@ -350,6 +368,7 @@ fun SettingsDialog(onDismiss: () -> Unit, onResetLayout: () -> Unit = {}, onConf
                         dataStore.setSelectedPalette(tempPalette)
                         dataStore.setMonochrome(tempPalette != "NATURAL")
                         dataStore.setThemeMode(tempThemeMode)
+                        context.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE).edit().putInt("haptic_intensity", tempHapticIntensity).apply()
                         
                         val pm = com.example.utils.QSPreferenceManager(context)
                         pm.setCustomShortcutLabel(tempShortcutLabel)

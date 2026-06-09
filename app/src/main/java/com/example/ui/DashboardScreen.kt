@@ -252,11 +252,18 @@ fun DashboardScreen(
     var showVoiceDialog by remember { mutableStateOf(false) }
     var activeTileSettings by remember { mutableStateOf<String?>(null) }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+    
     val toastMessage by viewModel.toastMessage.collectAsStateWithLifecycle()
 
     LaunchedEffect(toastMessage) {
         if (toastMessage != null) {
-            kotlinx.coroutines.delay(3500)
+            val result = snackbarHostState.showSnackbar(
+                message = toastMessage!!.message,
+                withDismissAction = true,
+                duration = SnackbarDuration.Short
+            )
             viewModel.clearToast()
         }
     }
@@ -615,6 +622,19 @@ fun DashboardScreen(
                             onNavigateToSettings()
                         }
                     )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    var showHelpDialog by remember { mutableStateOf(false) }
+                    HeaderActionButton(
+                        icon = Icons.Default.HelpOutline,
+                        contentDescription = "Quick Add Guide",
+                        tooltipText = "How to add Quick Tiles",
+                        onClick = {
+                            showHelpDialog = true
+                        }
+                    )
+                    if (showHelpDialog) {
+                        com.example.ui.QuickAddGuideDialog(onDismiss = { showHelpDialog = false })
+                    }
                 }
             }
 
@@ -1627,73 +1647,13 @@ fun DashboardScreen(
                 }
         )
 
-        // Floating premium custom toast notification component confirming Database storage state
-        androidx.compose.animation.AnimatedVisibility(
-            visible = toastMessage != null,
-            enter = androidx.compose.animation.slideInVertically(
-                animationSpec = androidx.compose.animation.core.spring(
-                    dampingRatio = androidx.compose.animation.core.Spring.DampingRatioLowBouncy,
-                    stiffness = androidx.compose.animation.core.Spring.StiffnessMedium
-                ),
-                initialOffsetY = { it }
-            ) + androidx.compose.animation.fadeIn(),
-            exit = androidx.compose.animation.slideOutVertically(
-                animationSpec = androidx.compose.animation.core.spring(
-                    stiffness = androidx.compose.animation.core.Spring.StiffnessMedium
-                ),
-                targetOffsetY = { it }
-            ) + androidx.compose.animation.fadeOut(),
+        SnackbarHost(
+            hostState = snackbarHostState,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 96.dp)
                 .zIndex(100f)
-        ) {
-            toastMessage?.let { msg ->
-                Card(
-                    modifier = Modifier
-                        .padding(horizontal = 24.dp)
-                        .fillMaxWidth(0.9f),
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (msg.isError) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.inverseSurface
-                    ),
-                    shape = RoundedCornerShape(24.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Icon(
-                            imageVector = if (msg.isError) Icons.Default.ErrorOutline else Icons.Default.CloudDone,
-                            contentDescription = "DB Sync Status",
-                            tint = if (msg.isError) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.inverseOnSurface,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Text(
-                            text = msg.message,
-                            style = AppTypography.bodySmall.copy(
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 11.sp,
-                                lineHeight = 15.sp
-                            ),
-                            color = if (msg.isError) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.inverseOnSurface,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Dismiss",
-                            tint = if (msg.isError) MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.6f) else MaterialTheme.colorScheme.inverseOnSurface.copy(alpha = 0.6f),
-                            modifier = Modifier
-                                .size(14.dp)
-                                .clickable { viewModel.clearToast() }
-                        )
-                    }
-                }
-            }
-        }
+        )
 
         // FLOATING SEARCH BAR AT THE BOTTOM OF THE DASHBOARD
         val isDarkTheme = MaterialTheme.colorScheme.background != Color(0xFFFDF8F6)

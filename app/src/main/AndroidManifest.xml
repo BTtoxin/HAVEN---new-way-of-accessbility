@@ -85,6 +85,46 @@
             <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
         </service>
 
+        <service android:name=".services.RingerModeTileService" android:exported="true"
+            android:label="Ringer Mode" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
+        <service android:name=".services.MobileHotspotTileService" android:exported="true"
+            android:label="Hotspot" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
+        <service android:name=".services.FlashlightIntensityTileService" android:exported="true"
+            android:label="Flashlight Intensity" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
+        <service android:name=".services.DataSaverTileService" android:exported="true"
+            android:label="Data Saver" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
+        <service android:name=".services.BatterySaverTileService" android:exported="true"
+            android:label="Battery Saver" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
+        <service android:name=".services.AdaptiveBrightnessTileService" android:exported="true"
+            android:label="Adaptive Brightness" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
+        <service android:name=".services.AutoRotateTileService" android:exported="true"
+            android:label="Auto-Rotate" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
+        <service android:name=".services.FontSizeTileService" android:exported="true"
+            android:label="Font Size" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
         <service android:name=".services.FocusSandboxService" android:exported="false"
                  android:foregroundServiceType="specialUse">
             <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
@@ -116,6 +156,26 @@
         <receiver android:name=".widgets.FocusLauncherWidgetReceiver" android:exported="true">
             <intent-filter> <action android:name="android.appwidget.action.APPWIDGET_UPDATE" /> </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/focus_launcher_widget_info" />
+        </receiver>
+
+        <receiver android:name=".widgets.BatteryStatusWidgetReceiver" android:exported="true">
+            <intent-filter> <action android:name="android.appwidget.action.APPWIDGET_UPDATE" /> </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/battery_status_widget_info" />
+        </receiver>
+
+        <receiver android:name=".widgets.ClockPillWidgetReceiver" android:exported="true">
+            <intent-filter> <action android:name="android.appwidget.action.APPWIDGET_UPDATE" /> </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/clock_pill_widget_info" />
+        </receiver>
+
+        <receiver android:name=".widgets.ClipboardPurgeWidgetReceiver" android:exported="true">
+            <intent-filter> <action android:name="android.appwidget.action.APPWIDGET_UPDATE" /> </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/clipboard_purge_widget_info" />
+        </receiver>
+
+        <receiver android:name=".widgets.TileShortcutWidgetReceiver" android:exported="true">
+            <intent-filter> <action android:name="android.appwidget.action.APPWIDGET_UPDATE" /> </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/tile_shortcut_widget_info" />
         </receiver>
 
         <receiver android:name=".receiver.BootReceiver" android:exported="true">

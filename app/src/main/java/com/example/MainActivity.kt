@@ -48,6 +48,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val selectedPalette by viewModel.selectedPalette.collectAsStateWithLifecycle()
             val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+            val hasSeenOnboarding by viewModel.hasSeenOnboarding.collectAsStateWithLifecycle()
             val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
             val isDark = when (themeMode) {
                 "DARK" -> true
@@ -58,7 +59,9 @@ class MainActivity : ComponentActivity() {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     var currentScreen by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("dashboard") }
 
-                    if (currentScreen == "dashboard") {
+                    if (!hasSeenOnboarding) {
+                        com.example.ui.OnboardingScreen(onComplete = { viewModel.completeOnboarding() })
+                    } else if (currentScreen == "dashboard") {
                         DashboardScreen(
                             viewModel = viewModel,
                             initialOpenFocus = openFocus,
@@ -75,9 +78,14 @@ class MainActivity : ComponentActivity() {
                                 startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
                             }
                         )
+                    } else if (currentScreen == "permissions") {
+                        com.example.ui.PermissionScreen(
+                            onBack = { currentScreen = "dashboard" }
+                        )
                     } else {
                         com.example.ui.SettingsScreen(
                             onBack = { currentScreen = "dashboard" },
+                            onNavigateToPermissions = { currentScreen = "permissions" },
                             onResetLayout = { viewModel.resetTileOrder() },
                             onConfirm = { viewModel.checkAllStates() }
                         )

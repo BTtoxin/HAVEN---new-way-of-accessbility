@@ -10,29 +10,51 @@ import android.os.Vibrator
 
 object AudioHapticEngine {
     fun triggerSuccess(context: Context) {
+        val intensity = getIntensity(context)
+        if (intensity == 0) return
         val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         if (Build.VERSION.SDK_INT >= 26) {
-            vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 40, 60, 20), -1))
+            vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 40 * intensity.toLong(), 60, 20 * intensity.toLong()), -1))
         }
         playSynthClick(1500.0, 30, 0.4)
     }
 
     fun triggerError(context: Context) {
+        val intensity = getIntensity(context)
+        if (intensity == 0) return
         val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         if (Build.VERSION.SDK_INT >= 26) {
-            vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 100, 50, 100), -1))
+            vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 100 * intensity.toLong(), 50, 100 * intensity.toLong()), -1))
         }
         playSynthClick(600.0, 80, 0.5)
     }
 
     fun triggerClick(context: Context) {
+        val intensity = getIntensity(context)
+        if (intensity == 0) return
         val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        val amplitude = when (intensity) {
+             1 -> 50
+             3 -> 255
+             else -> VibrationEffect.DEFAULT_AMPLITUDE
+        }
+        val duration = when (intensity) {
+             1 -> 15L
+             3 -> 40L
+             else -> 25L
+        }
+        
         if (Build.VERSION.SDK_INT >= 26) {
-            vibrator.vibrate(VibrationEffect.createOneShot(25, VibrationEffect.DEFAULT_AMPLITUDE))
+            vibrator.vibrate(VibrationEffect.createOneShot(duration, amplitude))
         } else {
-            vibrator.vibrate(25)
+            vibrator.vibrate(duration)
         }
         playSynthClick(1800.0, 15, 0.35)
+    }
+
+    private fun getIntensity(context: Context): Int {
+        val prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+        return prefs.getInt("haptic_intensity", 2)
     }
 
     private fun playSynthClick(frequencyHz: Double, durationMs: Int, volume: Double) {
