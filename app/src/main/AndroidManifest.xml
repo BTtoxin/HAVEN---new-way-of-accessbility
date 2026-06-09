@@ -110,6 +110,61 @@
             <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
         </service>
 
+        <service android:name=".services.MuteMicTileService" android:exported="true"
+            android:label="Mute Mic" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
+        <service android:name=".services.SoundProfileCycleTileService" android:exported="true"
+            android:label="Sound Profile" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
+        <service android:name=".services.GrayscaleTileService" android:exported="true"
+            android:label="Grayscale" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
+        <service android:name=".services.AodTileService" android:exported="true"
+            android:label="Always-On Display" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
+        <service android:name=".services.NightLightTileService" android:exported="true"
+            android:label="Night Light" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
+        <service android:name=".services.RefreshRateTileService" android:exported="true"
+            android:label="Refresh Rate" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
+        <service android:name=".services.BrightnessLockTileService" android:exported="true"
+            android:label="Brightness Lock" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
+        <service android:name=".services.VpnToggleTileService" android:exported="true"
+            android:label="VPN Guard" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
+        <service android:name=".services.AirplaneBtComboTileService" android:exported="true"
+            android:label="Flight + BT" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
+        <service android:name=".services.WifiQrShareTileService" android:exported="true"
+            android:label="Wi-Fi Share" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
+        <service android:name=".services.NfcToggleTileService" android:exported="true"
+            android:label="NFC Toggle" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
         <service android:name=".services.AdaptiveBrightnessTileService" android:exported="true"
             android:label="Adaptive Brightness" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>

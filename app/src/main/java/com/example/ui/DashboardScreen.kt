@@ -183,6 +183,7 @@ fun DashboardScreen(
     viewModel: QSViewModel,
     initialOpenFocus: Boolean = false,
     onNavigateToSettings: () -> Unit = {},
+    onNavigateToAutomation: () -> Unit = {},
     onRequestPermission: () -> Unit,
     onRequestDndPermission: () -> Unit
 ) {
@@ -620,6 +621,19 @@ fun DashboardScreen(
                         },
                         onClick = {
                             onNavigateToSettings()
+                        }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    HeaderActionButton(
+                        icon = Icons.Default.Bolt,
+                        contentDescription = "Automations",
+                        tooltipText = "Macro Rules",
+                        extraModifier = Modifier.graphicsLayer {
+                            scaleX = otherScale
+                            scaleY = otherScale
+                        },
+                        onClick = {
+                            onNavigateToAutomation()
                         }
                     )
                     Spacer(modifier = Modifier.width(8.dp))

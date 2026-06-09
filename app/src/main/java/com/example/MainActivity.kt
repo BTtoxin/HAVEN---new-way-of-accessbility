@@ -66,6 +66,7 @@ class MainActivity : ComponentActivity() {
                             viewModel = viewModel,
                             initialOpenFocus = openFocus,
                             onNavigateToSettings = { currentScreen = "settings" },
+                            onNavigateToAutomation = { currentScreen = "automation" },
                             onRequestPermission = {
                                 startActivity(
                                     Intent(
@@ -80,6 +81,10 @@ class MainActivity : ComponentActivity() {
                         )
                     } else if (currentScreen == "permissions") {
                         com.example.ui.PermissionScreen(
+                            onBack = { currentScreen = "dashboard" }
+                        )
+                    } else if (currentScreen == "automation") {
+                        com.example.ui.AutomationScreen(
                             onBack = { currentScreen = "dashboard" }
                         )
                     } else {
