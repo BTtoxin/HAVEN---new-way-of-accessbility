@@ -218,6 +218,7 @@ fun DashboardScreen(
     var showSpecialChangelog by remember { mutableStateOf(false) }
     var showSpecialManual by remember { mutableStateOf(false) }
     var showSpecialPaletteSelector by remember { mutableStateOf(false) }
+    var showAuthModal by remember { mutableStateOf(false) }
     var activeTileSettings by remember { mutableStateOf<String?>(null) }
 
     val tileOrderList by viewModel.tileOrder.collectAsStateWithLifecycle()
@@ -418,6 +419,21 @@ fun DashboardScreen(
                         },
                         onClick = {
                             isEditing = !isEditing
+                        }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
+                    HeaderActionButton(
+                        icon = if (currentUser != null) Icons.Default.AccountCircle else Icons.Default.ManageAccounts,
+                        contentDescription = "User Profile",
+                        isActive = currentUser != null,
+                        tooltipText = if (currentUser != null) "Profile: ${currentUser!!.nickname}" else "Sign In & Auth",
+                        extraModifier = Modifier.graphicsLayer {
+                            scaleX = otherScale
+                            scaleY = otherScale
+                        },
+                        onClick = {
+                            showAuthModal = true
                         }
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -1389,6 +1405,13 @@ fun DashboardScreen(
             onDismiss = { showSettingsDialog = false },
             onResetLayout = { viewModel.resetTileOrder() },
             onConfirm = { viewModel.checkAllStates() }
+        )
+    }
+
+    if (showAuthModal) {
+        com.example.ui.components.AuthModal(
+            viewModel = viewModel,
+            onDismiss = { showAuthModal = false }
         )
     }
 

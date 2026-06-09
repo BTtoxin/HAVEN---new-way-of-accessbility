@@ -16,6 +16,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import com.example.data.UserPrefDatabase
+import com.example.data.UserRepository
+import com.example.data.UserEntity
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 
 data class BatteryInfo(
     val percentage: Int = 100,
@@ -29,6 +35,24 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
     private val context = application.applicationContext
     private val prefManager = QSPreferenceManager(context)
     private val settingsHelper = SystemSettingsHelper
+
+    private val db = UserPrefDatabase.getDatabase(context)
+    val userRepository = UserRepository(db)
+
+    private val _currentUser = MutableStateFlow<UserEntity?>(null)
+    val currentUser = _currentUser.asStateFlow()
+
+    private val _activeUserId = MutableStateFlow<Int>(-1)
+    val activeUserId = _activeUserId.asStateFlow()
+
+    private val _authError = MutableStateFlow<String?>(null)
+    val authError = _authError.asStateFlow()
+
+    val allUsers = userRepository.allUsers.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
 
     private val _hasWriteSettingsPermission = MutableStateFlow(false)
     val hasWriteSettingsPermission = _hasWriteSettingsPermission.asStateFlow()
@@ -130,6 +154,60 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             checkAllStates()
         }
+        viewModelScope.launch {
+            _activeUserId.collectLatest { userId ->
+                userRepository.getPreferencesForUser(userId).collect { prefMap ->
+                    prefMap["theme_mode"]?.let { _themeMode.value = it }
+                    prefMap["is_monochrome"]?.let { _isMonochrome.value = it.toBoolean() }
+                    prefMap["selected_palette"]?.let { _selectedPalette.value = it }
+                    prefMap["tile_order"]?.let { orderStr ->
+                        val savedOrder = if (orderStr.isNotEmpty()) orderStr.split(",") else defaultTileOrder()
+                        _tileOrder.value = savedOrder
+                    }
+                    prefMap["is_dns_active"]?.let { _isDnsActive.value = it.toBoolean() }
+                    prefMap["is_caffeine_active"]?.let { _isCaffeineActive.value = it.toBoolean() }
+                    prefMap["is_theater_active"]?.let { _isTheaterActive.value = it.toBoolean() }
+                    prefMap["is_app_audio_isolated"]?.let { _isAppAudioIsolated.value = it.toBoolean() }
+                    prefMap["glyph_brightness_profile"]?.let { _glyphBrightnessProfile.value = it }
+                    prefMap["custom_shortcut_target"]?.let { _customShortcutTarget.value = it }
+                    prefMap["custom_shortcut_label"]?.let { _customShortcutLabel.value = it }
+                }
+            }
+        }
+    }
+
+    fun register(username: String, pin: String, nickname: String, avatarColorHex: String, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            val user = userRepository.registerUser(username, pin, nickname, avatarColorHex)
+            if (user != null) {
+                _currentUser.value = user
+                _activeUserId.value = user.id
+                _authError.value = null
+                onSuccess()
+            } else {
+                _authError.value = "Username already exists or details are invalid"
+            }
+        }
+    }
+
+    fun login(username: String, pin: String, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            val user = userRepository.authenticateUser(username, pin)
+            if (user != null) {
+                _currentUser.value = user
+                _activeUserId.value = user.id
+                _authError.value = null
+                onSuccess()
+            } else {
+                _authError.value = "Invalid username or PIN code"
+            }
+        }
+    }
+
+    fun logout() {
+        _currentUser.value = null
+        _activeUserId.value = -1
+        _authError.value = null
     }
 
     override fun onCleared() {
@@ -162,10 +240,17 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
     
+    private fun savePref(key: String, value: String) {
+        viewModelScope.launch {
+            userRepository.savePreference(_activeUserId.value, key, value)
+        }
+    }
+
     fun setThemeMode(mode: String) {
         viewModelScope.launch {
             com.example.utils.SettingsDataStore(context).setThemeMode(mode)
             _themeMode.value = mode
+            savePref("theme_mode", mode)
         }
     }
     
@@ -176,6 +261,8 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
             val palette = if (active) "MONOCHROME" else "NATURAL"
             com.example.utils.SettingsDataStore(context).setSelectedPalette(palette)
             _selectedPalette.value = palette
+            savePref("is_monochrome", active.toString())
+            savePref("selected_palette", palette)
         }
     }
 
@@ -186,6 +273,8 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
             val isMono = (palette != "NATURAL")
             _isMonochrome.value = isMono
             com.example.utils.SettingsDataStore(context).setMonochrome(isMono)
+            savePref("selected_palette", palette)
+            savePref("is_monochrome", isMono.toString())
         }
     }
     
@@ -193,6 +282,7 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
         _tileOrder.value = newOrder
         viewModelScope.launch {
             com.example.utils.SettingsDataStore(context).setTileOrder(newOrder.joinToString(","))
+            savePref("tile_order", newOrder.joinToString(","))
         }
     }
     
@@ -201,6 +291,7 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
         _tileOrder.value = order
         viewModelScope.launch {
             com.example.utils.SettingsDataStore(context).setTileOrder("")
+            savePref("tile_order", "")
         }
     }
     
@@ -221,11 +312,14 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
         prefManager.setCustomShortcutLabel(label)
         _customShortcutTarget.value = target
         _customShortcutLabel.value = label
+        savePref("custom_shortcut_target", target)
+        savePref("custom_shortcut_label", label)
     }
 
     fun setGlyphBrightnessProfile(profile: String) {
         prefManager.setGlyphBrightnessProfile(profile)
         _glyphBrightnessProfile.value = profile
+        savePref("glyph_brightness_profile", profile)
     }
 
     fun triggerEssentialTimerCountdown(secondsValue: Int) {
@@ -247,6 +341,7 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
             } else {
                 context.stopService(android.content.Intent(context, com.example.services.CaffeineWakeLockService::class.java))
             }
+            savePref("is_caffeine_active", active.toString())
         }
     }
 
@@ -262,6 +357,7 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
                 val targetDns = if (dns == "off" || dns.isEmpty()) "dns.google" else dns
                 SystemSettingsHelper.setPrivateDns(context, targetDns)
             }
+            savePref("is_dns_active", active.toString())
         }
     }
 
@@ -293,6 +389,7 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
                 dataStore.setTheaterActive(false)
                 _isTheaterActive.value = false
             }
+            savePref("is_theater_active", active.toString())
         }
     }
 
@@ -311,6 +408,7 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
                 audioManager.setStreamVolume(android.media.AudioManager.STREAM_RING, maxRing / 2, 0)
                 dataStore.setAppAudioIsolated(false)
             }
+            savePref("is_app_audio_isolated", active.toString())
         }
     }
 
