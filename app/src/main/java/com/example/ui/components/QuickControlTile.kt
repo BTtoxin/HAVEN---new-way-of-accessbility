@@ -1,6 +1,7 @@
 package com.example.ui.components
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -104,12 +105,24 @@ fun QuickControlTile(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = title,
-                tint = iconColor,
-                modifier = Modifier.size(24.dp)
-            )
+            androidx.compose.animation.AnimatedContent(
+                targetState = icon,
+                transitionSpec = {
+                    val springSpec = androidx.compose.animation.core.spring<kotlin.Float>(
+                        dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                        stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+                    )
+                    (androidx.compose.animation.scaleIn(animationSpec = springSpec) + androidx.compose.animation.fadeIn()) togetherWith (androidx.compose.animation.scaleOut(animationSpec = springSpec) + androidx.compose.animation.fadeOut())
+                },
+                label = "TileIconAnim"
+            ) { targetIcon ->
+                Icon(
+                    imageVector = targetIcon,
+                    contentDescription = title,
+                    tint = iconColor,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
             
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(

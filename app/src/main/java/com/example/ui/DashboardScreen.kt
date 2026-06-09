@@ -3,6 +3,7 @@ package com.example.ui
 import android.content.Intent
 import android.provider.Settings
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
@@ -121,12 +122,24 @@ fun HeaderActionButton(
                 .then(extraModifier),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = contentDescription,
-                tint = if (isActive) activeColor else MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.size(22.dp)
-            )
+            androidx.compose.animation.AnimatedContent(
+                targetState = icon,
+                transitionSpec = {
+                    val springSpec = androidx.compose.animation.core.spring<kotlin.Float>(
+                        dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                        stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+                    )
+                    (androidx.compose.animation.scaleIn(animationSpec = springSpec) + androidx.compose.animation.fadeIn()) togetherWith (androidx.compose.animation.scaleOut(animationSpec = springSpec) + androidx.compose.animation.fadeOut())
+                },
+                label = "HeaderActionIcon"
+            ) { targetIcon ->
+                Icon(
+                    imageVector = targetIcon,
+                    contentDescription = contentDescription,
+                    tint = if (isActive) activeColor else MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
         }
 
         // TOOLTIP WINDOW
@@ -205,6 +218,7 @@ fun DashboardScreen(
     var showSpecialChangelog by remember { mutableStateOf(false) }
     var showSpecialManual by remember { mutableStateOf(false) }
     var showSpecialPaletteSelector by remember { mutableStateOf(false) }
+    var activeTileSettings by remember { mutableStateOf<String?>(null) }
 
     val tileOrderList by viewModel.tileOrder.collectAsStateWithLifecycle()
     val availableOrder = remember(tileOrderList) {
@@ -453,7 +467,8 @@ fun DashboardScreen(
                                     } catch(e: Exception) {
                                         context.startActivity(Intent(Settings.ACTION_WIFI_SETTINGS))
                                     }
-                                }
+                                },
+                                onLongClick = { activeTileSettings = "Wi-Fi" }
                             )
                         }
                         item {
@@ -469,7 +484,8 @@ fun DashboardScreen(
                                 onClick = {
                                     val intent = Intent(Settings.ACTION_NETWORK_OPERATOR_SETTINGS)
                                     try { context.startActivity(intent.apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { }
-                                }
+                                },
+                                onLongClick = { activeTileSettings = "Network" }
                             )
                         }
                         item {
@@ -485,7 +501,8 @@ fun DashboardScreen(
                                 onClick = {
                                     val intent = Intent("android.settings.PRIVATE_DNS_SETTINGS")
                                     try { context.startActivity(intent.apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { }
-                                }
+                                },
+                                onLongClick = { activeTileSettings = "DNS Settings" }
                             )
                         }
                         item {
@@ -501,14 +518,15 @@ fun DashboardScreen(
                                 onClick = {
                                     val intent = Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
                                     try { context.startActivity(intent.apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { }
-                                }
+                                },
+                                onLongClick = { activeTileSettings = "Bluetooth" }
                             )
                         }
                         item {
                             QuickControlTile(
                                 title = "Do Not Disturb",
                                 subtitle = if (hasDndPermission) "Active" else "Off",
-                                icon = Icons.Default.DoNotDisturbOn,
+                                icon = if (hasDndPermission) Icons.Default.DoNotDisturbOn else Icons.Default.DoNotDisturbOff,
                                 containerColor = NtGreen,
                                 iconColor = NtGreenText,
                                 subtitleColor = NtGreenText,
@@ -520,14 +538,15 @@ fun DashboardScreen(
                                         val intent = Intent(Settings.ACTION_ZEN_MODE_PRIORITY_SETTINGS)
                                         try { context.startActivity(intent.apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { }
                                     }
-                                }
+                                },
+                                onLongClick = { activeTileSettings = "Do Not Disturb" }
                             )
                         }
                         item {
                             QuickControlTile(
                                 title = "Flashlight",
                                 subtitle = if (isFlashlightOn) "On" else "Off",
-                                icon = Icons.Default.FlashlightOn,
+                                icon = if (isFlashlightOn) Icons.Default.FlashlightOn else Icons.Default.FlashlightOff,
                                 containerColor = NtSurface,
                                 iconColor = NtTextSecondary,
                                 subtitleColor = NtTextSecondary,
@@ -541,7 +560,8 @@ fun DashboardScreen(
                                             isFlashlightOn = !isFlashlightOn
                                         }
                                     } catch (e: Exception) { }
-                                }
+                                },
+                                onLongClick = { activeTileSettings = "Flashlight" }
                             )
                         }
                         item {
@@ -554,7 +574,8 @@ fun DashboardScreen(
                                 subtitleColor = NtTextTertiary,
                                 modifier = Modifier.width(140.dp),
                                 index = 6,
-                                onClick = { try { context.startActivity(Intent(Settings.ACTION_DISPLAY_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } }
+                                onClick = { try { context.startActivity(Intent(Settings.ACTION_DISPLAY_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } },
+                                onLongClick = { activeTileSettings = "Display" }
                             )
                         }
                         item {
@@ -567,7 +588,8 @@ fun DashboardScreen(
                                 subtitleColor = NtTextSecondary,
                                 modifier = Modifier.width(140.dp),
                                 index = 7,
-                                onClick = { try { context.startActivity(Intent(Settings.ACTION_SOUND_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } }
+                                onClick = { try { context.startActivity(Intent(Settings.ACTION_SOUND_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } },
+                                onLongClick = { activeTileSettings = "Sound" }
                             )
                         }
                         item {
@@ -580,7 +602,8 @@ fun DashboardScreen(
                                 subtitleColor = NtTextTertiary,
                                 modifier = Modifier.width(140.dp),
                                 index = 8,
-                                onClick = { try { context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } }
+                                onClick = { try { context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } },
+                                onLongClick = { activeTileSettings = "Location" }
                             )
                         }
                         item {
@@ -593,7 +616,8 @@ fun DashboardScreen(
                                 subtitleColor = NtTextSecondary,
                                 modifier = Modifier.width(140.dp),
                                 index = 9,
-                                onClick = { try { context.startActivity(Intent(Intent.ACTION_POWER_USAGE_SUMMARY).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } }
+                                onClick = { try { context.startActivity(Intent(Intent.ACTION_POWER_USAGE_SUMMARY).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } },
+                                onLongClick = { activeTileSettings = "Battery" }
                             )
                         }
                         item {
@@ -606,7 +630,8 @@ fun DashboardScreen(
                                 subtitleColor = NtTextTertiary,
                                 modifier = Modifier.width(140.dp),
                                 index = 10,
-                                onClick = { try { context.startActivity(Intent(Settings.ACTION_DATA_ROAMING_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } }
+                                onClick = { try { context.startActivity(Intent(Settings.ACTION_DATA_ROAMING_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } },
+                                onLongClick = { activeTileSettings = "Data Saver" }
                             )
                         }
                         item {
@@ -619,7 +644,8 @@ fun DashboardScreen(
                                 subtitleColor = NtTextSecondary,
                                 modifier = Modifier.width(140.dp),
                                 index = 11,
-                                onClick = { try { context.startActivity(Intent(Settings.ACTION_SECURITY_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } }
+                                onClick = { try { context.startActivity(Intent(Settings.ACTION_SECURITY_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } },
+                                onLongClick = { activeTileSettings = "Security" }
                             )
                         }
                         item {
@@ -632,7 +658,8 @@ fun DashboardScreen(
                                 subtitleColor = NtTextTertiary,
                                 modifier = Modifier.width(140.dp),
                                 index = 12,
-                                onClick = { try { context.startActivity(Intent(Settings.ACTION_APPLICATION_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } }
+                                onClick = { try { context.startActivity(Intent(Settings.ACTION_APPLICATION_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } },
+                                onLongClick = { activeTileSettings = "Apps" }
                             )
                         }
                         item {
@@ -645,7 +672,8 @@ fun DashboardScreen(
                                 subtitleColor = NtTextSecondary,
                                 modifier = Modifier.width(140.dp),
                                 index = 13,
-                                onClick = { try { context.startActivity(Intent(Settings.ACTION_INTERNAL_STORAGE_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } }
+                                onClick = { try { context.startActivity(Intent(Settings.ACTION_INTERNAL_STORAGE_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } },
+                                onLongClick = { activeTileSettings = "Storage" }
                             )
                         }
                         item {
@@ -658,7 +686,8 @@ fun DashboardScreen(
                                 subtitleColor = NtTextTertiary,
                                 modifier = Modifier.width(140.dp),
                                 index = 14,
-                                onClick = { try { context.startActivity(Intent(Settings.ACTION_LOCALE_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } }
+                                onClick = { try { context.startActivity(Intent(Settings.ACTION_LOCALE_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } },
+                                onLongClick = { activeTileSettings = "Language" }
                             )
                         }
                         item {
@@ -671,7 +700,8 @@ fun DashboardScreen(
                                 subtitleColor = NtTextSecondary,
                                 modifier = Modifier.width(140.dp),
                                 index = 15,
-                                onClick = { try { context.startActivity(Intent(Settings.ACTION_DATE_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } }
+                                onClick = { try { context.startActivity(Intent(Settings.ACTION_DATE_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } },
+                                onLongClick = { activeTileSettings = "Date & Time" }
                             )
                         }
                         item {
@@ -684,7 +714,8 @@ fun DashboardScreen(
                                 subtitleColor = NtTextTertiary,
                                 modifier = Modifier.width(140.dp),
                                 index = 16,
-                                onClick = { try { context.startActivity(Intent(Settings.ACTION_NFC_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } }
+                                onClick = { try { context.startActivity(Intent(Settings.ACTION_NFC_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } },
+                                onLongClick = { activeTileSettings = "NFC" }
                             )
                         }
                         item {
@@ -697,7 +728,8 @@ fun DashboardScreen(
                                 subtitleColor = NtTextSecondary,
                                 modifier = Modifier.width(140.dp),
                                 index = 17,
-                                onClick = { try { context.startActivity(Intent(Settings.ACTION_PRINT_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } }
+                                onClick = { try { context.startActivity(Intent(Settings.ACTION_PRINT_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } },
+                                onLongClick = { activeTileSettings = "Print" }
                             )
                         }
                     }
@@ -1358,5 +1390,9 @@ fun DashboardScreen(
             onResetLayout = { viewModel.resetTileOrder() },
             onConfirm = { viewModel.checkAllStates() }
         )
+    }
+
+    activeTileSettings?.let { tile -> 
+        com.example.ui.components.TileSettingsModal(tile = tile, onDismiss = { activeTileSettings = null })
     }
 }
