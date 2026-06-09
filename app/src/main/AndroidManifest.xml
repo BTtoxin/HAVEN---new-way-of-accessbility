@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" tools:ignore="QueryAllPackagesPermission" />
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:enableOnBackInvokedCallback="true"
+        android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+        
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity 
+            android:name=".FocusLockOverlayActivity"
+            android:showOnLockScreen="true"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar.Fullscreen"
+            android:taskAffinity="" />
+
+        <service android:name=".services.ScreenTimeoutTileService" android:exported="true"
+            android:label="Screen Timeout" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
+        <service android:name=".services.NetworkShortcutTileService" android:exported="true"
+            android:label="Network Prefs" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
+        <service android:name=".services.DnsShortcutTileService" android:exported="true"
+            android:label="Private DNS" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
+        <service android:name=".services.ClipboardPurgeTileService" android:exported="true"
+            android:label="Purge Clipboard" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
+        <service android:name=".services.CaffeineTileService" android:exported="true"
+            android:label="Caffeine" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
+        <service android:name=".services.CustomShortcutTileService" android:exported="true"
+            android:label="Custom Shortcut" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
+        <service android:name=".services.AppAudioIsolationTileService" android:exported="true"
+            android:label="App Audio" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
+        <service android:name=".services.TheaterModeTileService" android:exported="true"
+            android:label="Theater Mode" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
+        <service android:name=".services.FocusSandboxService" android:exported="false"
+                 android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                      android:value="Timer and app blocker"/>
+        </service>
+
+        <service android:name=".services.CaffeineOverlayService" android:exported="false"
+                 android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                      android:value="Screen overlay keep awake"/>
+        </service>
+
+        <service android:name=".services.CaffeineWakeLockService" android:exported="false"
+                 android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                      android:value="Wakelock keep awake"/>
+        </service>
+
+        <receiver android:name=".widgets.CaffeineWidgetReceiver" android:exported="true">
+            <intent-filter> <action android:name="android.appwidget.action.APPWIDGET_UPDATE" /> </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/caffeine_widget_info" />
+        </receiver>
+
+        <receiver android:name=".widgets.SystemPillWidgetReceiver" android:exported="true">
+            <intent-filter> <action android:name="android.appwidget.action.APPWIDGET_UPDATE" /> </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/system_pill_widget_info" />
+        </receiver>
+
+        <receiver android:name=".widgets.FocusLauncherWidgetReceiver" android:exported="true">
+            <intent-filter> <action android:name="android.appwidget.action.APPWIDGET_UPDATE" /> </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/focus_launcher_widget_info" />
+        </receiver>
+
+        <receiver android:name=".receiver.BootReceiver" android:exported="true">
+            <intent-filter> <action android:name="android.intent.action.BOOT_COMPLETED" /> </intent-filter>
+        </receiver>
+
+    </application>
+
+</manifest>
