@@ -41,6 +41,9 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
     private val _isCaffeineActive = MutableStateFlow(false)
     val isCaffeineActive = _isCaffeineActive.asStateFlow()
 
+    private val _isDnsActive = MutableStateFlow(false)
+    val isDnsActive = _isDnsActive.asStateFlow()
+
     private val _isTheaterActive = MutableStateFlow(false)
     val isTheaterActive = _isTheaterActive.asStateFlow()
 
@@ -49,6 +52,9 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _isMonochrome = MutableStateFlow(false)
     val isMonochrome = _isMonochrome.asStateFlow()
+
+    private val _selectedPalette = MutableStateFlow("NATURAL")
+    val selectedPalette = _selectedPalette.asStateFlow()
 
     private val _tileOrder = MutableStateFlow(emptyList<String>())
     val tileOrder = _tileOrder.asStateFlow()
@@ -70,9 +76,11 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val dataStore = com.example.utils.SettingsDataStore(context)
             _isCaffeineActive.value = dataStore.isCaffeineActiveFlow.first()
+            _isDnsActive.value = dataStore.isDnsActiveFlow.first()
             _isTheaterActive.value = dataStore.isTheaterActiveFlow.first()
             _isAppAudioIsolated.value = dataStore.isAppAudioIsolatedFlow.first()
             _isMonochrome.value = dataStore.isMonochromeFlow.first()
+            _selectedPalette.value = dataStore.selectedPaletteFlow.first()
             val orderString = dataStore.tileOrderFlow.first()
             val savedOrder = if (orderString.isNotEmpty()) orderString.split(",") else defaultTileOrder()
             _tileOrder.value = savedOrder
@@ -83,6 +91,19 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             com.example.utils.SettingsDataStore(context).setMonochrome(active)
             _isMonochrome.value = active
+            val palette = if (active) "MONOCHROME" else "NATURAL"
+            com.example.utils.SettingsDataStore(context).setSelectedPalette(palette)
+            _selectedPalette.value = palette
+        }
+    }
+
+    fun setSelectedPalette(palette: String) {
+        viewModelScope.launch {
+            com.example.utils.SettingsDataStore(context).setSelectedPalette(palette)
+            _selectedPalette.value = palette
+            val isMono = (palette != "NATURAL")
+            _isMonochrome.value = isMono
+            com.example.utils.SettingsDataStore(context).setMonochrome(isMono)
         }
     }
     
@@ -102,7 +123,7 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
     }
     
     private fun defaultTileOrder() = listOf(
-        "TIMEOUT", "CAFFEINE", "DNS", "THEATER", "CLIPBOARD", "FOCUS", "SHORTCUT", "APP_AUDIO", "OPERATOR", "GLYPH"
+        "TIMEOUT", "CAFFEINE", "DNS", "THEATER", "CLIPBOARD", "FOCUS", "SHORTCUT", "APP_AUDIO", "OPERATOR", "GLYPH", "MANUAL", "CHANGELOG", "ABOUT"
     )
 
     fun cycleScreenTimeout() {
@@ -150,6 +171,8 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
     fun togglePrivateDns(active: Boolean) {
         viewModelScope.launch {
             val dataStore = com.example.utils.SettingsDataStore(context)
+            dataStore.setDnsActive(active)
+            _isDnsActive.value = active
             if (!active) {
                 SystemSettingsHelper.setPrivateDns(context, null)
             } else {
@@ -222,6 +245,15 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
             
             val intent = android.content.Intent(context, com.example.services.FocusSandboxService::class.java)
             context.startForegroundService(intent)
+        }
+    }
+
+    fun stopFocusSandbox() {
+        viewModelScope.launch {
+            com.example.utils.FocusDataStore.setTimes(context, 0L, 0L)
+            com.example.utils.FocusDataStore.setAllowedApps(context, emptySet())
+            val intent = android.content.Intent(context, com.example.services.FocusSandboxService::class.java)
+            context.stopService(intent)
         }
     }
 }

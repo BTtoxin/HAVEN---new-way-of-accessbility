@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.ui.theme.AppTypography
 import com.example.ui.theme.PitchBlack
@@ -24,6 +25,7 @@ fun GlyphSwitch(
     label: String,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
@@ -31,11 +33,14 @@ fun GlyphSwitch(
         Text(text = label, style = AppTypography.bodyMedium, modifier = Modifier.weight(1f))
         Spacer(modifier = Modifier.width(8.dp))
         
-        val isDark = MaterialTheme.colorScheme.background == PitchBlack
+        val isDark = MaterialTheme.colorScheme.background != androidx.compose.ui.graphics.Color(0xFFFDF8F6)
         
         Switch(
             checked = checked,
-            onCheckedChange = onCheckedChange,
+            onCheckedChange = {
+                com.example.utils.AudioHapticEngine.triggerClick(context)
+                onCheckedChange(it)
+            },
             modifier = Modifier.then(
                 if (checked) Modifier.shadow(
                     elevation = 12.dp,

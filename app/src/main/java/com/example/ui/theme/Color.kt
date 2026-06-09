@@ -28,6 +28,36 @@ val MonoBorder = Color(0xFF333333)
 val MonoGreen = Color(0xFF2C2C2C)
 val MonoGreenText = Color(0xFFFFFFFF)
 
+// Amber Palette (Warm Dark)
+val AmberBackground = Color(0xFF12100E)
+val AmberOnBackground = Color(0xFFF5EFEB)
+val AmberSurface = Color(0xFF1E1A16)
+val AmberSurfaceVariant = Color(0xFF2C2722)
+val AmberPrimary = Color(0xFFFFB300)
+val AmberOnPrimary = Color(0xFF12100E)
+val AmberSecondary = Color(0xFFFFA000)
+val AmberBorder = Color(0xFF423B35)
+
+// Forest Palette (Green Dark)
+val ForestBackground = Color(0xFF0E1210)
+val ForestOnBackground = Color(0xFFEBEFEF)
+val ForestSurface = Color(0xFF161E1A)
+val ForestSurfaceVariant = Color(0xFF222C27)
+val ForestPrimary = Color(0xFF81C784)
+val ForestOnPrimary = Color(0xFF0E1210)
+val ForestSecondary = Color(0xFF4CAF50)
+val ForestBorder = Color(0xFF35423B)
+
+// Ocean Palette (Blue Dark)
+val OceanBackground = Color(0xFF0E1012)
+val OceanOnBackground = Color(0xFFEBEFEF)
+val OceanSurface = Color(0xFF161A1E)
+val OceanSurfaceVariant = Color(0xFF22272C)
+val OceanPrimary = Color(0xFF4FC3F7)
+val OceanOnPrimary = Color(0xFF0E1012)
+val OceanSecondary = Color(0xFF0288D1)
+val OceanBorder = Color(0xFF353C42)
+
 // Dummy mappings to existing names so we don't break usages where imported
 val PitchBlack = NtOnBackground 
 val DarkGray = NtSurface

@@ -46,4 +46,22 @@ object SystemSettingsHelper {
             false
         }
     }
+
+    fun openPrivateDnsSettings(context: Context) {
+        try {
+            val intent = android.content.Intent("android.settings.PRIVATE_DNS_SETTINGS").apply {
+                flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            try {
+                val intent = android.content.Intent(Settings.ACTION_WIRELESS_SETTINGS).apply {
+                    flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                context.startActivity(intent)
+            } catch (ex: Exception) {
+                // Ignore fallback
+            }
+        }
+    }
 }

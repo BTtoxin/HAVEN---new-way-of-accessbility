@@ -27,11 +27,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.ui.components.BentoCard
-import com.example.ui.components.QuickControlTile
-import com.example.ui.components.GlyphSwitch
-import com.example.ui.components.SystemMonitorPanel
-import com.example.ui.components.NotificationsOverlay
+import androidx.compose.ui.graphics.Color
+import com.example.ui.components.*
 import com.example.ui.theme.*
 import com.example.utils.SystemSettingsHelper
 import com.example.viewmodel.QSViewModel
@@ -57,8 +54,8 @@ fun DashboardScreen(
     val isCaffeineActive by viewModel.isCaffeineActive.collectAsStateWithLifecycle()
     val isTheaterActive by viewModel.isTheaterActive.collectAsStateWithLifecycle()
     
-    // We'll also collect private DNS from DataStore manually here since it wasn't in _isDnsActive in VM completely.
-    val isDnsActive = SystemSettingsHelper.getPrivateDnsMode(context) == "hostname"
+    // We'll collect private DNS from VM StateFlow.
+    val isDnsActive by viewModel.isDnsActive.collectAsStateWithLifecycle()
     val isAudioIsolated by viewModel.isAppAudioIsolated.collectAsStateWithLifecycle()
 
     var showSettingsDialog by remember { mutableStateOf(false) }
@@ -66,8 +63,19 @@ fun DashboardScreen(
     var showNotifications by remember { mutableStateOf(false) }
     var showSystemMonitor by remember { mutableStateOf(false) }
 
+    var showSpecialAbout by remember { mutableStateOf(false) }
+    var showSpecialChangelog by remember { mutableStateOf(false) }
+    var showSpecialManual by remember { mutableStateOf(false) }
+    var showSpecialPaletteSelector by remember { mutableStateOf(false) }
+
     val tileOrderList by viewModel.tileOrder.collectAsStateWithLifecycle()
-    val availableOrder = if (tileOrderList.isEmpty()) listOf("TIMEOUT", "CAFFEINE", "DNS", "THEATER", "CLIPBOARD", "FOCUS", "SHORTCUT", "APP_AUDIO", "OPERATOR", "GLYPH") else tileOrderList
+    val availableOrder = remember(tileOrderList) {
+        if (tileOrderList.isEmpty() || !tileOrderList.contains("MANUAL")) {
+            listOf("TIMEOUT", "CAFFEINE", "DNS", "THEATER", "CLIPBOARD", "FOCUS", "SHORTCUT", "APP_AUDIO", "OPERATOR", "GLYPH", "MANUAL", "CHANGELOG", "ABOUT")
+        } else {
+            tileOrderList
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -100,7 +108,8 @@ fun DashboardScreen(
                 ) {
                     var tapCount by remember { mutableStateOf(0) }
                     var lastTapTime by remember { mutableStateOf(0L) }
-                    Column(
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.pointerInput(Unit) {
                             detectTapGestures(
                                 onTap = {
@@ -122,18 +131,35 @@ fun DashboardScreen(
                             )
                         }
                     ) {
-                        Text(
-                            text = "HAVEN",
-                            style = AppTypography.displayLarge,
-                            fontFamily = FontFamily.SansSerif,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                        Text(
-                            text = "by ashu mehta",
-                            style = AppTypography.labelSmall,
-                            color = NtSecondary,
-                            letterSpacing = 1.sp
-                        )
+                        // 4 Dots Modern Art Logo representing quadrants
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .padding(end = 12.dp)
+                        ) {
+                            val dotColor = MaterialTheme.colorScheme.primary
+                            androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+                                val dotRadius = 4.dp.toPx()
+                                drawCircle(color = dotColor, radius = dotRadius, center = androidx.compose.ui.geometry.Offset(size.width * 0.25f, size.height * 0.25f))
+                                drawCircle(color = dotColor, radius = dotRadius, center = androidx.compose.ui.geometry.Offset(size.width * 0.75f, size.height * 0.25f))
+                                drawCircle(color = dotColor, radius = dotRadius, center = androidx.compose.ui.geometry.Offset(size.width * 0.25f, size.height * 0.75f))
+                                drawCircle(color = dotColor, radius = dotRadius, center = androidx.compose.ui.geometry.Offset(size.width * 0.75f, size.height * 0.75f))
+                            }
+                        }
+                        Column {
+                            Text(
+                                text = "HAVEN",
+                                style = AppTypography.displayLarge,
+                                fontFamily = FontFamily.SansSerif,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                            Text(
+                                text = "by ashu mehta",
+                                style = AppTypography.labelSmall,
+                                color = NtSecondary,
+                                letterSpacing = 1.sp
+                            )
+                        }
                     }
                     Spacer(modifier = Modifier.weight(1f))
                     Column(horizontalAlignment = Alignment.End) {
@@ -150,10 +176,13 @@ fun DashboardScreen(
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     val isMonochrome by viewModel.isMonochrome.collectAsStateWithLifecycle()
-                    IconButton(onClick = { viewModel.setMonochrome(!isMonochrome) }) {
+                    IconButton(onClick = {
+                        com.example.utils.AudioHapticEngine.triggerClick(context)
+                        showSpecialPaletteSelector = true
+                    }) {
                         Icon(
-                            if (isMonochrome) Icons.Default.Contrast else Icons.Default.Palette,
-                            contentDescription = "Toggle Theme",
+                            Icons.Default.Palette,
+                            contentDescription = "Toggle Theme Selection",
                             modifier = Modifier.size(24.dp)
                         )
                     }
@@ -479,6 +508,18 @@ fun DashboardScreen(
                                     onCheckedChange = { viewModel.togglePrivateDns(it) },
                                     label = "Private DNS"
                                 )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                OutlinedButton(
+                                    onClick = {
+                                        com.example.utils.AudioHapticEngine.triggerClick(context)
+                                        SystemSettingsHelper.openPrivateDnsSettings(context)
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(Icons.Default.SettingsInputComponent, contentDescription = "Deep Settings", modifier = Modifier.size(14.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("DEEP SETTINGS", style = AppTypography.labelSmall)
+                                }
                             }
                         }
                         "THEATER" -> {
@@ -546,34 +587,91 @@ fun DashboardScreen(
                                         }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = NothingRed)) { Text("GRANT OVERLAY PERMISSION") }
                                     }
                                 } else {
-                                    val isDark = MaterialTheme.colorScheme.background == PitchBlack
+                                    val isDark = MaterialTheme.colorScheme.background != androidx.compose.ui.graphics.Color(0xFFFDF8F6)
+                                    var isSessionActive by remember { mutableStateOf(com.example.utils.FocusDataStore.isSandboxActive(context)) }
+                                    var remainingSeconds by remember { mutableLongStateOf(0L) }
+                                    
+                                    LaunchedEffect(isSessionActive) {
+                                        if (isSessionActive) {
+                                            while (true) {
+                                                val endTime = com.example.utils.FocusDataStore.getEndTime(context)
+                                                val now = System.currentTimeMillis()
+                                                val diff = (endTime - now) / 1000
+                                                if (diff <= 0) {
+                                                    isSessionActive = false
+                                                    break
+                                                }
+                                                remainingSeconds = diff
+                                                kotlinx.coroutines.delay(1000)
+                                            }
+                                        }
+                                    }
 
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(selectedDuration.toString(), style = AppTypography.displayLarge)
-                                        Text(" MIN", style = AppTypography.labelSmall, color = NeutralGray)
-                                        Spacer(modifier = Modifier.weight(1f))
-                                        IconButton(onClick = { if (selectedDuration > 5) selectedDuration -= 5 }) {
-                                            Icon(Icons.Default.Remove, contentDescription = "Decrease")
+                                    if (isSessionActive) {
+                                        val mins = remainingSeconds / 60
+                                        val secs = remainingSeconds % 60
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                                            Text("SESSION TIME REMAINING", style = AppTypography.labelSmall, color = NothingRed)
+                                            Spacer(modifier = Modifier.height(6.dp))
+                                            Text(
+                                                text = String.format("%02d:%02d", mins, secs),
+                                                style = AppTypography.displayLarge.copy(fontSize = 32.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Black),
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                            Spacer(modifier = Modifier.height(10.dp))
+                                            LinearProgressIndicator(
+                                                progress = (remainingSeconds.toFloat() / (selectedDuration * 60f)).coerceIn(0f, 1f),
+                                                modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
+                                                color = NothingRed,
+                                                trackColor = BorderDark
+                                            )
+                                            Spacer(modifier = Modifier.height(12.dp))
+                                            Button(
+                                                onClick = {
+                                                    com.example.utils.AudioHapticEngine.triggerClick(context)
+                                                    viewModel.stopFocusSandbox()
+                                                    isSessionActive = false
+                                                },
+                                                modifier = Modifier.fillMaxWidth(),
+                                                colors = ButtonDefaults.buttonColors(containerColor = NothingRed)
+                                            ) {
+                                                Icon(Icons.Default.Stop, contentDescription = "Stop", tint = Color.White, modifier = Modifier.size(16.dp))
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text("STOP FOCUS", style = AppTypography.labelSmall, color = Color.White)
+                                            }
                                         }
-                                        IconButton(onClick = { if (selectedDuration < 120) selectedDuration += 5 }) {
-                                            Icon(Icons.Default.Add, contentDescription = "Increase")
+                                    } else {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text(selectedDuration.toString(), style = AppTypography.displayLarge)
+                                            Text(" MIN", style = AppTypography.labelSmall, color = NeutralGray)
+                                            Spacer(modifier = Modifier.weight(1f))
+                                            IconButton(onClick = { if (selectedDuration > 5) selectedDuration -= 5 }) {
+                                                Icon(Icons.Default.Remove, contentDescription = "Decrease")
+                                            }
+                                            IconButton(onClick = { if (selectedDuration < 120) selectedDuration += 5 }) {
+                                                Icon(Icons.Default.Add, contentDescription = "Increase")
+                                            }
                                         }
-                                    }
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    OutlinedButton(onClick = { showAppSelector = true }, modifier = Modifier.fillMaxWidth()) {
-                                        Icon(Icons.Default.Apps, contentDescription = "Select Apps", modifier = Modifier.size(16.dp))
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text("${allowedApps.size} APPS ALLOWED", style = AppTypography.labelSmall)
-                                    }
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Button(
-                                        onClick = { viewModel.startFocusSandbox(selectedDuration, allowedApps) },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        colors = ButtonDefaults.buttonColors(containerColor = if (isDark) PureWhite else PitchBlack)
-                                    ) {
-                                        Icon(Icons.Default.PlayArrow, contentDescription = "Start Focus", tint = if (isDark) PitchBlack else PureWhite)
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text("START FOCUS", style = AppTypography.labelSmall, color = if (isDark) PitchBlack else PureWhite)
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        OutlinedButton(onClick = { showAppSelector = true }, modifier = Modifier.fillMaxWidth()) {
+                                            Icon(Icons.Default.Apps, contentDescription = "Select Apps", modifier = Modifier.size(16.dp))
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text("${allowedApps.size} APPS ALLOWED", style = AppTypography.labelSmall)
+                                        }
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Button(
+                                            onClick = {
+                                                com.example.utils.AudioHapticEngine.triggerClick(context)
+                                                viewModel.startFocusSandbox(selectedDuration, allowedApps)
+                                                isSessionActive = true
+                                            },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            colors = ButtonDefaults.buttonColors(containerColor = if (isDark) PureWhite else PitchBlack)
+                                        ) {
+                                            Icon(Icons.Default.PlayArrow, contentDescription = "Start Focus", tint = if (isDark) PitchBlack else PureWhite)
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text("START FOCUS", style = AppTypography.labelSmall, color = if (isDark) PitchBlack else PureWhite)
+                                        }
                                     }
 
                                     if (showAppSelector) {
@@ -660,6 +758,63 @@ fun DashboardScreen(
                                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Icon(Icons.Default.ChevronRight, contentDescription = "Chevron Right", tint = NeutralGray, modifier = Modifier.size(16.dp))
                                     Text("Opens carrier settings", style = AppTypography.labelSmall, color = NeutralGray)
+                                }
+                            }
+                        }
+                        "MANUAL" -> {
+                            BentoCard(
+                                title = "USER MANUAL",
+                                icon = Icons.Default.HelpOutline,
+                                onClick = {
+                                    com.example.utils.AudioHapticEngine.triggerClick(context)
+                                    showSpecialManual = true
+                                }
+                            ) {
+                                Text("MANUAL", style = AppTypography.displayLarge)
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text("TAP FOR USER MANUAL GUIDE", style = AppTypography.labelSmall, color = NeutralGray)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.MenuBook, contentDescription = null, tint = NothingRed, modifier = Modifier.size(16.dp))
+                                    Text("Explore instructions", style = AppTypography.labelSmall, color = NeutralGray)
+                                }
+                            }
+                        }
+                        "CHANGELOG" -> {
+                            BentoCard(
+                                title = "CHANGELOGS",
+                                icon = Icons.Default.History,
+                                onClick = {
+                                    com.example.utils.AudioHapticEngine.triggerClick(context)
+                                    showSpecialChangelog = true
+                                }
+                            ) {
+                                Text("UPDATES", style = AppTypography.displayLarge)
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text("VERSION 1.1.0 (JUNE 2026)", style = AppTypography.labelSmall, color = NeutralGray)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Check, contentDescription = null, tint = NothingRed, modifier = Modifier.size(16.dp))
+                                    Text("View historical changes", style = AppTypography.labelSmall, color = NeutralGray)
+                                }
+                            }
+                        }
+                        "ABOUT" -> {
+                            BentoCard(
+                                title = "ABOUT APP",
+                                icon = Icons.Default.Info,
+                                onClick = {
+                                    com.example.utils.AudioHapticEngine.triggerClick(context)
+                                    showSpecialAbout = true
+                                }
+                            ) {
+                                Text("HAVEN", style = AppTypography.displayLarge)
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text("CREATOR: ASHU MEHTA", style = AppTypography.labelSmall, color = NeutralGray)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Person, contentDescription = null, tint = NothingRed, modifier = Modifier.size(16.dp))
+                                    Text("Tap for system metadata", style = AppTypography.labelSmall, color = NeutralGray)
                                 }
                             }
                         }
@@ -757,13 +912,38 @@ fun DashboardScreen(
     }
 
     if (showSystemMonitor) {
-        SystemMonitorPanel(onDismiss = { showSystemMonitor = false })
+        SystemDiagnosticsOverlay(onDismiss = { showSystemMonitor = false })
+    }
+
+    if (showSpecialAbout) {
+        AboutOverlay(onDismiss = { showSpecialAbout = false })
+    }
+
+    if (showSpecialChangelog) {
+        ChangelogOverlay(onDismiss = { showSpecialChangelog = false })
+    }
+
+    if (showSpecialManual) {
+        UserManualOverlay(onDismiss = { showSpecialManual = false })
+    }
+
+    if (showSpecialPaletteSelector) {
+        val selectedPalette by viewModel.selectedPalette.collectAsStateWithLifecycle()
+        PaletteSelectorOverlay(
+            currentPalette = selectedPalette,
+            onPaletteSelected = { id ->
+                viewModel.setSelectedPalette(id)
+                showSpecialPaletteSelector = false
+            },
+            onDismiss = { showSpecialPaletteSelector = false }
+        )
     }
 
     if (showSettingsDialog) {
         SettingsDialog(
             onDismiss = { showSettingsDialog = false },
-            onResetLayout = { viewModel.resetTileOrder() }
+            onResetLayout = { viewModel.resetTileOrder() },
+            onConfirm = { viewModel.checkAllStates() }
         )
     }
 }

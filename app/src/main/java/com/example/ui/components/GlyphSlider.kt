@@ -9,8 +9,11 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import com.example.ui.theme.AppTypography
 import com.example.ui.theme.BorderDark
 import com.example.ui.theme.NeutralGray
@@ -27,6 +30,9 @@ fun GlyphSlider(
     valueDisplay: String,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val lastRoundedValue = remember { mutableStateOf(value.toInt()) }
+
     Column(modifier = modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.Bottom) {
             Text(text = label, style = AppTypography.bodyMedium)
@@ -34,11 +40,18 @@ fun GlyphSlider(
             Text(text = valueDisplay, style = AppTypography.labelSmall, color = NeutralGray)
         }
         
-        val isDark = MaterialTheme.colorScheme.background == PitchBlack
+        val isDark = MaterialTheme.colorScheme.background != androidx.compose.ui.graphics.Color(0xFFFDF8F6)
         
         Slider(
             value = value,
-            onValueChange = onValueChange,
+            onValueChange = { newValue ->
+                onValueChange(newValue)
+                val rounded = newValue.toInt()
+                if (rounded != lastRoundedValue.value) {
+                    com.example.utils.AudioHapticEngine.triggerClick(context)
+                    lastRoundedValue.value = rounded
+                }
+            },
             valueRange = valueRange,
             colors = SliderDefaults.colors(
                 thumbColor = if (isDark) PureWhite else PitchBlack,

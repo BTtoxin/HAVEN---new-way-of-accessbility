@@ -25,11 +25,23 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        // Force Choreographer/Window display mode to prefer 120Hz peak performance
+        try {
+            val params = window.attributes
+            val minField = params::class.java.getField("preferredMinDisplayRefreshRate")
+            val maxField = params::class.java.getField("preferredMaxDisplayRefreshRate")
+            minField.set(params, 120f)
+            maxField.set(params, 120f)
+            window.attributes = params
+        } catch (e: Exception) {
+            // Safe fallback for devices/system builds that do not support it
+        }
+
         val openFocus = intent.getBooleanExtra("openFocus", false)
 
         setContent {
-            val isMonochrome by viewModel.isMonochrome.collectAsStateWithLifecycle()
-            NothingTheme(isMonochrome = isMonochrome) {
+            val selectedPalette by viewModel.selectedPalette.collectAsStateWithLifecycle()
+            NothingTheme(palette = selectedPalette) {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     DashboardScreen(
                         viewModel = viewModel,

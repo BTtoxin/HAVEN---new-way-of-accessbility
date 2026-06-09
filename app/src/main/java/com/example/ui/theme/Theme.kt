@@ -44,10 +44,61 @@ private val MonochromeColorScheme = lightColorScheme(
     onSurfaceVariant = MonoTextSecondary
 )
 
+private val AmberColorScheme = lightColorScheme(
+    primary = AmberPrimary,
+    onPrimary = AmberOnPrimary,
+    primaryContainer = AmberPrimary,
+    onPrimaryContainer = AmberOnPrimary,
+    secondary = AmberSecondary,
+    onSecondary = AmberBackground,
+    surface = AmberSurface,
+    onSurface = AmberOnBackground,
+    background = AmberBackground,
+    onBackground = AmberOnBackground,
+    error = AmberSecondary,
+    outline = AmberBorder,
+    surfaceVariant = AmberSurfaceVariant,
+    onSurfaceVariant = AmberOnBackground
+)
+
+private val ForestColorScheme = lightColorScheme(
+    primary = ForestPrimary,
+    onPrimary = ForestOnPrimary,
+    primaryContainer = ForestPrimary,
+    onPrimaryContainer = ForestOnPrimary,
+    secondary = ForestSecondary,
+    onSecondary = ForestBackground,
+    surface = ForestSurface,
+    onSurface = ForestOnBackground,
+    background = ForestBackground,
+    onBackground = ForestOnBackground,
+    error = ForestSecondary,
+    outline = ForestBorder,
+    surfaceVariant = ForestSurfaceVariant,
+    onSurfaceVariant = ForestOnBackground
+)
+
+private val OceanColorScheme = lightColorScheme(
+    primary = OceanPrimary,
+    onPrimary = OceanOnPrimary,
+    primaryContainer = OceanPrimary,
+    onPrimaryContainer = OceanOnPrimary,
+    secondary = OceanSecondary,
+    onSecondary = OceanBackground,
+    surface = OceanSurface,
+    onSurface = OceanOnBackground,
+    background = OceanBackground,
+    onBackground = OceanOnBackground,
+    error = OceanSecondary,
+    outline = OceanBorder,
+    surfaceVariant = OceanSurfaceVariant,
+    onSurfaceVariant = OceanOnBackground
+)
+
 @Composable
 fun NothingTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    isMonochrome: Boolean = false,
+    palette: String = "NATURAL",
     content: @Composable () -> Unit
 ) {
     val view = LocalView.current
@@ -58,8 +109,16 @@ fun NothingTheme(
         }
     }
 
+    val selectedScheme = when (palette) {
+        "MONOCHROME" -> MonochromeColorScheme
+        "AMBER" -> AmberColorScheme
+        "FOREST" -> ForestColorScheme
+        "OCEAN" -> OceanColorScheme
+        else -> NaturalColorScheme
+    }
+
     MaterialTheme(
-        colorScheme = if (isMonochrome) MonochromeColorScheme else NaturalColorScheme,
+        colorScheme = selectedScheme,
         typography = AppTypography,
         content = content
     )

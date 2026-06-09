@@ -1,11 +1,17 @@
 package com.example.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -21,7 +27,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsDialog(onDismiss: () -> Unit, onResetLayout: () -> Unit = {}) {
+fun SettingsDialog(onDismiss: () -> Unit, onResetLayout: () -> Unit = {}, onConfirm: () -> Unit = {}) {
     val context = LocalContext.current
     val dataStore = remember { SettingsDataStore(context) }
     val scope = rememberCoroutineScope()
@@ -33,6 +39,7 @@ fun SettingsDialog(onDismiss: () -> Unit, onResetLayout: () -> Unit = {}) {
     var tempDnd by remember { mutableStateOf(true) }
     var clipboardInterval by remember { mutableIntStateOf(0) }
     var tempDns by remember { mutableStateOf("") }
+    var tempPalette by remember { mutableStateOf("NATURAL") }
     
     // Add custom shortcut stuff that is supposed to be here as per step 7 
     var tempShortcutLabel by remember { mutableStateOf("") }
@@ -46,6 +53,7 @@ fun SettingsDialog(onDismiss: () -> Unit, onResetLayout: () -> Unit = {}) {
         tempDnd = dataStore.theaterDndFlow.first()
         clipboardInterval = dataStore.clipboardIntervalFlow.first()
         tempDns = dataStore.privateDnsFlow.first().let { if(it=="off") "" else it }
+        tempPalette = dataStore.selectedPaletteFlow.first()
         
         val pm = com.example.utils.QSPreferenceManager(context)
         tempShortcutLabel = pm.getCustomShortcutLabel()
@@ -190,18 +198,65 @@ fun SettingsDialog(onDismiss: () -> Unit, onResetLayout: () -> Unit = {}) {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // SECTION 7: THEMING
-                var tempMonochrome by remember { mutableStateOf(false) }
-                LaunchedEffect(Unit) { tempMonochrome = dataStore.isMonochromeFlow.first() }
                 Text("COLOR PALETTE", style = AppTypography.labelSmall, color = NeutralGray)
-                Spacer(modifier = Modifier.height(8.dp))
-                GlyphSwitch(
-                    checked = tempMonochrome,
-                    onCheckedChange = { 
-                        tempMonochrome = it 
-                        scope.launch { dataStore.setMonochrome(it) } 
-                    },
-                    label = "Monochrome Interface"
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                val paletteList = listOf(
+                    Triple("NATURAL", "Cream", androidx.compose.ui.graphics.Color(0xFFFDF8F6)),
+                    Triple("MONOCHROME", "Mono", androidx.compose.ui.graphics.Color(0xFF1C1C1C)),
+                    Triple("AMBER", "Amber", androidx.compose.ui.graphics.Color(0xFFFFB300)),
+                    Triple("FOREST", "Forest", androidx.compose.ui.graphics.Color(0xFF81C784)),
+                    Triple("OCEAN", "Ocean", androidx.compose.ui.graphics.Color(0xFF4FC3F7))
                 )
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    paletteList.forEach { (id, label, previewColor) ->
+                        val isSelected = (tempPalette == id)
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable {
+                                    tempPalette = id
+                                    com.example.utils.AudioHapticEngine.triggerClick(context)
+                                }
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .background(
+                                        color = previewColor,
+                                        shape = androidx.compose.foundation.shape.CircleShape
+                                    )
+                                    .border(
+                                        width = if (isSelected) 3.dp else 1.dp,
+                                        color = if (isSelected) NothingRed else BorderDark,
+                                        shape = androidx.compose.foundation.shape.CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (isSelected) {
+                                    Icon(
+                                        Icons.Default.Check,
+                                        contentDescription = "Selected",
+                                        tint = if (id == "NATURAL" || id == "AMBER" || id == "FOREST" || id == "OCEAN") androidx.compose.ui.graphics.Color.Black else androidx.compose.ui.graphics.Color.White,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = label,
+                                style = AppTypography.labelSmall.copy(fontSize = 9.sp),
+                                color = if (isSelected) NothingRed else NeutralGray
+                            )
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
                 HorizontalDivider(color = BorderDark, thickness = 0.5.dp)
@@ -244,9 +299,13 @@ fun SettingsDialog(onDismiss: () -> Unit, onResetLayout: () -> Unit = {}) {
                         } else {
                             dataStore.setPrivateDns(tempDns)
                         }
+                        dataStore.setSelectedPalette(tempPalette)
+                        dataStore.setMonochrome(tempPalette != "NATURAL")
+                        
                         val pm = com.example.utils.QSPreferenceManager(context)
                         pm.setCustomShortcutLabel(tempShortcutLabel)
                         pm.setCustomShortcutTarget(tempShortcutTarget)
+                        onConfirm()
                         onDismiss()
                     }
                 }
