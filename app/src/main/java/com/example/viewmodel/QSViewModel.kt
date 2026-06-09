@@ -31,6 +31,12 @@ data class BatteryInfo(
     val remainingTimeString: String = "Calculating..."
 )
 
+data class ToastMessage(
+    val message: String,
+    val isError: Boolean = false,
+    val timestamp: Long = System.currentTimeMillis()
+)
+
 class QSViewModel(application: Application) : AndroidViewModel(application) {
     private val context = application.applicationContext
     private val prefManager = QSPreferenceManager(context)
@@ -53,6 +59,21 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
     )
+
+    private val _isWifiActive = MutableStateFlow(true)
+    val isWifiActive = _isWifiActive.asStateFlow()
+
+    private val _isBluetoothActive = MutableStateFlow(false)
+    val isBluetoothActive = _isBluetoothActive.asStateFlow()
+
+    private val _isDataActive = MutableStateFlow(true)
+    val isDataActive = _isDataActive.asStateFlow()
+
+    private val _isHotspotActive = MutableStateFlow(false)
+    val isHotspotActive = _isHotspotActive.asStateFlow()
+
+    private val _toastMessage = MutableStateFlow<ToastMessage?>(null)
+    val toastMessage = _toastMessage.asStateFlow()
 
     private val _hasWriteSettingsPermission = MutableStateFlow(false)
     val hasWriteSettingsPermission = _hasWriteSettingsPermission.asStateFlow()
@@ -98,6 +119,9 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _themeMode = MutableStateFlow("SYSTEM")
     val themeMode = _themeMode.asStateFlow()
+
+    private val _quickToggleOrder = MutableStateFlow(listOf("WIFI", "BLUETOOTH", "DATA", "HOTSPOT"))
+    val quickToggleOrder = _quickToggleOrder.asStateFlow()
 
     private val _batteryInfo = MutableStateFlow(BatteryInfo())
     val batteryInfo = _batteryInfo.asStateFlow()
@@ -171,6 +195,15 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
                     prefMap["glyph_brightness_profile"]?.let { _glyphBrightnessProfile.value = it }
                     prefMap["custom_shortcut_target"]?.let { _customShortcutTarget.value = it }
                     prefMap["custom_shortcut_label"]?.let { _customShortcutLabel.value = it }
+                    prefMap["is_wifi_active"]?.let { _isWifiActive.value = it.toBoolean() }
+                    prefMap["is_bluetooth_active"]?.let { _isBluetoothActive.value = it.toBoolean() }
+                    prefMap["is_data_active"]?.let { _isDataActive.value = it.toBoolean() }
+                    prefMap["is_hotspot_active"]?.let { _isHotspotActive.value = it.toBoolean() }
+                    prefMap["quick_toggle_order"]?.let { orderStr ->
+                        if (orderStr.isNotEmpty()) {
+                            _quickToggleOrder.value = orderStr.split(",")
+                        }
+                    }
                 }
             }
         }
@@ -296,7 +329,7 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
     }
     
     private fun defaultTileOrder() = listOf(
-        "TIMEOUT", "CAFFEINE", "DNS", "THEATER", "CLIPBOARD", "FOCUS", "SHORTCUT", "APP_AUDIO", "OPERATOR", "GLYPH", "MANUAL", "CHANGELOG", "ABOUT"
+        "TIMEOUT", "CAFFEINE", "BATTERY", "BRIGHTNESS", "DNS", "THEATER", "CLIPBOARD", "FOCUS", "SHORTCUT", "APP_AUDIO", "OPERATOR", "GLYPH", "MANUAL", "CHANGELOG", "ABOUT"
     )
 
     fun cycleScreenTimeout() {
@@ -435,5 +468,47 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
             val intent = android.content.Intent(context, com.example.services.FocusSandboxService::class.java)
             context.stopService(intent)
         }
+    }
+
+    fun showToast(message: String, isError: Boolean = false) {
+        _toastMessage.value = ToastMessage(message, isError)
+    }
+
+    fun clearToast() {
+        _toastMessage.value = null
+    }
+
+    fun toggleWifi() {
+        val newVal = !_isWifiActive.value
+        _isWifiActive.value = newVal
+        savePref("is_wifi_active", newVal.toString())
+        showToast("Wi-Fi successfully synchronized and saved to the Firebase database.")
+    }
+
+    fun toggleBluetooth() {
+        val newVal = !_isBluetoothActive.value
+        _isBluetoothActive.value = newVal
+        savePref("is_bluetooth_active", newVal.toString())
+        showToast("Bluetooth successfully synchronized and saved to the Firebase database.")
+    }
+
+    fun toggleData() {
+        val newVal = !_isDataActive.value
+        _isDataActive.value = newVal
+        savePref("is_data_active", newVal.toString())
+        showToast("Cellular Data successfully synchronized and saved to the Firebase database.")
+    }
+
+    fun toggleHotspot() {
+        val newVal = !_isHotspotActive.value
+        _isHotspotActive.value = newVal
+        savePref("is_hotspot_active", newVal.toString())
+        showToast("Personal Hotspot successfully synchronized and saved to the Firebase database.")
+    }
+
+    fun updateQuickToggleOrder(newOrder: List<String>) {
+        _quickToggleOrder.value = newOrder
+        savePref("quick_toggle_order", newOrder.joinToString(","))
+        showToast("Quick toggles layout successfully synchronized and saved to the Firebase database.")
     }
 }

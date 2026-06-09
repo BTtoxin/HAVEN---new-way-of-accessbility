@@ -25,6 +25,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.zIndex
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -221,10 +223,19 @@ fun DashboardScreen(
     var showAuthModal by remember { mutableStateOf(false) }
     var activeTileSettings by remember { mutableStateOf<String?>(null) }
 
+    val toastMessage by viewModel.toastMessage.collectAsStateWithLifecycle()
+
+    LaunchedEffect(toastMessage) {
+        if (toastMessage != null) {
+            kotlinx.coroutines.delay(3500)
+            viewModel.clearToast()
+        }
+    }
+
     val tileOrderList by viewModel.tileOrder.collectAsStateWithLifecycle()
     val availableOrder = remember(tileOrderList) {
         if (tileOrderList.isEmpty() || !tileOrderList.contains("MANUAL")) {
-            listOf("TIMEOUT", "CAFFEINE", "BATTERY", "DNS", "THEATER", "CLIPBOARD", "FOCUS", "SHORTCUT", "APP_AUDIO", "OPERATOR", "GLYPH", "MANUAL", "CHANGELOG", "ABOUT")
+            listOf("TIMEOUT", "CAFFEINE", "BATTERY", "BRIGHTNESS", "DNS", "THEATER", "CLIPBOARD", "FOCUS", "SHORTCUT", "APP_AUDIO", "OPERATOR", "GLYPH", "MANUAL", "CHANGELOG", "ABOUT")
         } else {
             tileOrderList
         }
@@ -450,6 +461,14 @@ fun DashboardScreen(
                         }
                     )
                 }
+            }
+
+            // 2X2 QUICK TOGGLES GRID COMPONENT
+            item(span = StaggeredGridItemSpan.FullLine) {
+                com.example.ui.components.QuickToggleGrid(
+                    viewModel = viewModel,
+                    modifier = Modifier.padding(bottom = 14.dp)
+                )
             }
 
             // QUICK CONTROLS SECTION
@@ -778,7 +797,7 @@ fun DashboardScreen(
                 items = availableOrder,
                 key = { id -> id },
                 span = { id ->
-                    if (id in listOf("CAFFEINE", "BATTERY", "THEATER", "FOCUS", "GLYPH")) StaggeredGridItemSpan.FullLine
+                    if (id in listOf("CAFFEINE", "BATTERY", "BRIGHTNESS", "THEATER", "FOCUS", "GLYPH")) StaggeredGridItemSpan.FullLine
                     else StaggeredGridItemSpan.SingleLane
                 }
             ) { id ->
@@ -823,7 +842,6 @@ fun DashboardScreen(
                         }
                         "BATTERY" -> {
                             val batteryInfo by viewModel.batteryInfo.collectAsStateWithLifecycle()
-                            val primaryColor = MaterialTheme.colorScheme.primary
                             BentoCard(
                                 title = "BATTERY STATISTICS",
                                 icon = if (batteryInfo.isCharging) Icons.Default.BatteryChargingFull else Icons.Default.BatteryStd,
@@ -839,75 +857,14 @@ fun DashboardScreen(
                                     }
                                 }
                             ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = "${batteryInfo.percentage}%",
-                                            style = AppTypography.displayLarge.copy(fontSize = 32.sp),
-                                            color = if (batteryInfo.percentage <= 20 && !batteryInfo.isCharging) NothingRed else MaterialTheme.colorScheme.onSurface
-                                        )
-                                        Spacer(modifier = Modifier.height(2.dp))
-                                        Text(
-                                            text = batteryInfo.remainingTimeString.uppercase(),
-                                            style = AppTypography.labelSmall.copy(fontSize = 10.sp),
-                                            color = NeutralGray
-                                        )
-                                        Spacer(modifier = Modifier.height(2.dp))
-                                        Text(
-                                            text = "HEALTH: ${batteryInfo.health.uppercase()}",
-                                            style = AppTypography.labelSmall.copy(fontSize = 9.sp),
-                                            color = NtSecondary
-                                        )
-                                    }
-                                    
-                                    Box(
-                                        modifier = Modifier.size(54.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        androidx.compose.foundation.Canvas(modifier = Modifier.size(48.dp)) {
-                                            val strokeWidth = 3.dp.toPx()
-                                            
-                                            drawArc(
-                                                color = Color.Gray.copy(alpha = 0.2f),
-                                                startAngle = -90f,
-                                                sweepAngle = 360f,
-                                                useCenter = false,
-                                                style = androidx.compose.ui.graphics.drawscope.Stroke(
-                                                    width = strokeWidth,
-                                                    pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(
-                                                        floatArrayOf(5.dp.toPx(), 4.dp.toPx()), 0f
-                                                    )
-                                                )
-                                            )
-                                            
-                                            drawArc(
-                                                color = if (batteryInfo.percentage <= 20) NothingRed else primaryColor,
-                                                startAngle = -90f,
-                                                sweepAngle = (batteryInfo.percentage / 100f) * 360f,
-                                                useCenter = false,
-                                                style = androidx.compose.ui.graphics.drawscope.Stroke(
-                                                    width = strokeWidth,
-                                                    pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(
-                                                        floatArrayOf(5.dp.toPx(), 4.dp.toPx()), 0f
-                                                    )
-                                                )
-                                            )
-                                        }
-                                        
-                                        Box(
-                                            modifier = Modifier
-                                                .size(8.dp)
-                                                .background(
-                                                    color = if (batteryInfo.isCharging) NothingRed else Color.LightGray,
-                                                    shape = CircleShape
-                                                )
-                                        )
-                                    }
-                                }
+                                BatteryGauge(batteryInfo = batteryInfo)
                             }
+                        }
+                        "BRIGHTNESS" -> {
+                            BrightnessSlider(
+                                hasWriteSettingsPermission = hasWriteSettingsPermission,
+                                modifier = Modifier.fillMaxWidth()
+                            )
                         }
                         "DNS" -> {
                             BentoCard(title = "PRIVATE DNS", icon = Icons.Default.Dns) {
@@ -1324,33 +1281,7 @@ fun DashboardScreen(
                 }
             }
 
-            item(span = StaggeredGridItemSpan.FullLine) {
-                var brightnessState by remember { mutableFloatStateOf(128f) }
-                LaunchedEffect(Unit) {
-                    try {
-                        val current = Settings.System.getInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS)
-                        brightnessState = current.toFloat()
-                    } catch (e: Exception) {}
-                }
-                
-                BentoCard(title = "BRIGHTNESS", icon = Icons.Default.BrightnessMedium) {
-                    Slider(
-                        value = brightnessState,
-                        onValueChange = { 
-                            brightnessState = it
-                            if (hasWriteSettingsPermission) {
-                                SystemSettingsHelper.setScreenBrightness(context, it.toInt())
-                            }
-                        },
-                        valueRange = 0f..255f,
-                        colors = SliderDefaults.colors(
-                            thumbColor = MaterialTheme.colorScheme.onSurface,
-                            activeTrackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                            inactiveTrackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
-                        )
-                    )
-                }
-            }
+
         }
 
         Box(
@@ -1366,6 +1297,74 @@ fun DashboardScreen(
                     }
                 }
         )
+
+        // Floating premium custom toast notification component confirming Database storage state
+        androidx.compose.animation.AnimatedVisibility(
+            visible = toastMessage != null,
+            enter = androidx.compose.animation.slideInVertically(
+                animationSpec = androidx.compose.animation.core.spring(
+                    dampingRatio = androidx.compose.animation.core.Spring.DampingRatioLowBouncy,
+                    stiffness = androidx.compose.animation.core.Spring.StiffnessMedium
+                ),
+                initialOffsetY = { it }
+            ) + androidx.compose.animation.fadeIn(),
+            exit = androidx.compose.animation.slideOutVertically(
+                animationSpec = androidx.compose.animation.core.spring(
+                    stiffness = androidx.compose.animation.core.Spring.StiffnessMedium
+                ),
+                targetOffsetY = { it }
+            ) + androidx.compose.animation.fadeOut(),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 96.dp)
+                .zIndex(100f)
+        ) {
+            toastMessage?.let { msg ->
+                Card(
+                    modifier = Modifier
+                        .padding(horizontal = 24.dp)
+                        .fillMaxWidth(0.9f),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (msg.isError) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.inverseSurface
+                    ),
+                    shape = RoundedCornerShape(24.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (msg.isError) Icons.Default.ErrorOutline else Icons.Default.CloudDone,
+                            contentDescription = "DB Sync Status",
+                            tint = if (msg.isError) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.inverseOnSurface,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Text(
+                            text = msg.message,
+                            style = AppTypography.bodySmall.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 11.sp,
+                                lineHeight = 15.sp
+                            ),
+                            color = if (msg.isError) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.inverseOnSurface,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Dismiss",
+                            tint = if (msg.isError) MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.6f) else MaterialTheme.colorScheme.inverseOnSurface.copy(alpha = 0.6f),
+                            modifier = Modifier
+                                .size(14.dp)
+                                .clickable { viewModel.clearToast() }
+                        )
+                    }
+                }
+            }
+        }
     }
 
     if (showNotifications) {
