@@ -6,6 +6,10 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
@@ -41,19 +45,25 @@ import com.example.utils.SystemSettingsHelper
 import com.example.viewmodel.QSViewModel
 import android.hardware.camera2.CameraManager
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun HeaderActionButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     contentDescription: String,
     isActive: Boolean = false,
     activeColor: androidx.compose.ui.graphics.Color = NothingRed,
+    tooltipText: String = "",
+    extraModifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     val context = LocalContext.current
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
+    val isHovered by interactionSource.collectIsHoveredAsState()
+    var showTooltip by remember { mutableStateOf(false) }
+
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.90f else 1f,
+        targetValue = if (isPressed) 0.90f else if (isHovered) 1.05f else 1f,
         animationSpec = androidx.compose.animation.core.spring(
             dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
             stiffness = androidx.compose.animation.core.Spring.StiffnessLow
@@ -61,38 +71,85 @@ fun HeaderActionButton(
         label = "HeaderButtonScale"
     )
 
+    LaunchedEffect(isHovered) {
+        if (isHovered) {
+            showTooltip = true
+        } else {
+            showTooltip = false
+        }
+    }
+
+    LaunchedEffect(showTooltip) {
+        if (showTooltip) {
+            kotlinx.coroutines.delay(2000)
+            showTooltip = false
+        }
+    }
+
     Box(
-        modifier = Modifier
-            .size(48.dp)
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
-            .background(
-                color = if (isActive) activeColor.copy(alpha = 0.15f) else Color.Transparent,
-                shape = CircleShape
-            )
-            .border(
-                width = 1.dp,
-                color = if (isActive) activeColor else BorderDark.copy(alpha = 0.3f),
-                shape = CircleShape
-            )
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = {
-                    com.example.utils.AudioHapticEngine.triggerClick(context)
-                    onClick()
-                }
-            ),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.TopCenter,
+        modifier = Modifier.wrapContentSize()
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = contentDescription,
-            tint = if (isActive) activeColor else MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.size(22.dp)
-        )
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                }
+                .background(
+                    color = if (isActive) activeColor.copy(alpha = 0.15f) else Color.Transparent,
+                    shape = CircleShape
+                )
+                .border(
+                    width = 1.dp,
+                    color = if (isActive) activeColor else BorderDark.copy(alpha = 0.3f),
+                    shape = CircleShape
+                )
+                .combinedClickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    onClick = {
+                        com.example.utils.AudioHapticEngine.triggerClick(context)
+                        onClick()
+                    },
+                    onLongClick = {
+                        com.example.utils.AudioHapticEngine.triggerClick(context)
+                        showTooltip = true
+                    }
+                )
+                .then(extraModifier),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = contentDescription,
+                tint = if (isActive) activeColor else MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.size(22.dp)
+            )
+        }
+
+        // TOOLTIP WINDOW
+        AnimatedVisibility(
+            visible = showTooltip && tooltipText.isNotEmpty(),
+            enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.expandVertically(expandFrom = Alignment.Top),
+            exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.shrinkVertically(shrinkTowards = Alignment.Top),
+            modifier = Modifier.absoluteOffset(y = 54.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .background(Color.Black, shape = RoundedCornerShape(6.dp))
+                    .border(1.dp, Color.White.copy(alpha = 0.2f), shape = RoundedCornerShape(6.dp))
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = tooltipText.uppercase(),
+                    style = AppTypography.labelSmall.copy(fontSize = 9.sp, letterSpacing = 1.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
+                    color = Color.White
+                )
+            }
+        }
     }
 }
 
@@ -123,6 +180,24 @@ fun DashboardScreen(
 
     var showSettingsDialog by remember { mutableStateOf(false) }
     var isEditing by remember { mutableStateOf(false) }
+
+    val editRotation by animateFloatAsState(
+        targetValue = if (isEditing) 180f else 0f,
+        animationSpec = androidx.compose.animation.core.spring(
+            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+            stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+        ),
+        label = "EditRotationAnimation"
+    )
+    val otherScale by animateFloatAsState(
+        targetValue = if (isEditing) 0.85f else 1f,
+        animationSpec = androidx.compose.animation.core.spring(
+            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+            stiffness = androidx.compose.animation.core.Spring.StiffnessMedium
+        ),
+        label = "SecondaryButtonScale"
+    )
+
     var showNotifications by remember { mutableStateOf(false) }
     var showSystemMonitor by remember { mutableStateOf(false) }
 
@@ -152,6 +227,35 @@ fun DashboardScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalItemSpacing = 12.dp
         ) {
+            // DIGITAL CLOCK WIDGET
+            item(span = StaggeredGridItemSpan.FullLine) {
+                var currentTime by remember { mutableStateOf(java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date())) }
+                var currentDate by remember { mutableStateOf(java.text.SimpleDateFormat("EEE, MMM dd", java.util.Locale.getDefault()).format(java.util.Date())) }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                        .padding(vertical = 32.dp, horizontal = 24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = currentTime,
+                            style = AppTypography.displayLarge.copy(fontSize = 64.sp, letterSpacing = 2.sp),
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = currentDate.uppercase(),
+                            style = AppTypography.labelSmall.copy(fontSize = 12.sp, letterSpacing = 4.sp),
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+            }
+
             // HEADER
             item(span = StaggeredGridItemSpan.FullLine) {
                 var currentTime by remember { mutableStateOf(java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date())) }
@@ -217,23 +321,36 @@ fun DashboardScreen(
                         }
                     }
                     Spacer(modifier = Modifier.weight(1f))
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = currentTime,
-                            style = AppTypography.displayLarge.copy(fontSize = 24.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                        Text(
-                            text = currentDate,
-                            style = AppTypography.labelSmall,
-                            color = NeutralGray
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
                     val isMonochrome by viewModel.isMonochrome.collectAsStateWithLifecycle()
+                    val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+                    val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
+                    val isDark = when (themeMode) {
+                        "DARK" -> true
+                        "LIGHT" -> false
+                        else -> systemDark
+                    }
+
+                    HeaderActionButton(
+                        icon = if (isDark) Icons.Default.LightMode else Icons.Default.DarkMode,
+                        contentDescription = "Toggle Theme",
+                        tooltipText = if (isDark) "Light Mode" else "Dark Mode",
+                        extraModifier = Modifier.graphicsLayer {
+                            scaleX = otherScale
+                            scaleY = otherScale
+                        },
+                        onClick = {
+                            viewModel.setThemeMode(if (isDark) "LIGHT" else "DARK")
+                        }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
                     HeaderActionButton(
                         icon = Icons.Default.Palette,
                         contentDescription = "Toggle Theme Selection",
+                        tooltipText = "Theme Palette",
+                        extraModifier = Modifier.graphicsLayer {
+                            scaleX = otherScale
+                            scaleY = otherScale
+                        },
                         onClick = {
                             showSpecialPaletteSelector = true
                         }
@@ -243,6 +360,10 @@ fun DashboardScreen(
                         icon = if (isEditing) Icons.Default.Done else Icons.Default.Edit,
                         contentDescription = "Edit Layout",
                         isActive = isEditing,
+                        tooltipText = if (isEditing) "Finish Editing" else "Edit Layout",
+                        extraModifier = Modifier.graphicsLayer {
+                            rotationZ = editRotation
+                        },
                         onClick = {
                             isEditing = !isEditing
                         }
@@ -251,6 +372,11 @@ fun DashboardScreen(
                     HeaderActionButton(
                         icon = Icons.Default.Settings,
                         contentDescription = "Settings",
+                        tooltipText = "App Settings",
+                        extraModifier = Modifier.graphicsLayer {
+                            scaleX = otherScale
+                            scaleY = otherScale
+                        },
                         onClick = {
                             onNavigateToSettings()
                         }

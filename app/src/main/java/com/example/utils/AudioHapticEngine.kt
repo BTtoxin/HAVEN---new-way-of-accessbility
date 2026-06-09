@@ -1,6 +1,9 @@
 package com.example.utils
 
 import android.content.Context
+import android.media.AudioFormat
+import android.media.AudioManager
+import android.media.AudioTrack
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -11,6 +14,7 @@ object AudioHapticEngine {
         if (Build.VERSION.SDK_INT >= 26) {
             vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 40, 60, 20), -1))
         }
+        playSynthClick(1500.0, 30, 0.4)
     }
 
     fun triggerError(context: Context) {
@@ -18,6 +22,7 @@ object AudioHapticEngine {
         if (Build.VERSION.SDK_INT >= 26) {
             vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 100, 50, 100), -1))
         }
+        playSynthClick(600.0, 80, 0.5)
     }
 
     fun triggerClick(context: Context) {
@@ -27,5 +32,44 @@ object AudioHapticEngine {
         } else {
             vibrator.vibrate(25)
         }
+        playSynthClick(1800.0, 15, 0.35)
+    }
+
+    private fun playSynthClick(frequencyHz: Double, durationMs: Int, volume: Double) {
+        Thread {
+            try {
+                val sampleRate = 44100
+                val numSamples = (sampleRate * durationMs / 1000)
+                val generatedSnd = ByteArray(2 * numSamples)
+                
+                for (i in 0 until numSamples) {
+                    val angle = 2.0 * Math.PI * i / (sampleRate / frequencyHz)
+                    // Synthesize linear/exponential decay envelope
+                    val fade = (numSamples - i).toDouble() / numSamples
+                    val valSample = (Math.sin(angle) * 32767.0 * volume * fade).toInt()
+                    
+                    generatedSnd[2 * i] = (valSample and 0x00ff).toByte()
+                    generatedSnd[2 * i + 1] = ((valSample and 0xff00) ushr 8).toByte()
+                }
+                
+                val audioTrack = AudioTrack(
+                    AudioManager.STREAM_MUSIC,
+                    sampleRate,
+                    AudioFormat.CHANNEL_OUT_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT,
+                    generatedSnd.size,
+                    AudioTrack.MODE_STATIC
+                )
+                audioTrack.write(generatedSnd, 0, generatedSnd.size)
+                audioTrack.play()
+                
+                Thread.sleep(durationMs.toLong() + 15)
+                try {
+                    audioTrack.stop()
+                } catch (e: Exception) {}
+                audioTrack.release()
+            } catch (e: Exception) {}
+        }.start()
     }
 }
+

@@ -43,10 +43,10 @@ fun QuickControlTile(
     val isHovered by interactionSource.collectIsHoveredAsState()
     val context = androidx.compose.ui.platform.LocalContext.current
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.92f else 1f,
+        targetValue = if (isPressed) 0.92f else if (isHovered) 1.05f else 1f,
         animationSpec = androidx.compose.animation.core.spring(
             dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
-            stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow
+            stiffness = androidx.compose.animation.core.Spring.StiffnessLow
         ),
         label = "tileScale"
     )
