@@ -184,6 +184,7 @@ fun DashboardScreen(
     initialOpenFocus: Boolean = false,
     onNavigateToSettings: () -> Unit = {},
     onNavigateToAutomation: () -> Unit = {},
+    onNavigateToClipboard: () -> Unit = {},
     onRequestPermission: () -> Unit,
     onRequestDndPermission: () -> Unit
 ) {
@@ -498,6 +499,95 @@ fun DashboardScreen(
                 }
             }
 
+            // IP INFO CARD
+            item(span = StaggeredGridItemSpan.FullLine) {
+                var localIp by remember { mutableStateOf("192.168.1.XX") }
+                var isVpn by remember { mutableStateOf(false) }
+
+                LaunchedEffect(Unit) {
+                    try {
+                        var vpnFound = false
+                        val interfaces = java.net.NetworkInterface.getNetworkInterfaces()
+                        while (interfaces.hasMoreElements()) {
+                            val networkInterface = interfaces.nextElement()
+                            if (networkInterface.name.contains("tun") || networkInterface.name.contains("ppp")) vpnFound = true
+                            if (networkInterface.name.contains("wlan") || networkInterface.name.contains("eth")) {
+                                val addresses = networkInterface.inetAddresses
+                                while (addresses.hasMoreElements()) {
+                                    val address = addresses.nextElement()
+                                    if (!address.isLoopbackAddress && address.hostAddress?.contains(":") == false) {
+                                        localIp = address.hostAddress ?: "Unknown"
+                                    }
+                                }
+                            }
+                        }
+                        isVpn = vpnFound
+                    } catch (e: Exception) {}
+                }
+
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                    shape = RoundedCornerShape(24.dp)
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Wifi, contentDescription = "Network", tint = NothingRed, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("NETWORK INFO", style = AppTypography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp, color = NothingRed))
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Column {
+                                Text("Local IP", style = AppTypography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
+                                Text(localIp, style = AppTypography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                            }
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text("VPN Security", style = AppTypography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
+                                Text(if (isVpn) "Secured" else "Exposed", style = AppTypography.titleMedium.copy(fontWeight = FontWeight.Bold, color = if (isVpn) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error))
+                            }
+                        }
+                    }
+                }
+            }
+
+            // OEM UNLOCK CARD
+            item(span = StaggeredGridItemSpan.FullLine) {
+                var oemUnlocked by remember { mutableStateOf(false) }
+                
+                LaunchedEffect(Unit) {
+                    try {
+                        oemUnlocked = android.provider.Settings.Global.getInt(context.contentResolver, "oem_unlock_disallowed", 0) == 0
+                    } catch (e: Exception) {}
+                }
+                
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                    shape = RoundedCornerShape(24.dp)
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.LockOpen, contentDescription = "OEM", tint = NothingRed, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("SYSTEM STATUS", style = AppTypography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp, color = NothingRed))
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Column {
+                                Text("OEM Unlocking", style = AppTypography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
+                                Text(if (oemUnlocked) "Allowed" else "Disallowed", style = AppTypography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                            }
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text("Developer Options", style = AppTypography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
+                                val devEnabled = android.provider.Settings.Global.getInt(context.contentResolver, android.provider.Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 0) == 1
+                                Text(if (devEnabled) "Enabled" else "Disabled", style = AppTypography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                            }
+                        }
+                    }
+                }
+            }
+
             // AI REORGANIZATION SUGGESTION BANNER
             if (false && aiLayoutSuggestion != null) {
                 item(span = StaggeredGridItemSpan.FullLine) {
@@ -750,6 +840,19 @@ fun DashboardScreen(
                         },
                         onClick = {
                             onNavigateToAutomation()
+                        }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    HeaderActionButton(
+                        icon = Icons.Default.Assignment,
+                        contentDescription = "Clipboard Manager",
+                        tooltipText = "Clipboard",
+                        extraModifier = Modifier.graphicsLayer {
+                            scaleX = otherScale
+                            scaleY = otherScale
+                        },
+                        onClick = {
+                            onNavigateToClipboard()
                         }
                     )
                     Spacer(modifier = Modifier.width(8.dp))

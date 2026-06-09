@@ -165,8 +165,33 @@
             <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
         </service>
 
+        <service android:name=".services.AdbWirelessTileService" android:exported="true"
+            android:label="Wireless ADB" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
+        <service android:name=".services.DevOptionsTileService" android:exported="true"
+            android:label="Dev Options" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
+        <service android:name=".services.UsbModeTileService" android:exported="true"
+            android:label="USB Mode" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
+        <service android:name=".services.NotifFilterTileService" android:exported="true"
+            android:label="Notif Filter" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
         <service android:name=".services.SessionPasswordTileService" android:exported="true"
             android:label="Session Password" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
+        <service android:name=".services.DnsPresetsTileService" android:exported="true"
+            android:label="Private DNS" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
         </service>
 
