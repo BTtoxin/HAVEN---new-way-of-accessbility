@@ -230,17 +230,55 @@ fun DashboardScreen(
             // DIGITAL CLOCK WIDGET
             item(span = StaggeredGridItemSpan.FullLine) {
                 var currentTime by remember { mutableStateOf(java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date())) }
-                var currentDate by remember { mutableStateOf(java.text.SimpleDateFormat("EEE, MMM dd", java.util.Locale.getDefault()).format(java.util.Date())) }
+                var currentDate by remember { mutableStateOf(java.text.SimpleDateFormat("EEEE, MMMM dd, yyyy", java.util.Locale.getDefault()).format(java.util.Date())) }
+                var networkType by remember { mutableStateOf("4G LTE") }
+                var signalStrength by remember { mutableIntStateOf(4) }
+
+                LaunchedEffect(Unit) {
+                    while(true) {
+                        currentTime = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
+                        currentDate = java.text.SimpleDateFormat("EEEE, MMMM dd, yyyy", java.util.Locale.getDefault()).format(java.util.Date())
+                        // Simulate window.navigator.connection updates
+                        signalStrength = listOf(2, 3, 4).random()
+                        networkType = listOf("5G", "4G LTE", "Wi-Fi").random()
+                        kotlinx.coroutines.delay(5000)
+                    }
+                }
 
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(24.dp))
                         .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                        .padding(vertical = 32.dp, horizontal = 24.dp),
-                    contentAlignment = Alignment.Center
+                        .padding(vertical = 32.dp, horizontal = 24.dp)
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    // Small Network Signal Strength Indicator
+                    Row(
+                        modifier = Modifier.align(Alignment.TopEnd),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = when(signalStrength) {
+                                4 -> Icons.Default.SignalCellular4Bar
+                                3 -> Icons.Default.NetworkCell
+                                else -> Icons.Default.NetworkCell
+                            },
+                            contentDescription = "Signal Strength",
+                            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = networkType,
+                            style = AppTypography.labelSmall.copy(fontSize = 10.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
+                        )
+                    }
+                    
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                         Text(
                             text = currentTime,
                             style = AppTypography.displayLarge.copy(fontSize = 64.sp, letterSpacing = 2.sp),
@@ -265,7 +303,7 @@ fun DashboardScreen(
                     while(true) {
                         currentTime = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
                         currentDate = java.text.SimpleDateFormat("EEE, MMM dd", java.util.Locale.getDefault()).format(java.util.Date())
-                        kotlinx.coroutines.delay(1000)
+                        kotlinx.coroutines.delay(60000)
                     }
                 }
 
@@ -408,12 +446,45 @@ fun DashboardScreen(
                                 iconColor = NtSecondary,
                                 subtitleColor = NtTextTertiary,
                                 modifier = Modifier.width(140.dp),
+                                index = 0,
                                 onClick = {
                                     try {
                                         context.startActivity(Intent(Settings.Panel.ACTION_WIFI))
                                     } catch(e: Exception) {
                                         context.startActivity(Intent(Settings.ACTION_WIFI_SETTINGS))
                                     }
+                                }
+                            )
+                        }
+                        item {
+                            QuickControlTile(
+                                title = "Network",
+                                subtitle = "Configuration",
+                                icon = Icons.Default.CellTower,
+                                containerColor = NtSurface,
+                                iconColor = NtTextSecondary,
+                                subtitleColor = NtTextSecondary,
+                                modifier = Modifier.width(140.dp),
+                                index = 1,
+                                onClick = {
+                                    val intent = Intent(Settings.ACTION_NETWORK_OPERATOR_SETTINGS)
+                                    try { context.startActivity(intent.apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { }
+                                }
+                            )
+                        }
+                        item {
+                            QuickControlTile(
+                                title = "DNS Settings",
+                                subtitle = "Private DNS",
+                                icon = Icons.Default.Dns,
+                                containerColor = NtSurfaceVariant,
+                                iconColor = NtSecondary,
+                                subtitleColor = NtTextTertiary,
+                                modifier = Modifier.width(140.dp),
+                                index = 2,
+                                onClick = {
+                                    val intent = Intent("android.settings.PRIVATE_DNS_SETTINGS")
+                                    try { context.startActivity(intent.apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { }
                                 }
                             )
                         }
@@ -426,6 +497,7 @@ fun DashboardScreen(
                                 iconColor = NtTextSecondary,
                                 subtitleColor = NtTextSecondary,
                                 modifier = Modifier.width(140.dp),
+                                index = 3,
                                 onClick = {
                                     val intent = Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
                                     try { context.startActivity(intent.apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { }
@@ -441,6 +513,7 @@ fun DashboardScreen(
                                 iconColor = NtGreenText,
                                 subtitleColor = NtGreenText,
                                 modifier = Modifier.width(140.dp),
+                                index = 4,
                                 onClick = {
                                     if (!hasDndPermission) onRequestDndPermission()
                                     else {
@@ -459,6 +532,7 @@ fun DashboardScreen(
                                 iconColor = NtTextSecondary,
                                 subtitleColor = NtTextSecondary,
                                 modifier = Modifier.width(140.dp),
+                                index = 5,
                                 onClick = {
                                     try {
                                         val cameraId = cameraManager?.cameraIdList?.firstOrNull()
@@ -479,6 +553,7 @@ fun DashboardScreen(
                                 iconColor = NtSecondary,
                                 subtitleColor = NtTextTertiary,
                                 modifier = Modifier.width(140.dp),
+                                index = 6,
                                 onClick = { try { context.startActivity(Intent(Settings.ACTION_DISPLAY_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } }
                             )
                         }
@@ -491,6 +566,7 @@ fun DashboardScreen(
                                 iconColor = NtTextSecondary,
                                 subtitleColor = NtTextSecondary,
                                 modifier = Modifier.width(140.dp),
+                                index = 7,
                                 onClick = { try { context.startActivity(Intent(Settings.ACTION_SOUND_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } }
                             )
                         }
@@ -503,6 +579,7 @@ fun DashboardScreen(
                                 iconColor = NtSecondary,
                                 subtitleColor = NtTextTertiary,
                                 modifier = Modifier.width(140.dp),
+                                index = 8,
                                 onClick = { try { context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } }
                             )
                         }
@@ -515,6 +592,7 @@ fun DashboardScreen(
                                 iconColor = NtTextSecondary,
                                 subtitleColor = NtTextSecondary,
                                 modifier = Modifier.width(140.dp),
+                                index = 9,
                                 onClick = { try { context.startActivity(Intent(Intent.ACTION_POWER_USAGE_SUMMARY).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } }
                             )
                         }
@@ -527,6 +605,7 @@ fun DashboardScreen(
                                 iconColor = NtSecondary,
                                 subtitleColor = NtTextTertiary,
                                 modifier = Modifier.width(140.dp),
+                                index = 10,
                                 onClick = { try { context.startActivity(Intent(Settings.ACTION_DATA_ROAMING_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } }
                             )
                         }
@@ -539,6 +618,7 @@ fun DashboardScreen(
                                 iconColor = NtTextSecondary,
                                 subtitleColor = NtTextSecondary,
                                 modifier = Modifier.width(140.dp),
+                                index = 11,
                                 onClick = { try { context.startActivity(Intent(Settings.ACTION_SECURITY_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } }
                             )
                         }
@@ -551,6 +631,7 @@ fun DashboardScreen(
                                 iconColor = NtSecondary,
                                 subtitleColor = NtTextTertiary,
                                 modifier = Modifier.width(140.dp),
+                                index = 12,
                                 onClick = { try { context.startActivity(Intent(Settings.ACTION_APPLICATION_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } }
                             )
                         }
@@ -563,6 +644,7 @@ fun DashboardScreen(
                                 iconColor = NtTextSecondary,
                                 subtitleColor = NtTextSecondary,
                                 modifier = Modifier.width(140.dp),
+                                index = 13,
                                 onClick = { try { context.startActivity(Intent(Settings.ACTION_INTERNAL_STORAGE_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } }
                             )
                         }
@@ -575,6 +657,7 @@ fun DashboardScreen(
                                 iconColor = NtSecondary,
                                 subtitleColor = NtTextTertiary,
                                 modifier = Modifier.width(140.dp),
+                                index = 14,
                                 onClick = { try { context.startActivity(Intent(Settings.ACTION_LOCALE_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } }
                             )
                         }
@@ -587,6 +670,7 @@ fun DashboardScreen(
                                 iconColor = NtTextSecondary,
                                 subtitleColor = NtTextSecondary,
                                 modifier = Modifier.width(140.dp),
+                                index = 15,
                                 onClick = { try { context.startActivity(Intent(Settings.ACTION_DATE_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } }
                             )
                         }
@@ -599,6 +683,7 @@ fun DashboardScreen(
                                 iconColor = NtSecondary,
                                 subtitleColor = NtTextTertiary,
                                 modifier = Modifier.width(140.dp),
+                                index = 16,
                                 onClick = { try { context.startActivity(Intent(Settings.ACTION_NFC_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } }
                             )
                         }
@@ -611,6 +696,7 @@ fun DashboardScreen(
                                 iconColor = NtTextSecondary,
                                 subtitleColor = NtTextSecondary,
                                 modifier = Modifier.width(140.dp),
+                                index = 17,
                                 onClick = { try { context.startActivity(Intent(Settings.ACTION_PRINT_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } }
                             )
                         }
@@ -1067,11 +1153,11 @@ fun DashboardScreen(
                             ) {
                                 Text("UPDATES", style = AppTypography.displayLarge)
                                 Spacer(modifier = Modifier.height(4.dp))
-                                Text("VERSION 1.1.0 (JUNE 2026)", style = AppTypography.labelSmall, color = NeutralGray)
+                                Text("VERSION 1.2.0 (JUNE 2026)", style = AppTypography.labelSmall, color = NeutralGray)
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Icon(Icons.Default.Check, contentDescription = null, tint = NothingRed, modifier = Modifier.size(16.dp))
-                                    Text("View historical changes", style = AppTypography.labelSmall, color = NeutralGray)
+                                    Text("Added animations, network widget, settings intents", style = AppTypography.labelSmall, color = NeutralGray)
                                 }
                             }
                         }

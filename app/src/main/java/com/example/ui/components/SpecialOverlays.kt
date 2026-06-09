@@ -161,7 +161,7 @@ fun AboutOverlay(onDismiss: () -> Unit) {
                     Text("APPLICATION DETAILS", style = AppTypography.labelSmall, color = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.height(8.dp))
                     InfoRow(label = "Developer", value = "Ashu Mehta")
-                    InfoRow(label = "Version Name", value = "1.1.0")
+                    InfoRow(label = "Version Name", value = "1.2.0")
                     InfoRow(label = "Target Year", value = "June 2026")
                     InfoRow(label = "Platform", value = "Kotlin & Compose 1.7")
                     InfoRow(label = "Status", value = "Production Ready")
@@ -218,6 +218,17 @@ fun AboutOverlay(onDismiss: () -> Unit) {
 @Composable
 fun ChangelogOverlay(onDismiss: () -> Unit) {
     val updates = listOf(
+        ChangelogItem(
+            version = "v1.2.0",
+            date = "June 2026",
+            changes = listOf(
+                "Added animated network signal widget to clock",
+                "Staggered entry scale transitions to grid items",
+                "New DNS and Network Configuration quick settings",
+                "Haptic integration for toggling tiles",
+                "Clock formatted to include complete day and date"
+            )
+        ),
         ChangelogItem(
             version = "v1.1.0",
             date = "June 2026",

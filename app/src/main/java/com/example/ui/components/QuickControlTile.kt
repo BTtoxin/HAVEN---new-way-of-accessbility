@@ -15,7 +15,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
@@ -35,6 +38,7 @@ fun QuickControlTile(
     iconColor: Color,
     subtitleColor: Color,
     modifier: Modifier = Modifier,
+    index: Int = 0,
     onClick: () -> Unit = {},
     onLongClick: (() -> Unit)? = null
 ) {
@@ -42,6 +46,27 @@ fun QuickControlTile(
     val isPressed by interactionSource.collectIsPressedAsState()
     val isHovered by interactionSource.collectIsHoveredAsState()
     val context = androidx.compose.ui.platform.LocalContext.current
+    
+    var isVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay((index * 50).toLong())
+        isVisible = true
+    }
+    
+    val popScale by animateFloatAsState(
+        targetValue = if (isVisible) 1f else 0.5f,
+        animationSpec = androidx.compose.animation.core.spring(
+            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+            stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+        ),
+        label = "popScale"
+    )
+    val popAlpha by animateFloatAsState(
+        targetValue = if (isVisible) 1f else 0f,
+        animationSpec = androidx.compose.animation.core.tween(durationMillis = 300),
+        label = "popAlpha"
+    )
+
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.92f else if (isHovered) 1.05f else 1f,
         animationSpec = androidx.compose.animation.core.spring(
@@ -57,7 +82,8 @@ fun QuickControlTile(
 
     Box(
         modifier = modifier
-            .scale(scale)
+            .alpha(popAlpha)
+            .scale(popScale * scale)
             .alpha(opacity)
             .clip(RoundedCornerShape(24.dp))
             .background(containerColor)
