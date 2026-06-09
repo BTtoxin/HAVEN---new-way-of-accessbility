@@ -219,6 +219,15 @@ fun AboutOverlay(onDismiss: () -> Unit) {
 fun ChangelogOverlay(onDismiss: () -> Unit) {
     val updates = listOf(
         ChangelogItem(
+            version = "v1.3.0",
+            date = "June 9, 2026, 11:21 AM",
+            changes = listOf(
+                "Integrated D3-inspired real-time network speed & signal strength micro-charts inside the Wi-Fi card.",
+                "Added granular Tile Resizing parameters allowing tiles to cycle between Standard, Compact, and Wide formats.",
+                "Designed a background listener syncing app toggle controllers with mock Android system status in real-time."
+            )
+        ),
+        ChangelogItem(
             version = "v1.2.0",
             date = "June 2026",
             changes = listOf(

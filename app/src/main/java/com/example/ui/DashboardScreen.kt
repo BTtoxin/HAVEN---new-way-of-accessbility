@@ -7,6 +7,8 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
@@ -221,6 +223,7 @@ fun DashboardScreen(
     var showSpecialManual by remember { mutableStateOf(false) }
     var showSpecialPaletteSelector by remember { mutableStateOf(false) }
     var showAuthModal by remember { mutableStateOf(false) }
+    var showVoiceDialog by remember { mutableStateOf(false) }
     var activeTileSettings by remember { mutableStateOf<String?>(null) }
 
     val toastMessage by viewModel.toastMessage.collectAsStateWithLifecycle()
@@ -241,6 +244,37 @@ fun DashboardScreen(
         }
     }
 
+    val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
+    val aiLayoutSuggestion by viewModel.aiLayoutSuggestion.collectAsStateWithLifecycle()
+    val filteredOrder = remember(availableOrder, searchQuery) {
+        if (searchQuery.isBlank()) {
+            availableOrder
+        } else {
+            val q = searchQuery.trim().lowercase()
+            availableOrder.filter { id ->
+                val keywords = when (id) {
+                    "TIMEOUT" -> listOf("timeout", "screen", "display", "time", "sleep", "lock")
+                    "CAFFEINE" -> listOf("caffeine", "screen on", "wake", "lock", "standby", "keep awake")
+                    "BATTERY" -> listOf("battery", "power", "charging", "statistics", "saver", "gauge", "percentage")
+                    "BRIGHTNESS" -> listOf("brightness", "backlight", "screen", "dim", "slider")
+                    "DNS" -> listOf("dns", "private dns", "network", "domain", "internet", "private")
+                    "THEATER" -> listOf("theater", "theatre", "dnd", "mute", "dim", "quiet", "cinema")
+                    "CLIPBOARD" -> listOf("clipboard", "copy", "paste", "purge", "clear", "clean")
+                    "FOCUS" -> listOf("focus", "deep focus", "sandbox", "timer", "minutes", "lock", "restrict")
+                    "SHORTCUT" -> listOf("shortcut", "configure", "open", "custom", "launch", "quick")
+                    "APP_AUDIO" -> listOf("app audio", "audio", "isolate", "volume", "sound", "mute")
+                    "OPERATOR" -> listOf("operator", "carrier", "network", "cell", "sim", "mobile", "carrier settings")
+                    "GLYPH" -> listOf("glyph", "led", "brightness", "profile", "backlight", "lights", "ring")
+                    "MANUAL" -> listOf("manual", "help", "guide", "user", "instructions", "faq")
+                    "CHANGELOG" -> listOf("changelog", "update", "history", "version", "june", "new", "release")
+                    "ABOUT" -> listOf("about", "metadata", "creator", "system", "ashu", "info", "developer")
+                    else -> emptyList()
+                }
+                keywords.any { it.contains(q) } || id.lowercase().contains(q)
+            }
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -249,7 +283,7 @@ fun DashboardScreen(
     ) {
         LazyVerticalStaggeredGrid(
             columns = StaggeredGridCells.Fixed(2),
-            contentPadding = PaddingValues(16.dp),
+            contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 96.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalItemSpacing = 12.dp
         ) {
@@ -318,6 +352,102 @@ fun DashboardScreen(
                         )
                     }
                 }
+            }
+
+            // AI REORGANIZATION SUGGESTION BANNER
+            if (aiLayoutSuggestion != null) {
+                item(span = StaggeredGridItemSpan.FullLine) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 12.dp)
+                            .clip(RoundedCornerShape(20.dp))
+                            .border(1.dp, NothingRed.copy(alpha = 0.5f), RoundedCornerShape(20.dp)),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f))
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.AutoAwesome,
+                                    contentDescription = "AI Layout Check",
+                                    tint = NothingRed,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "NOTHING OS AI • GRID OPTIMIZER",
+                                    style = AppTypography.labelSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 1.sp,
+                                        fontSize = 11.sp,
+                                        color = NothingRed
+                                    )
+                                )
+                            }
+                            
+                            Spacer(modifier = Modifier.height(8.dp))
+                            
+                            Text(
+                                text = "Based on your frequent click habits, we found a more efficient arrangement. Move active toggles to the primary 2x2 grid positions?",
+                                style = AppTypography.bodySmall.copy(
+                                    fontWeight = FontWeight.Medium,
+                                    lineHeight = 16.sp,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            )
+                            
+                            Spacer(modifier = Modifier.height(12.dp))
+                            
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                TextButton(
+                                    onClick = { 
+                                        com.example.utils.AudioHapticEngine.triggerClick(context)
+                                        viewModel.dismissReorganization() 
+                                    }
+                                ) {
+                                    Text(
+                                        "DISMISS",
+                                        style = AppTypography.labelSmall.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            letterSpacing = 1.sp,
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                        )
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Button(
+                                    onClick = { 
+                                        com.example.utils.AudioHapticEngine.triggerClick(context)
+                                        viewModel.acceptReorganization() 
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = NothingRed),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Text(
+                                        "REORGANIZE",
+                                        style = AppTypography.labelSmall.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            letterSpacing = 1.sp,
+                                            color = Color.White
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // WEATHER WIDGET (2X2 GRID STYLE WIDGET IN NOTHING OS)
+            item(span = StaggeredGridItemSpan.FullLine) {
+                com.example.ui.components.WeatherWidget(
+                    viewModel = viewModel,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
             }
 
             // HEADER
@@ -793,15 +923,57 @@ fun DashboardScreen(
                 }
             }
 
-            items(
-                items = availableOrder,
-                key = { id -> id },
-                span = { id ->
-                    if (id in listOf("CAFFEINE", "BATTERY", "BRIGHTNESS", "THEATER", "FOCUS", "GLYPH")) StaggeredGridItemSpan.FullLine
-                    else StaggeredGridItemSpan.SingleLane
+            if (filteredOrder.isEmpty()) {
+                item(span = StaggeredGridItemSpan.FullLine) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 48.dp, horizontal = 24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(64.dp)
+                                .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.SearchOff,
+                                contentDescription = "No results",
+                                tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f),
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                "NO SETTINGS MATCH",
+                                style = AppTypography.labelSmall.copy(
+                                    fontWeight = FontWeight.ExtraBold,
+                                    letterSpacing = 2.sp
+                                ),
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                "Try searching for caffeine, timeout, battery, dns, app audio, or glyph profiles.",
+                                style = AppTypography.bodySmall,
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                        }
+                    }
                 }
-            ) { id ->
-                val index = remember(id, availableOrder) { availableOrder.indexOf(id) }
+            } else {
+                items(
+                    items = filteredOrder,
+                    key = { id -> id },
+                    span = { id ->
+                        if (id in listOf("CAFFEINE", "BATTERY", "BRIGHTNESS", "THEATER", "FOCUS", "GLYPH")) StaggeredGridItemSpan.FullLine
+                        else StaggeredGridItemSpan.SingleLane
+                    }
+                ) { id ->
+                    val index = remember(id, availableOrder) { availableOrder.indexOf(id) }
                 Box {
                     when (id) {
                         "TIMEOUT" -> {
@@ -1280,6 +1452,7 @@ fun DashboardScreen(
                     }
                 }
             }
+            }
 
 
         }
@@ -1365,6 +1538,354 @@ fun DashboardScreen(
                 }
             }
         }
+
+        // FLOATING SEARCH BAR AT THE BOTTOM OF THE DASHBOARD
+        val isDarkTheme = MaterialTheme.colorScheme.background != Color(0xFFFDF8F6)
+        val searchBarBg = if (isDarkTheme) Color(0xFF161616) else Color(0xFFF3ECE9)
+        val searchBarBorder = if (isDarkTheme) Color.White.copy(alpha = 0.15f) else Color.Black.copy(alpha = 0.1f)
+        val textCol = if (isDarkTheme) Color.White else Color.Black
+
+        val tileUsageCounts by viewModel.tileUsageCounts.collectAsStateWithLifecycle()
+        val searchSuggestions = remember(tileUsageCounts, searchQuery) {
+            val allItems = listOf(
+                "WIFI" to "Wi-Fi",
+                "BLUETOOTH" to "Bluetooth",
+                "DATA" to "Data",
+                "HOTSPOT" to "Hotspot",
+                "TIMEOUT" to "Timeout",
+                "CAFFEINE" to "Caffeine",
+                "DNS" to "DNS",
+                "THEATER" to "Theater",
+                "CLIPBOARD" to "Clipboard",
+                "FOCUS" to "Focus",
+                "SHORTCUT" to "Shortcut",
+                "APP_AUDIO" to "App Audio",
+                "GLYPH" to "Glyph"
+            )
+            if (searchQuery.isBlank()) {
+                allItems.sortedByDescending { tileUsageCounts[it.first] ?: 0 }.take(3)
+            } else {
+                allItems.filter { it.second.contains(searchQuery, ignoreCase = true) }
+                    .sortedByDescending { tileUsageCounts[it.first] ?: 0 }
+                    .take(4)
+            }
+        }
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .background(
+                    brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            MaterialTheme.colorScheme.background.copy(alpha = 0.95f)
+                        )
+                    )
+                )
+                .navigationBarsPadding()
+                .padding(horizontal = 20.dp, vertical = 14.dp)
+                .zIndex(90f)
+        ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                if (searchSuggestions.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp)
+                            .horizontalScroll(androidx.compose.foundation.rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "SUGGESTED:",
+                            style = AppTypography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 1.5.sp,
+                                fontSize = 8.sp,
+                                color = textCol.copy(alpha = 0.5f)
+                            )
+                        )
+                        searchSuggestions.forEach { (id, label) ->
+                            val count = tileUsageCounts[id] ?: 0
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(textCol.copy(alpha = 0.08f))
+                                    .border(1.dp, textCol.copy(alpha = 0.12f), RoundedCornerShape(12.dp))
+                                    .clickable {
+                                        viewModel.setSearchQuery(label)
+                                        com.example.utils.AudioHapticEngine.triggerClick(context)
+                                    }
+                                    .padding(horizontal = 10.dp, vertical = 5.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Text(
+                                        text = label.uppercase(),
+                                        style = AppTypography.labelSmall.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 9.sp,
+                                            letterSpacing = 1.sp,
+                                            color = textCol
+                                        )
+                                    )
+                                    if (count > 0) {
+                                        Text(
+                                            text = "($count)",
+                                            style = AppTypography.labelSmall.copy(
+                                                fontSize = 8.sp,
+                                                color = textCol.copy(alpha = 0.5f)
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { viewModel.setSearchQuery(it) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    placeholder = {
+                        Text(
+                            "FILTER SETTINGS TOGGLES...",
+                            style = AppTypography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 2.sp,
+                                color = textCol.copy(alpha = 0.4f)
+                            )
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Search",
+                            tint = textCol.copy(alpha = 0.6f),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    },
+                    trailingIcon = {
+                        Row(
+                            modifier = Modifier.padding(end = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(
+                                    onClick = {
+                                        viewModel.setSearchQuery("")
+                                        com.example.utils.AudioHapticEngine.triggerClick(context)
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Clear search",
+                                        tint = textCol.copy(alpha = 0.6f),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                            IconButton(
+                                onClick = {
+                                    com.example.utils.AudioHapticEngine.triggerClick(context)
+                                    showVoiceDialog = true
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Mic,
+                                    contentDescription = "Voice assistant",
+                                    tint = textCol.copy(alpha = 0.7f),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(24.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = searchBarBg,
+                        unfocusedContainerColor = searchBarBg,
+                        focusedBorderColor = textCol.copy(alpha = 0.4f),
+                        unfocusedBorderColor = searchBarBorder,
+                        focusedTextColor = textCol,
+                        unfocusedTextColor = textCol
+                    ),
+                    textStyle = AppTypography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+                )
+            }
+        }
+    }
+
+    if (showVoiceDialog) {
+        var voiceInputText by remember { mutableStateOf("") }
+        var isListeningState by remember { mutableStateOf(false) }
+        var aiResponseFeedback by remember { mutableStateOf("") }
+        
+        AlertDialog(
+            onDismissRequest = { showVoiceDialog = false },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Mic,
+                        contentDescription = "Voice Input",
+                        tint = NothingRed,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        "OS VOICE CONTROLLER",
+                        style = AppTypography.labelSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 2.sp,
+                            fontSize = 14.sp
+                        )
+                    )
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        "Command Nothing OS with natural voice suggestions.",
+                        style = AppTypography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    OutlinedTextField(
+                        value = voiceInputText,
+                        onValueChange = { voiceInputText = it },
+                        placeholder = {
+                            Text(
+                                "e.g. 'Turn caffeine on and disable mobile data'",
+                                style = AppTypography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f))
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        textStyle = AppTypography.bodyMedium,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    
+                    if (isListeningState) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = NothingRed
+                            )
+                            Text(
+                                "COMPILING AUDIO SPECTRUM...",
+                                style = AppTypography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 10.sp,
+                                    letterSpacing = 1.sp,
+                                    color = NothingRed
+                                )
+                            )
+                        }
+                    }
+                    
+                    if (aiResponseFeedback.isNotEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(NothingRed.copy(alpha = 0.1f))
+                                .border(1.dp, NothingRed.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                                .padding(12.dp)
+                        ) {
+                            Text(
+                                text = aiResponseFeedback,
+                                style = AppTypography.bodySmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    lineHeight = 16.sp,
+                                    color = NothingRed
+                                )
+                            )
+                        }
+                    }
+                    
+                    Text(
+                        "SUGGESTIONS:",
+                        style = AppTypography.labelSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 9.sp,
+                            letterSpacing = 1.5.sp
+                        )
+                    )
+                    
+                    listOf(
+                        "Turn on bluetooth",
+                        "Deactivate mobile data",
+                        "Activate caffeine",
+                        "Start focus sandbox for 45 minutes",
+                        "Cycle weather selection",
+                        "Turn on theater mode",
+                        "Set screen monochrome"
+                    ).forEach { phrase ->
+                        Text(
+                            text = "• \"$phrase\"",
+                            style = AppTypography.bodySmall.copy(
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 11.sp
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    voiceInputText = phrase
+                                }
+                                .padding(vertical = 2.dp)
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (voiceInputText.isNotBlank()) {
+                            isListeningState = true
+                            com.example.utils.AudioHapticEngine.triggerClick(context)
+                            viewModel.executeVoiceCommand(voiceInputText) { feedback ->
+                                isListeningState = false
+                                aiResponseFeedback = feedback
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = NothingRed),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        "COMPILE COMMAND",
+                        style = AppTypography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showVoiceDialog = false
+                    }
+                ) {
+                    Text(
+                        "CLOSE",
+                        style = AppTypography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                    )
+                }
+            },
+            shape = RoundedCornerShape(24.dp)
+        )
     }
 
     if (showNotifications) {
