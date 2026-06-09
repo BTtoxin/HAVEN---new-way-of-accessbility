@@ -95,6 +95,23 @@ private val OceanColorScheme = lightColorScheme(
     onSurfaceVariant = OceanOnBackground
 )
 
+private val NeonColorScheme = lightColorScheme(
+    primary = NeonPrimary,
+    onPrimary = NeonOnPrimary,
+    primaryContainer = NeonPrimary,
+    onPrimaryContainer = NeonOnPrimary,
+    secondary = NeonSecondary,
+    onSecondary = NeonBackground,
+    surface = NeonSurface,
+    onSurface = NeonOnBackground,
+    background = NeonBackground,
+    onBackground = NeonOnBackground,
+    error = NeonSecondary,
+    outline = NeonBorder,
+    surfaceVariant = NeonSurfaceVariant,
+    onSurfaceVariant = NeonOnBackground
+)
+
 @Composable
 fun NothingTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -114,6 +131,7 @@ fun NothingTheme(
         "AMBER" -> AmberColorScheme
         "FOREST" -> ForestColorScheme
         "OCEAN" -> OceanColorScheme
+        "NEON" -> NeonColorScheme
         else -> NaturalColorScheme
     }
 

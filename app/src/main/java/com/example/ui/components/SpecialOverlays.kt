@@ -139,14 +139,11 @@ fun AboutOverlay(onDismiss: () -> Unit) {
                             .border(1.dp, BorderDark, RoundedCornerShape(16.dp)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Canvas(modifier = Modifier.size(44.dp)) {
-                            val dotRadius = 5.dp.toPx()
-                            val dotColor = Color.Red
-                            drawCircle(color = dotColor, radius = dotRadius, center = Offset(size.width * 0.25f, size.height * 0.25f))
-                            drawCircle(color = dotColor, radius = dotRadius, center = Offset(size.width * 0.75f, size.height * 0.25f))
-                            drawCircle(color = dotColor, radius = dotRadius, center = Offset(size.width * 0.25f, size.height * 0.75f))
-                            drawCircle(color = dotColor, radius = dotRadius, center = Offset(size.width * 0.75f, size.height * 0.75f))
-                        }
+                        GlowingLogo(
+                            size = 44.dp,
+                            dotColor = MaterialTheme.colorScheme.primary,
+                            glowing = true
+                        )
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                     Text("HAVEN", style = AppTypography.displayLarge, fontSize = 28.sp)
@@ -770,8 +767,9 @@ fun PaletteSelectorOverlay(
 ) {
     val context = LocalContext.current
     val palettes = listOf(
-        Triple("NATURAL", "Cream Natural", androidx.compose.ui.graphics.Color(0xFFFDF8F6)),
-        Triple("MONOCHROME", "Monochrome Slate", androidx.compose.ui.graphics.Color(0xFF1C1C1C)),
+        Triple("NATURAL", "Classic Nothing", androidx.compose.ui.graphics.Color(0xFFFDF8F6)),
+        Triple("MONOCHROME", "Mono / Slate", androidx.compose.ui.graphics.Color(0xFF1C1C1C)),
+        Triple("NEON", "Neon Glyph", androidx.compose.ui.graphics.Color(0xFF39FF14)),
         Triple("AMBER", "Amber Fire", androidx.compose.ui.graphics.Color(0xFFFFB300)),
         Triple("FOREST", "Forest Zen", androidx.compose.ui.graphics.Color(0xFF81C784)),
         Triple("OCEAN", "Ocean Lagoon", androidx.compose.ui.graphics.Color(0xFF4FC3F7))
@@ -791,10 +789,10 @@ fun PaletteSelectorOverlay(
                 color = NeutralGray,
                 letterSpacing = 1.5.sp
             )
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             Column(
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 palettes.forEach { (id, label, color) ->
@@ -815,12 +813,12 @@ fun PaletteSelectorOverlay(
                                 AudioHapticEngine.triggerClick(context)
                                 onPaletteSelected(id)
                             }
-                            .padding(16.dp),
+                            .padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(40.dp)
+                                .size(36.dp)
                                 .background(color = color, shape = CircleShape)
                                 .border(
                                     width = if (isSelected) 3.dp else 1.dp,
@@ -838,8 +836,9 @@ fun PaletteSelectorOverlay(
                             )
                             Text(
                                 text = when (id) {
-                                    "NATURAL" -> "Light dynamic cream and charcoal accents"
-                                    "MONOCHROME" -> "Tactile high-contrast black minimalism"
+                                    "NATURAL" -> "Light dynamic cream and charcoal accents with iconic red dots"
+                                    "MONOCHROME" -> "High-contrast tactile dark slate minimalism"
+                                    "NEON" -> "Bright fluorescent cybernetic glow"
                                     "AMBER" -> "Warm light-emitting copper telemetry glow"
                                     "FOREST" -> "Deep relaxing organic leaf tones"
                                     "OCEAN" -> "Electrifying oceanic liquid dark scheme"

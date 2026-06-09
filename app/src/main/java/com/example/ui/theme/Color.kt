@@ -58,6 +58,16 @@ val OceanOnPrimary = Color(0xFF0E1012)
 val OceanSecondary = Color(0xFF0288D1)
 val OceanBorder = Color(0xFF353C42)
 
+// Neon Palette (Cyber Synthwave Glow)
+val NeonBackground = Color(0xFF070B14)
+val NeonOnBackground = Color(0xFF39FF14) // Electric Neon Green
+val NeonSurface = Color(0xFF0F172A)
+val NeonSurfaceVariant = Color(0xFF1E293B)
+val NeonPrimary = Color(0xFF39FF14) // Electric Cyan/Green Glow
+val NeonOnPrimary = Color(0xFF070B14)
+val NeonSecondary = Color(0xFFFF007F) // Hot Neon Pink Accent
+val NeonBorder = Color(0xFF1E293B)
+
 // Dummy mappings to existing names so we don't break usages where imported
 val PitchBlack = NtOnBackground 
 val DarkGray = NtSurface

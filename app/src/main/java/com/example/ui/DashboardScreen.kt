@@ -131,21 +131,13 @@ fun DashboardScreen(
                             )
                         }
                     ) {
-                        // 4 Dots Modern Art Logo representing quadrants
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .padding(end = 12.dp)
-                        ) {
-                            val dotColor = MaterialTheme.colorScheme.primary
-                            androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
-                                val dotRadius = 4.dp.toPx()
-                                drawCircle(color = dotColor, radius = dotRadius, center = androidx.compose.ui.geometry.Offset(size.width * 0.25f, size.height * 0.25f))
-                                drawCircle(color = dotColor, radius = dotRadius, center = androidx.compose.ui.geometry.Offset(size.width * 0.75f, size.height * 0.25f))
-                                drawCircle(color = dotColor, radius = dotRadius, center = androidx.compose.ui.geometry.Offset(size.width * 0.25f, size.height * 0.75f))
-                                drawCircle(color = dotColor, radius = dotRadius, center = androidx.compose.ui.geometry.Offset(size.width * 0.75f, size.height * 0.75f))
-                            }
-                        }
+                        // Animated quadrant glowing logo (representing modern art and tech identity)
+                        GlowingLogo(
+                            size = 36.dp,
+                            modifier = Modifier.padding(end = 12.dp),
+                            dotColor = MaterialTheme.colorScheme.primary,
+                            glowing = true
+                        )
                         Column {
                             Text(
                                 text = "HAVEN",
