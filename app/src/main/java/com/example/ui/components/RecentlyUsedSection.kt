@@ -86,26 +86,6 @@ fun RecentlyUsedSection(
                     color = NeutralGray
                 )
             }
-
-            // Real-time Firebase Status Indicator
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(5.dp)
-                        .background(Color(0xFF10B981), shape = CircleShape) // Emerald Green
-                )
-                Text(
-                    text = "FIREBASE LIVE SYNCED",
-                    style = AppTypography.bodySmall.copy(
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF10B981)
-                    )
-                )
-            }
         }
 
         // Horizontal Carousel of last 5 used tiles

@@ -618,6 +618,18 @@ fun DashboardScreen(
                 }
             }
 
+            // RECENTLY USED SECTION
+            item(span = StaggeredGridItemSpan.FullLine) {
+                val recentlyUsed by viewModel.recentlyUsedTiles.collectAsStateWithLifecycle()
+                if (recentlyUsed.isNotEmpty()) {
+                    com.example.ui.components.RecentlyUsedSection(
+                        recentlyUsed = recentlyUsed,
+                        viewModel = viewModel,
+                        modifier = Modifier.padding(bottom = 14.dp)
+                    )
+                }
+            }
+
             // 2X2 QUICK TOGGLES GRID COMPONENT
             item(span = StaggeredGridItemSpan.FullLine) {
                 com.example.ui.components.QuickToggleGrid(
@@ -634,18 +646,6 @@ fun DashboardScreen(
                     },
                     modifier = Modifier.padding(bottom = 14.dp)
                 )
-            }
-
-            // RECENTLY USED SECTION (FIREBASE INTEGRATED)
-            item(span = StaggeredGridItemSpan.FullLine) {
-                val recentlyUsed by viewModel.recentlyUsedTiles.collectAsStateWithLifecycle()
-                if (recentlyUsed.isNotEmpty()) {
-                    com.example.ui.components.RecentlyUsedSection(
-                        recentlyUsed = recentlyUsed,
-                        viewModel = viewModel,
-                        modifier = Modifier.padding(bottom = 14.dp)
-                    )
-                }
             }
 
             // QUICK CONTROLS SECTION
@@ -1034,6 +1034,17 @@ fun DashboardScreen(
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Text("CYCLE →", style = AppTypography.labelSmall)
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                OutlinedButton(
+                                    onClick = {
+                                        try {
+                                            context.startActivity(Intent(Settings.ACTION_DISPLAY_SETTINGS))
+                                        } catch (e: Exception) {}
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("DEEP SETTINGS", style = AppTypography.labelSmall)
                                 }
                             }
                         }

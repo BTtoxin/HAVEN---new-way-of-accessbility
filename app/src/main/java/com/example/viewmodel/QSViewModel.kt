@@ -196,7 +196,7 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
         _focusWhitelist.value = apps
         savePref("focus_whitelist", apps.joinToString(","))
         com.example.utils.FocusDataStore.setAllowedApps(context, apps)
-        showToast("Whitelist synchronized to Firebase.")
+        showToast("Whitelist synchronized.")
     }
 
     private val weatherApi by lazy { com.example.data.WeatherApi.create() }
@@ -705,7 +705,7 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
     fun updateQuickToggleOrder(newOrder: List<String>) {
         _quickToggleOrder.value = newOrder
         savePref("quick_toggle_order", newOrder.joinToString(","))
-        showToast("Quick toggles layout successfully synchronized and saved to the Firebase database.")
+        showToast("Quick toggles layout successfully synchronized.")
     }
 
     fun setSearchQuery(query: String) {
@@ -1014,7 +1014,7 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
         val truncated = current.take(5)
         _recentlyUsedTiles.value = truncated
         savePref("recently_used_tiles", truncated.joinToString(","))
-        showToast("$id state changes recorded and synchronized to Firebase.")
+        showToast("$id state changes recorded and synchronized.")
     }
 
     fun triggerTileAction(id: String) {

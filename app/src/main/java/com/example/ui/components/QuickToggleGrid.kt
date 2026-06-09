@@ -147,7 +147,7 @@ fun QuickToggleGrid(
                         modifier = Modifier.size(11.dp)
                     )
                     Text(
-                        text = "Firebase Synced",
+                        text = "Cloud Synced",
                         style = AppTypography.bodyMedium.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -960,22 +960,25 @@ fun QuickToggleTile(
                 }
                 "DATA" -> {
                     DropdownMenuItem(
-                        text = { Text("Data Usage Tracker", fontWeight = FontWeight.Bold, style = AppTypography.bodyMedium) },
-                        onClick = {
-                            showMenu = false
-                            Toast.makeText(context, "Standard limit: 4.8 GB of 20 GB used", Toast.LENGTH_LONG).show()
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Roaming Options...", style = AppTypography.bodyMedium) },
+                        text = { Text("Network Deep Settings", fontWeight = FontWeight.Bold, style = AppTypography.bodyMedium) },
                         onClick = {
                             showMenu = false
                             try {
-                                val intent = Intent(Settings.ACTION_WIRELESS_SETTINGS)
+                                val intent = Intent(Settings.ACTION_NETWORK_OPERATOR_SETTINGS)
                                 context.startActivity(intent)
                             } catch (e: Exception) {
-                                Toast.makeText(context, "Cannot open network settings", Toast.LENGTH_SHORT).show()
+                                try {
+                                    val fallbackIntent = Intent(Settings.ACTION_WIRELESS_SETTINGS)
+                                    context.startActivity(fallbackIntent)
+                                } catch (e2: Exception) {}
                             }
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Data Usage Tracker", style = AppTypography.bodyMedium) },
+                        onClick = {
+                            showMenu = false
+                            Toast.makeText(context, "Standard limit: 4.8 GB of 20 GB used", Toast.LENGTH_LONG).show()
                         }
                     )
                 }
@@ -1002,14 +1005,17 @@ fun QuickToggleTile(
                 }
                 "DNS" -> {
                     DropdownMenuItem(
-                        text = { Text("DNS provider config...", fontWeight = FontWeight.Bold, style = AppTypography.bodyMedium) },
+                        text = { Text("DNS Deep Settings", fontWeight = FontWeight.Bold, style = AppTypography.bodyMedium) },
                         onClick = {
                             showMenu = false
                             try {
-                                val intent = Intent(Settings.ACTION_WIRELESS_SETTINGS)
+                                val intent = Intent("android.settings.PRIVATE_DNS_SETTINGS")
                                 context.startActivity(intent)
                             } catch (e: Exception) {
-                                Toast.makeText(context, "Cannot open wireless settings for DNS", Toast.LENGTH_SHORT).show()
+                                try {
+                                    val fallbackIntent = Intent(Settings.ACTION_WIRELESS_SETTINGS)
+                                    context.startActivity(fallbackIntent)
+                                } catch (e2: Exception) {}
                             }
                         }
                     )
