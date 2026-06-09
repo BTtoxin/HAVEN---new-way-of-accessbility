@@ -870,3 +870,17 @@ fun PaletteSelectorOverlay(
         }
     }
 }
+
+@Composable
+fun ThemePalette(
+    currentPalette: String,
+    onPaletteSelected: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    PaletteSelectorOverlay(
+        currentPalette = currentPalette,
+        onPaletteSelected = onPaletteSelected,
+        onDismiss = onDismiss
+    )
+}
+

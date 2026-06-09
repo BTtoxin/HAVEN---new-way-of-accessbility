@@ -5,6 +5,7 @@ import android.provider.Settings
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
@@ -19,6 +20,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
@@ -35,6 +40,61 @@ import com.example.ui.theme.*
 import com.example.utils.SystemSettingsHelper
 import com.example.viewmodel.QSViewModel
 import android.hardware.camera2.CameraManager
+
+@Composable
+fun HeaderActionButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    contentDescription: String,
+    isActive: Boolean = false,
+    activeColor: androidx.compose.ui.graphics.Color = NothingRed,
+    onClick: () -> Unit
+) {
+    val context = LocalContext.current
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.90f else 1f,
+        animationSpec = androidx.compose.animation.core.spring(
+            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+            stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+        ),
+        label = "HeaderButtonScale"
+    )
+
+    Box(
+        modifier = Modifier
+            .size(48.dp)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .background(
+                color = if (isActive) activeColor.copy(alpha = 0.15f) else Color.Transparent,
+                shape = CircleShape
+            )
+            .border(
+                width = 1.dp,
+                color = if (isActive) activeColor else BorderDark.copy(alpha = 0.3f),
+                shape = CircleShape
+            )
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = {
+                    com.example.utils.AudioHapticEngine.triggerClick(context)
+                    onClick()
+                }
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = if (isActive) activeColor else MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.size(22.dp)
+        )
+    }
+}
 
 @Composable
 fun DashboardScreen(
@@ -62,7 +122,7 @@ fun DashboardScreen(
     val isAudioIsolated by viewModel.isAppAudioIsolated.collectAsStateWithLifecycle()
 
     var showSettingsDialog by remember { mutableStateOf(false) }
-    var isEditMode by remember { mutableStateOf(false) }
+    var isEditing by remember { mutableStateOf(false) }
     var showNotifications by remember { mutableStateOf(false) }
     var showSystemMonitor by remember { mutableStateOf(false) }
 
@@ -171,45 +231,30 @@ fun DashboardScreen(
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     val isMonochrome by viewModel.isMonochrome.collectAsStateWithLifecycle()
-                    IconButton(
+                    HeaderActionButton(
+                        icon = Icons.Default.Palette,
+                        contentDescription = "Toggle Theme Selection",
                         onClick = {
-                            com.example.utils.AudioHapticEngine.triggerClick(context)
                             showSpecialPaletteSelector = true
-                        },
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Palette,
-                            contentDescription = "Toggle Theme Selection",
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                    IconButton(
+                        }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    HeaderActionButton(
+                        icon = if (isEditing) Icons.Default.Done else Icons.Default.Edit,
+                        contentDescription = "Edit Layout",
+                        isActive = isEditing,
                         onClick = {
-                            com.example.utils.AudioHapticEngine.triggerClick(context)
-                            isEditMode = !isEditMode
-                        },
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        Icon(
-                            imageVector = if (isEditMode) Icons.Default.Done else Icons.Default.Edit,
-                            contentDescription = "Edit Layout",
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                    IconButton(
+                            isEditing = !isEditing
+                        }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    HeaderActionButton(
+                        icon = Icons.Default.Settings,
+                        contentDescription = "Settings",
                         onClick = {
-                            com.example.utils.AudioHapticEngine.triggerClick(context)
                             onNavigateToSettings()
-                        },
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = "Settings",
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
+                        }
+                    )
                 }
             }
 
@@ -924,7 +969,7 @@ fun DashboardScreen(
                             }
                         }
                     }
-                    if (isEditMode) {
+                    if (isEditing) {
                         var dragDistanceX by remember { mutableFloatStateOf(0f) }
                         var dragDistanceY by remember { mutableFloatStateOf(0f) }
                         Box(
@@ -1085,7 +1130,7 @@ fun DashboardScreen(
 
     if (showSpecialPaletteSelector) {
         val selectedPalette by viewModel.selectedPalette.collectAsStateWithLifecycle()
-        PaletteSelectorOverlay(
+        ThemePalette(
             currentPalette = selectedPalette,
             onPaletteSelected = { id ->
                 viewModel.setSelectedPalette(id)
