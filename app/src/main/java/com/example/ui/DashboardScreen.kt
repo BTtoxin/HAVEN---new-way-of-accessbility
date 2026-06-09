@@ -185,6 +185,7 @@ fun DashboardScreen(
     onNavigateToSettings: () -> Unit = {},
     onNavigateToAutomation: () -> Unit = {},
     onNavigateToClipboard: () -> Unit = {},
+    onNavigateToSensors: () -> Unit = {},
     onRequestPermission: () -> Unit,
     onRequestDndPermission: () -> Unit
 ) {
@@ -495,6 +496,97 @@ fun DashboardScreen(
                                 }
                             }
                         }
+                    }
+                }
+            }
+
+            // CPU & RAM Live Card
+            item(span = StaggeredGridItemSpan.FullLine) {
+                var availRam by remember { mutableLongStateOf(0L) }
+                var totalRam by remember { mutableLongStateOf(0L) }
+                
+                LaunchedEffect(Unit) {
+                    while (true) {
+                        try {
+                            val am = context.getSystemService(android.content.Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+                            val memoryInfo = android.app.ActivityManager.MemoryInfo()
+                            am.getMemoryInfo(memoryInfo)
+                            availRam = memoryInfo.availMem / (1024 * 1024)
+                            totalRam = memoryInfo.totalMem / (1024 * 1024)
+                        } catch (e: Exception) {}
+                        kotlinx.coroutines.delay(5000)
+                    }
+                }
+                
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                    shape = RoundedCornerShape(24.dp)
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Memory, contentDescription = "CPU & RAM", tint = NothingRed, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("SYSTEM RESOURCES", style = AppTypography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp, color = NothingRed))
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Column {
+                                Text("Available RAM", style = AppTypography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
+                                Text("${availRam}MB / ${totalRam}MB", style = AppTypography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        LinearProgressIndicator(
+                            progress = { if (totalRam > 0) 1f - (availRam.toFloat() / totalRam.toFloat()) else 0f },
+                            modifier = Modifier.fillMaxWidth().height(8.dp),
+                            color = NothingRed,
+                            trackColor = MaterialTheme.colorScheme.surface,
+                            strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
+                        )
+                    }
+                }
+            }
+
+            // STORAGE ANALYZER CARD
+            item(span = StaggeredGridItemSpan.FullLine) {
+                var totalSpace by remember { mutableLongStateOf(1L) }
+                var freeSpace by remember { mutableLongStateOf(1L) }
+                
+                LaunchedEffect(Unit) {
+                    try {
+                        val stat = android.os.StatFs(android.os.Environment.getExternalStorageDirectory().path)
+                        totalSpace = stat.totalBytes / (1024 * 1024 * 1024)
+                        freeSpace = stat.availableBytes / (1024 * 1024 * 1024)
+                    } catch (e: Exception) {}
+                }
+                
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                    shape = RoundedCornerShape(24.dp)
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Storage, contentDescription = "Storage", tint = NothingRed, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("STORAGE", style = AppTypography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp, color = NothingRed))
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Column {
+                                Text("Free Space", style = AppTypography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
+                                Text("${freeSpace}GB / ${totalSpace}GB", style = AppTypography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        LinearProgressIndicator(
+                            progress = { if (totalSpace > 0) 1f - (freeSpace.toFloat() / totalSpace.toFloat()) else 0f },
+                            modifier = Modifier.fillMaxWidth().height(8.dp),
+                            color = MaterialTheme.colorScheme.primary,
+                            trackColor = MaterialTheme.colorScheme.surface,
+                            strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
+                        )
                     }
                 }
             }
@@ -853,6 +945,19 @@ fun DashboardScreen(
                         },
                         onClick = {
                             onNavigateToClipboard()
+                        }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    HeaderActionButton(
+                        icon = Icons.Default.Sensors,
+                        contentDescription = "Sensor Dashboard",
+                        tooltipText = "Sensors",
+                        extraModifier = Modifier.graphicsLayer {
+                            scaleX = otherScale
+                            scaleY = otherScale
+                        },
+                        onClick = {
+                            onNavigateToSensors()
                         }
                     )
                     Spacer(modifier = Modifier.width(8.dp))

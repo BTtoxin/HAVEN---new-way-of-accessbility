@@ -68,6 +68,7 @@ class MainActivity : ComponentActivity() {
                             onNavigateToSettings = { currentScreen = "settings" },
                             onNavigateToAutomation = { currentScreen = "automation" },
                             onNavigateToClipboard = { currentScreen = "clipboard" },
+                            onNavigateToSensors = { currentScreen = "sensors" },
                             onRequestPermission = {
                                 startActivity(
                                     Intent(
@@ -90,6 +91,10 @@ class MainActivity : ComponentActivity() {
                         )
                     } else if (currentScreen == "clipboard") {
                         com.example.ui.ClipboardScreen(
+                            onBack = { currentScreen = "dashboard" }
+                        )
+                    } else if (currentScreen == "sensors") {
+                        com.example.ui.SensorScreen(
                             onBack = { currentScreen = "dashboard" }
                         )
                     } else {
