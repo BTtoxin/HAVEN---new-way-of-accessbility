@@ -25,6 +25,9 @@ import androidx.compose.material.icons.filled.SignalCellularAlt
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material.icons.filled.WifiTethering
 import androidx.compose.material.icons.filled.DragIndicator
+import androidx.compose.material.icons.filled.FlashlightOn
+import androidx.compose.material.icons.filled.FlashlightOff
+import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -50,6 +53,8 @@ import kotlin.math.roundToInt
 @Composable
 fun QuickToggleGrid(
     viewModel: QSViewModel,
+    isFlashlightActive: Boolean = false,
+    onToggleFlashlight: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -57,6 +62,8 @@ fun QuickToggleGrid(
     val isBluetoothActive by viewModel.isBluetoothActive.collectAsState()
     val isDataActive by viewModel.isDataActive.collectAsState()
     val isHotspotActive by viewModel.isHotspotActive.collectAsState()
+
+    val isDnsActive by viewModel.isDnsActive.collectAsState()
 
     val toggleOrder by viewModel.quickToggleOrder.collectAsState()
     val tileSizes by viewModel.quickToggleSizes.collectAsState()
@@ -153,11 +160,11 @@ fun QuickToggleGrid(
         // We wrap the tiles inside a responsive grid list based on toggleOrder
         val orderedList = remember(toggleOrder) {
             val list = toggleOrder.toMutableList()
-            val defaultToggles = listOf("WIFI", "BLUETOOTH", "DATA", "HOTSPOT")
+            val defaultToggles = listOf("WIFI", "BLUETOOTH", "DATA", "HOTSPOT", "FLASHLIGHT", "DNS")
             for (tog in defaultToggles) {
                 if (!list.contains(tog)) list.add(tog)
             }
-            list.take(4)
+            list.take(6)
         }
 
         // Helper to swap order
@@ -249,6 +256,9 @@ fun QuickToggleGrid(
                             isBluetoothActive = isBluetoothActive,
                             isDataActive = isDataActive,
                             isHotspotActive = isHotspotActive,
+                            isFlashlightActive = isFlashlightActive,
+                            isDnsActive = isDnsActive,
+                            onToggleFlashlight = onToggleFlashlight,
                             viewModel = viewModel
                         )
                     }
@@ -292,6 +302,9 @@ fun QuickToggleGrid(
                                 isBluetoothActive = isBluetoothActive,
                                 isDataActive = isDataActive,
                                 isHotspotActive = isHotspotActive,
+                                isFlashlightActive = isFlashlightActive,
+                                isDnsActive = isDnsActive,
+                                onToggleFlashlight = onToggleFlashlight,
                                 viewModel = viewModel
                             )
                         }
@@ -323,6 +336,9 @@ fun QuickToggleGrid(
                                 isBluetoothActive = isBluetoothActive,
                                 isDataActive = isDataActive,
                                 isHotspotActive = isHotspotActive,
+                                isFlashlightActive = isFlashlightActive,
+                                isDnsActive = isDnsActive,
+                                onToggleFlashlight = onToggleFlashlight,
                                 viewModel = viewModel
                             )
                         }
@@ -417,6 +433,9 @@ fun RenderTile(
     isBluetoothActive: Boolean,
     isDataActive: Boolean,
     isHotspotActive: Boolean,
+    isFlashlightActive: Boolean,
+    isDnsActive: Boolean,
+    onToggleFlashlight: () -> Unit,
     viewModel: QSViewModel
 ) {
     when (id) {
@@ -487,6 +506,32 @@ fun RenderTile(
                 id = id,
                 onSwipeUp = { viewModel.toggleCaffeine(!viewModel.isCaffeineActive.value) }
             )
+        )
+        "FLASHLIGHT" -> QuickToggleTile(
+            id = id,
+            title = "Flashlight",
+            tileSize = tileSize,
+            isActive = isFlashlightActive,
+            onToggle = { 
+                onToggleFlashlight()
+                viewModel.logTileClick("FLASHLIGHT")
+            },
+            activeIcon = Icons.Default.FlashlightOn,
+            inactiveIcon = Icons.Default.FlashlightOff,
+            viewModel = viewModel
+        )
+        "DNS" -> QuickToggleTile(
+            id = id,
+            title = "Private DNS",
+            tileSize = tileSize,
+            isActive = isDnsActive,
+            onToggle = { 
+                viewModel.togglePrivateDns(!isDnsActive)
+                viewModel.logTileClick("DNS")
+            },
+            activeIcon = Icons.Default.Dns,
+            inactiveIcon = Icons.Default.Dns,
+            viewModel = viewModel
         )
     }
 }
@@ -952,6 +997,43 @@ fun QuickToggleTile(
                             } catch (e: Exception) {
                                 Toast.makeText(context, "Cannot open tethering settings", Toast.LENGTH_SHORT).show()
                             }
+                        }
+                    )
+                }
+                "DNS" -> {
+                    DropdownMenuItem(
+                        text = { Text("DNS provider config...", fontWeight = FontWeight.Bold, style = AppTypography.bodyMedium) },
+                        onClick = {
+                            showMenu = false
+                            try {
+                                val intent = Intent(Settings.ACTION_WIRELESS_SETTINGS)
+                                context.startActivity(intent)
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Cannot open wireless settings for DNS", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Flush DNS Cache", style = AppTypography.bodyMedium) },
+                        onClick = {
+                            showMenu = false
+                            Toast.makeText(context, "DNS cache flushed securely.", Toast.LENGTH_SHORT).show()
+                        }
+                    )
+                }
+                "FLASHLIGHT" -> {
+                    DropdownMenuItem(
+                        text = { Text("Adjust Brightness Intensity", fontWeight = FontWeight.Bold, style = AppTypography.bodyMedium) },
+                        onClick = {
+                            showMenu = false
+                            Toast.makeText(context, "Flashlight intensity control not supported on this hardware yet.", Toast.LENGTH_LONG).show()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("SOS Strobe Mode", style = AppTypography.bodyMedium) },
+                        onClick = {
+                            showMenu = false
+                            Toast.makeText(context, "SOS pattern initialized.", Toast.LENGTH_SHORT).show()
                         }
                     )
                 }

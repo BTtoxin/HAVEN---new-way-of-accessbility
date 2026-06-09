@@ -27,6 +27,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import com.example.ui.components.TactileButton as Button
+import com.example.ui.components.TactileOutlinedButton as OutlinedButton
+import com.example.ui.components.TactileIconButton as IconButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -187,7 +190,7 @@ fun DashboardScreen(
     val cameraManager = remember { context.getSystemService(android.content.Context.CAMERA_SERVICE) as? CameraManager }
     var isFlashlightOn by remember { mutableStateOf(false) }
 
-    var isBooted by remember { mutableStateOf(false) }
+    var isBooted by remember { mutableStateOf(true) }
     val entranceTranslationY by animateFloatAsState(
         targetValue = if (isBooted) 0f else 80f,
         animationSpec = androidx.compose.animation.core.spring(
@@ -385,7 +388,7 @@ fun DashboardScreen(
             }
 
             // AI REORGANIZATION SUGGESTION BANNER
-            if (aiLayoutSuggestion != null) {
+            if (false && aiLayoutSuggestion != null) {
                 item(span = StaggeredGridItemSpan.FullLine) {
                     Card(
                         modifier = Modifier
@@ -619,6 +622,16 @@ fun DashboardScreen(
             item(span = StaggeredGridItemSpan.FullLine) {
                 com.example.ui.components.QuickToggleGrid(
                     viewModel = viewModel,
+                    isFlashlightActive = isFlashlightOn,
+                    onToggleFlashlight = {
+                        try {
+                            val cameraId = cameraManager?.cameraIdList?.firstOrNull()
+                            if (cameraId != null) {
+                                cameraManager.setTorchMode(cameraId, !isFlashlightOn)
+                                isFlashlightOn = !isFlashlightOn
+                            }
+                        } catch (e: Exception) { }
+                    },
                     modifier = Modifier.padding(bottom = 14.dp)
                 )
             }

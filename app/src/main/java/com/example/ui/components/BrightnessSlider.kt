@@ -28,6 +28,8 @@ import com.example.utils.AudioHapticEngine
 import com.example.utils.SystemSettingsHelper
 import kotlin.math.roundToInt
 
+import com.example.ui.components.NothingSlider
+
 @Composable
 fun BrightnessSlider(
     hasWriteSettingsPermission: Boolean,
@@ -35,6 +37,7 @@ fun BrightnessSlider(
 ) {
     val context = LocalContext.current
     var brightnessState by remember { mutableFloatStateOf(128f) }
+    var volumeState by remember { mutableFloatStateOf(50f) }
 
     // Read current system brightness on load
     LaunchedEffect(Unit) {
@@ -58,28 +61,8 @@ fun BrightnessSlider(
         label = "SliderSpringScale"
     )
 
-    // Bouncy thickness resize for track focus
-    val trackHeight by animateDpAsState(
-        targetValue = if (isPressed) 14.dp else 8.dp,
-        animationSpec = spring(
-            dampingRatio = 0.5f,
-            stiffness = Spring.StiffnessMedium
-        ),
-        label = "TrackHeight"
-    )
-
-    // Thumb scale up on touch
-    val thumbSize by animateDpAsState(
-        targetValue = if (isPressed) 26.dp else 16.dp,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioHighBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
-        label = "ThumbScale"
-    )
-
     BentoCard(
-        title = "BRIGHTNESS CONTROL",
+        title = "SYSTEM CONTROLS",
         icon = Icons.Default.BrightnessMedium,
         modifier = modifier
             .graphicsLayer {
@@ -98,7 +81,7 @@ fun BrightnessSlider(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Tactile Slider • ${((brightnessState / 255f) * 100).roundToInt()}%",
+                    text = "Brightness • ${((brightnessState / 255f) * 100).roundToInt()}%",
                     style = AppTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
@@ -110,13 +93,11 @@ fun BrightnessSlider(
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // Premium Wide Monochrome Slider Component
-            Slider(
+            NothingSlider(
                 value = brightnessState,
                 onValueChange = { newValue ->
-                    // Trigger click ticking haptics at intervals for realistic feeling
                     val oldValInt = brightnessState.roundToInt()
                     val newValInt = newValue.roundToInt()
                     if (Math.abs(oldValInt - newValInt) >= 12) {
@@ -129,20 +110,45 @@ fun BrightnessSlider(
                     }
                 },
                 valueRange = 0f..255f,
-                interactionSource = interactionSource,
-                colors = SliderDefaults.colors(
-                    thumbColor = Color.White,
-                    activeTrackColor = Color.White,
-                    inactiveTrackColor = Color.White.copy(alpha = 0.15f),
-                    disabledThumbColor = Color.Gray,
-                    disabledActiveTrackColor = Color.DarkGray
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(36.dp)
+                modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Media Volume • ${volumeState.roundToInt()}%",
+                    style = AppTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+                Text(
+                    text = "Vol",
+                    style = AppTypography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            NothingSlider(
+                value = volumeState,
+                onValueChange = { newValue ->
+                    val oldValInt = volumeState.roundToInt()
+                    val newValInt = newValue.roundToInt()
+                    if (Math.abs(oldValInt - newValInt) >= 5) {
+                        AudioHapticEngine.triggerClick(context)
+                    }
+                    volumeState = newValue
+                },
+                valueRange = 0f..100f,
+                modifier = Modifier.fillMaxWidth()
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
             
             if (!hasWriteSettingsPermission) {
                 Text(
@@ -152,7 +158,7 @@ fun BrightnessSlider(
                 )
             } else {
                 Text(
-                    text = "Perfect contrast for high refresh and essential glyph sync",
+                    text = "Custom Nothing OS styling with active haptics",
                     style = AppTypography.labelSmall.copy(fontSize = 9.sp, letterSpacing = 0.5.sp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                 )
