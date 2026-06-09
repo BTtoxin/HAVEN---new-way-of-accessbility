@@ -12,6 +12,8 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -212,7 +214,7 @@ fun QuickToggleGrid(
 
         // dynamic packing row outputs
         Column(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().animateContentSize(),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             rows.forEach { rowTiles ->
@@ -331,160 +333,7 @@ fun QuickToggleGrid(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        HorizontalDivider(
-            modifier = Modifier.padding(horizontal = 4.dp),
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.08f)
-        )
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // System Integration Section showing Mock System API sync
-        val syncLogs by viewModel.systemSyncLogs.collectAsState()
-        var showLogs by remember { mutableStateOf(false) }
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = "SYSTEM REGISTRY SYNC",
-                        style = AppTypography.labelSmall.copy(letterSpacing = 1.sp, fontWeight = FontWeight.ExtraBold),
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
-                    )
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFF4CAF50))
-                        )
-                        Text(
-                            text = "Background listener active",
-                            style = AppTypography.bodySmall.copy(fontSize = 11.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f))
-                        )
-                    }
-                }
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    TextButton(
-                        onClick = { showLogs = !showLogs },
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                        modifier = Modifier.height(28.dp)
-                    ) {
-                        Text(
-                            text = if (showLogs) "HIDE LOGS" else "VIEW LOGS (${syncLogs.size})",
-                            style = AppTypography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 10.sp),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-
-                    Button(
-                        onClick = {
-                            viewModel.triggerSimulatedSystemEvent()
-                            AudioHapticEngine.triggerClick(context)
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        ),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                        modifier = Modifier.height(28.dp),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text(
-                            text = "SIMULATE INTERRUPT",
-                            style = AppTypography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.sp)
-                        )
-                    }
-                }
-            }
-
-            if (showLogs) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Card(
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-                    ),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.08f)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(12.dp)
-                    ) {
-                        if (syncLogs.isEmpty()) {
-                            Text(
-                                text = "No sync events logs yet.",
-                                style = AppTypography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)),
-                                modifier = Modifier.padding(vertical = 8.dp)
-                            )
-                        } else {
-                            syncLogs.take(5).forEach { log ->
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 4.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(4.dp))
-                                            .background(
-                                                if (log.source == "SYSTEM") {
-                                                    Color(0xFFE53935).copy(alpha = 0.15f)
-                                                } else if (log.source == "USER" || log.source == "UI" || log.source == "DATABASE_LOAD") {
-                                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                                                } else {
-                                                    Color.Gray.copy(alpha = 0.15f)
-                                                }
-                                            )
-                                            .padding(horizontal = 4.dp, vertical = 2.dp)
-                                    ) {
-                                        Text(
-                                            text = log.source,
-                                            style = AppTypography.labelSmall.copy(
-                                                fontSize = 8.sp,
-                                                fontWeight = FontWeight.ExtraBold,
-                                                color = if (log.source == "SYSTEM") Color(0xFFE53935) else if (log.source == "USER" || log.source == "UI" || log.source == "DATABASE_LOAD") MaterialTheme.colorScheme.primary else Color.Gray
-                                            )
-                                        )
-                                    }
-
-                                    Text(
-                                        text = log.timestamp,
-                                        style = AppTypography.bodySmall.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                                    )
-
-                                    Text(
-                                        text = log.message,
-                                        style = AppTypography.bodySmall.copy(fontSize = 11.sp),
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -521,6 +370,45 @@ fun Modifier.draggableTile(
     }
 }
 
+fun Modifier.tileSwipeListener(
+    id: String,
+    onSwipeUp: () -> Unit = {},
+    onSwipeDown: () -> Unit = {}
+): Modifier {
+    return this.pointerInput(id) {
+        awaitEachGesture {
+            val down = awaitFirstDown(requireUnconsumed = false)
+            var totalDragY = 0f
+            var triggered = false
+            while (true) {
+                val event = awaitPointerEvent()
+                val anyPressed = event.changes.any { it.pressed }
+                if (!anyPressed) break
+                
+                val change = event.changes.firstOrNull()
+                if (change != null) {
+                    val dragY = change.position.y - change.previousPosition.y
+                    totalDragY += dragY
+                    if (!triggered) {
+                        if (totalDragY < -75f) {
+                            triggered = true
+                            onSwipeUp()
+                            change.consume()
+                        } else if (totalDragY > 75f) {
+                            triggered = true
+                            onSwipeDown()
+                            change.consume()
+                        }
+                    }
+                    if (triggered) {
+                        change.consume()
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun RenderTile(
     id: String,
@@ -543,7 +431,11 @@ fun RenderTile(
             },
             activeIcon = Icons.Default.Wifi,
             inactiveIcon = Icons.Default.Wifi,
-            viewModel = viewModel
+            viewModel = viewModel,
+            modifier = Modifier.tileSwipeListener(
+                id = id,
+                onSwipeUp = { viewModel.toggleAirplaneMode() }
+            )
         )
         "BLUETOOTH" -> QuickToggleTile(
             id = id,
@@ -556,7 +448,11 @@ fun RenderTile(
             },
             activeIcon = Icons.Default.Bluetooth,
             inactiveIcon = Icons.Default.Bluetooth,
-            viewModel = viewModel
+            viewModel = viewModel,
+            modifier = Modifier.tileSwipeListener(
+                id = id,
+                onSwipeUp = { viewModel.setMonochrome(!viewModel.isMonochrome.value) }
+            )
         )
         "DATA" -> QuickToggleTile(
             id = id,
@@ -569,7 +465,11 @@ fun RenderTile(
             },
             activeIcon = Icons.Default.SignalCellularAlt,
             inactiveIcon = Icons.Default.SignalCellularAlt,
-            viewModel = viewModel
+            viewModel = viewModel,
+            modifier = Modifier.tileSwipeListener(
+                id = id,
+                onSwipeUp = { viewModel.togglePrivateDns(!viewModel.isDnsActive.value) }
+            )
         )
         "HOTSPOT" -> QuickToggleTile(
             id = id,
@@ -582,7 +482,11 @@ fun RenderTile(
             },
             activeIcon = Icons.Default.WifiTethering,
             inactiveIcon = Icons.Default.WifiTethering,
-            viewModel = viewModel
+            viewModel = viewModel,
+            modifier = Modifier.tileSwipeListener(
+                id = id,
+                onSwipeUp = { viewModel.toggleCaffeine(!viewModel.isCaffeineActive.value) }
+            )
         )
     }
 }

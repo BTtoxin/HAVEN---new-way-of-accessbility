@@ -46,6 +46,18 @@ fun AppSelectorDialog(
     val allApps by remember { mutableStateOf(loadInstalledApps(context)) }
     val filtered = allApps.filter { it.label.contains(searchQuery, ignoreCase = true) }
 
+    val recentAppPackages = remember {
+        val usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as android.app.usage.UsageStatsManager
+        val endTime = System.currentTimeMillis()
+        val startTime = endTime - 1000 * 60 * 60 * 24 * 7 // 7 days window for recent
+        val stats = usageStatsManager.queryUsageStats(android.app.usage.UsageStatsManager.INTERVAL_DAILY, startTime, endTime)
+        stats?.filter { it.lastTimeUsed > 0 }?.sortedByDescending { it.lastTimeUsed }?.map { it.packageName }?.distinct() ?: emptyList()
+    }
+    
+    val recentApps = remember(allApps, recentAppPackages) {
+        recentAppPackages.mapNotNull { pkg -> allApps.find { it.packageName == pkg } }.take(5)
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -64,32 +76,14 @@ fun AppSelectorDialog(
                 Text("${selectedApps.size} selected", style = AppTypography.labelSmall, color = NothingRed)
                 Spacer(modifier = Modifier.height(8.dp))
                 LazyColumn {
-                    items(filtered) { app ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    selectedApps = if (app.packageName in selectedApps) {
-                                        selectedApps - app.packageName
-                                    } else {
-                                        selectedApps + app.packageName
-                                    }
-                                }
-                                .padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            AsyncImage(
-                                model = app.icon,
-                                contentDescription = app.label,
-                                modifier = Modifier.size(40.dp)
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(app.label, style = AppTypography.bodyMedium)
-                                Text(app.packageName, style = AppTypography.labelSmall, color = NeutralGray)
-                            }
-                            Checkbox(
-                                checked = app.packageName in selectedApps,
+                    if (searchQuery.isEmpty() && recentApps.isNotEmpty()) {
+                        item {
+                            Text("RECENTLY USED", style = AppTypography.labelSmall, modifier = Modifier.padding(12.dp))
+                        }
+                        items(recentApps) { app ->
+                            AppItemRow(
+                                app = app,
+                                isSelected = app.packageName in selectedApps,
                                 onCheckedChange = { checked ->
                                     selectedApps = if (checked) {
                                         selectedApps + app.packageName
@@ -99,7 +93,24 @@ fun AppSelectorDialog(
                                 }
                             )
                         }
-                        HorizontalDivider(color = BorderDark, thickness = 0.5.dp)
+                        item {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            HorizontalDivider(color = BorderDark, thickness = 1.dp)
+                            Text("ALL APPS", style = AppTypography.labelSmall, modifier = Modifier.padding(12.dp))
+                        }
+                    }
+                    items(filtered) { app ->
+                        AppItemRow(
+                            app = app,
+                            isSelected = app.packageName in selectedApps,
+                            onCheckedChange = { checked ->
+                                selectedApps = if (checked) {
+                                    selectedApps + app.packageName
+                                } else {
+                                    selectedApps - app.packageName
+                                }
+                            }
+                        )
                     }
                 }
             }
@@ -115,4 +126,37 @@ fun AppSelectorDialog(
             }
         }
     )
+}
+
+@Composable
+fun AppItemRow(
+    app: AppInfo,
+    isSelected: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onCheckedChange(!isSelected) }
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AsyncImage(
+                model = app.icon,
+                contentDescription = app.label,
+                modifier = Modifier.size(40.dp)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(app.label, style = AppTypography.bodyMedium)
+                Text(app.packageName, style = AppTypography.labelSmall, color = NeutralGray)
+            }
+            Switch(
+                checked = isSelected,
+                onCheckedChange = onCheckedChange
+            )
+        }
+        HorizontalDivider(color = BorderDark, thickness = 0.5.dp)
+    }
 }

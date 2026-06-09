@@ -14,6 +14,11 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
@@ -30,7 +35,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.input.pointer.pointerInput
@@ -182,6 +187,24 @@ fun DashboardScreen(
     val cameraManager = remember { context.getSystemService(android.content.Context.CAMERA_SERVICE) as? CameraManager }
     var isFlashlightOn by remember { mutableStateOf(false) }
 
+    var isBooted by remember { mutableStateOf(false) }
+    val entranceTranslationY by animateFloatAsState(
+        targetValue = if (isBooted) 0f else 80f,
+        animationSpec = androidx.compose.animation.core.spring(
+            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioLowBouncy,
+            stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+        ),
+        label = "dashboardEntranceTranslationY"
+    )
+    val entranceAlpha by animateFloatAsState(
+        targetValue = if (isBooted) 1f else 0f,
+        animationSpec = androidx.compose.animation.core.tween(
+            durationMillis = 800,
+            easing = androidx.compose.animation.core.EaseOutQuad
+        ),
+        label = "dashboardEntranceAlpha"
+    )
+
     val hasWriteSettingsPermission by viewModel.hasWriteSettingsPermission.collectAsStateWithLifecycle()
     val hasDndPermission by viewModel.hasDndPermission.collectAsStateWithLifecycle()
     val systemTimeout by viewModel.currentSystemTimeout.collectAsStateWithLifecycle()
@@ -238,7 +261,7 @@ fun DashboardScreen(
     val tileOrderList by viewModel.tileOrder.collectAsStateWithLifecycle()
     val availableOrder = remember(tileOrderList) {
         if (tileOrderList.isEmpty() || !tileOrderList.contains("MANUAL")) {
-            listOf("TIMEOUT", "CAFFEINE", "BATTERY", "BRIGHTNESS", "DNS", "THEATER", "CLIPBOARD", "FOCUS", "SHORTCUT", "APP_AUDIO", "OPERATOR", "GLYPH", "MANUAL", "CHANGELOG", "ABOUT")
+            listOf("TIMEOUT", "CAFFEINE", "WEATHER", "BATTERY", "BRIGHTNESS", "DNS", "THEATER", "CLIPBOARD", "FOCUS", "SHORTCUT", "APP_AUDIO", "OPERATOR", "GLYPH", "MANUAL", "CHANGELOG", "ABOUT")
         } else {
             tileOrderList
         }
@@ -255,6 +278,7 @@ fun DashboardScreen(
                 val keywords = when (id) {
                     "TIMEOUT" -> listOf("timeout", "screen", "display", "time", "sleep", "lock")
                     "CAFFEINE" -> listOf("caffeine", "screen on", "wake", "lock", "standby", "keep awake")
+                    "WEATHER" -> listOf("weather", "forecast", "temperature", "rain", "meteorology", "climate", "sun", "clouds")
                     "BATTERY" -> listOf("battery", "power", "charging", "statistics", "saver", "gauge", "percentage")
                     "BRIGHTNESS" -> listOf("brightness", "backlight", "screen", "dim", "slider")
                     "DNS" -> listOf("dns", "private dns", "network", "domain", "internet", "private")
@@ -285,7 +309,13 @@ fun DashboardScreen(
             columns = StaggeredGridCells.Fixed(2),
             contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 96.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalItemSpacing = 12.dp
+            verticalItemSpacing = 12.dp,
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    translationY = entranceTranslationY
+                    alpha = entranceAlpha
+                }
         ) {
             // DIGITAL CLOCK WIDGET
             item(span = StaggeredGridItemSpan.FullLine) {
@@ -442,14 +472,6 @@ fun DashboardScreen(
                 }
             }
 
-            // WEATHER WIDGET (2X2 GRID STYLE WIDGET IN NOTHING OS)
-            item(span = StaggeredGridItemSpan.FullLine) {
-                com.example.ui.components.WeatherWidget(
-                    viewModel = viewModel,
-                    modifier = Modifier.padding(bottom = 12.dp)
-                )
-            }
-
             // HEADER
             item(span = StaggeredGridItemSpan.FullLine) {
                 var currentTime by remember { mutableStateOf(java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date())) }
@@ -599,6 +621,18 @@ fun DashboardScreen(
                     viewModel = viewModel,
                     modifier = Modifier.padding(bottom = 14.dp)
                 )
+            }
+
+            // RECENTLY USED SECTION (FIREBASE INTEGRATED)
+            item(span = StaggeredGridItemSpan.FullLine) {
+                val recentlyUsed by viewModel.recentlyUsedTiles.collectAsStateWithLifecycle()
+                if (recentlyUsed.isNotEmpty()) {
+                    com.example.ui.components.RecentlyUsedSection(
+                        recentlyUsed = recentlyUsed,
+                        viewModel = viewModel,
+                        modifier = Modifier.padding(bottom = 14.dp)
+                    )
+                }
             }
 
             // QUICK CONTROLS SECTION
@@ -969,12 +1003,12 @@ fun DashboardScreen(
                     items = filteredOrder,
                     key = { id -> id },
                     span = { id ->
-                        if (id in listOf("CAFFEINE", "BATTERY", "BRIGHTNESS", "THEATER", "FOCUS", "GLYPH")) StaggeredGridItemSpan.FullLine
+                        if (id in listOf("CAFFEINE", "BATTERY", "BRIGHTNESS", "THEATER", "FOCUS", "GLYPH", "WEATHER")) StaggeredGridItemSpan.FullLine
                         else StaggeredGridItemSpan.SingleLane
                     }
                 ) { id ->
                     val index = remember(id, availableOrder) { availableOrder.indexOf(id) }
-                Box {
+                Box(modifier = Modifier.animateItem()) {
                     when (id) {
                         "TIMEOUT" -> {
                             BentoCard(title = "SCREEN TIMEOUT", icon = Icons.Default.Timer) {
@@ -989,6 +1023,9 @@ fun DashboardScreen(
                                     Text("CYCLE →", style = AppTypography.labelSmall)
                                 }
                             }
+                        }
+                        "WEATHER" -> {
+                            com.example.ui.components.MinimalistPlaceholder(type = "WEATHER")
                         }
                         "CAFFEINE" -> {
                             BentoCard(title = "CAFFEINE", icon = Icons.Default.Coffee) {
@@ -1014,22 +1051,80 @@ fun DashboardScreen(
                         }
                         "BATTERY" -> {
                             val batteryInfo by viewModel.batteryInfo.collectAsStateWithLifecycle()
-                            BentoCard(
-                                title = "BATTERY STATISTICS",
-                                icon = if (batteryInfo.isCharging) Icons.Default.BatteryChargingFull else Icons.Default.BatteryStd,
-                                onClick = {
-                                    try {
-                                        val batteryIntent = Intent(Intent.ACTION_POWER_USAGE_SUMMARY)
-                                        context.startActivity(batteryIntent)
-                                    } catch(e: Exception) {
-                                        try {
-                                            val intent = Intent(Settings.ACTION_BATTERY_SAVER_SETTINGS)
-                                            context.startActivity(intent)
-                                        } catch (ex: Exception) {}
+                            val prediction by viewModel.batteryPrediction.collectAsStateWithLifecycle()
+                            val isAnalyzing by viewModel.isAnalyzingBattery.collectAsStateWithLifecycle()
+                            
+                            if (batteryInfo.percentage <= 0) {
+                                com.example.ui.components.MinimalistPlaceholder(type = "BATTERY", message = "ACCUMULATOR TELEMETRY DISCONNECTED")
+                            } else {
+                                BentoCard(
+                                    title = "BATTERY STATISTICS",
+                                    icon = if (batteryInfo.isCharging) Icons.Default.BatteryChargingFull else Icons.Default.BatteryStd,
+                                    onClick = {
+                                        viewModel.fetchBatteryPrediction(batteryInfo.percentage, batteryInfo.isCharging)
+                                    }
+                                ) {
+                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        BatteryGauge(batteryInfo = batteryInfo)
+                                        
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clip(RoundedCornerShape(12.dp))
+                                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                                                .border(
+                                                    width = 1.dp,
+                                                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
+                                                    shape = RoundedCornerShape(12.dp)
+                                                )
+                                                .clickable {
+                                                    viewModel.fetchBatteryPrediction(batteryInfo.percentage, batteryInfo.isCharging)
+                                                }
+                                                .padding(10.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                        ) {
+                                            if (isAnalyzing) {
+                                                CircularProgressIndicator(
+                                                    modifier = Modifier.size(14.dp),
+                                                    strokeWidth = 2.dp,
+                                                    color = NothingRed
+                                                )
+                                            } else {
+                                                Icon(
+                                                    imageVector = Icons.Default.Sync,
+                                                    contentDescription = "Recalibrate",
+                                                    tint = NothingRed,
+                                                    modifier = Modifier.size(14.dp)
+                                                )
+                                            }
+                                            
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    text = "GEMINI INTELLIGENCE PREDICTION",
+                                                    style = AppTypography.labelSmall.copy(
+                                                        fontSize = 8.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        letterSpacing = 1.sp,
+                                                        color = NothingRed
+                                                    )
+                                                )
+                                                Spacer(modifier = Modifier.height(2.dp))
+                                                Text(
+                                                    text = prediction,
+                                                    style = AppTypography.bodySmall.copy(
+                                                        fontSize = 11.sp,
+                                                        fontWeight = FontWeight.Medium,
+                                                        lineHeight = 15.sp,
+                                                        color = MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                )
+                                            }
+                                        }
                                     }
                                 }
-                            ) {
-                                BatteryGauge(batteryInfo = batteryInfo)
                             }
                         }
                         "BRIGHTNESS" -> {
@@ -1102,7 +1197,7 @@ fun DashboardScreen(
                             BentoCard(title = "DEEP FOCUS", icon = Icons.Default.Lock) {
                                 var selectedDuration by remember { mutableIntStateOf(25) }
                                 var showAppSelector by remember { mutableStateOf(false) }
-                                var allowedApps by remember { mutableStateOf(setOf<String>()) }
+                                val allowedApps by viewModel.focusWhitelist.collectAsStateWithLifecycle()
                                 
                                 val appOps = context.getSystemService(android.content.Context.APP_OPS_SERVICE) as android.app.AppOpsManager
                                 val usageMode = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
@@ -1192,6 +1287,43 @@ fun DashboardScreen(
                                             }
                                         }
                                         Spacer(modifier = Modifier.height(8.dp))
+                                        
+                                        val allApps = remember { com.example.ui.loadInstalledApps(context) }
+                                        val whitelistedDashboardApps = remember(allowedApps, allApps) {
+                                            allApps.filter { it.packageName in allowedApps }
+                                        }
+
+                                        if (whitelistedDashboardApps.isNotEmpty()) {
+                                            val scrollState = rememberScrollState()
+                                            Row(
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                modifier = Modifier.fillMaxWidth().horizontalScroll(scrollState).padding(bottom = 8.dp)
+                                            ) {
+                                                whitelistedDashboardApps.forEach { app ->
+                                                    coil.compose.AsyncImage(
+                                                        model = app.icon,
+                                                        contentDescription = app.label,
+                                                        modifier = Modifier
+                                                            .size(32.dp)
+                                                            .clip(CircleShape)
+                                                            .border(1.5.dp, androidx.compose.ui.graphics.Color(0xFF10B981), CircleShape)
+                                                            .clickable {
+                                                                if (isSessionActive) {
+                                                                    val launchIntent = context.packageManager.getLaunchIntentForPackage(app.packageName)
+                                                                    if (launchIntent != null) {
+                                                                        try {
+                                                                            context.startActivity(launchIntent)
+                                                                        } catch (e: Exception) {
+                                                                            android.widget.Toast.makeText(context, "Could not launch app", android.widget.Toast.LENGTH_SHORT).show()
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                    )
+                                                }
+                                            }
+                                        }
+
                                         OutlinedButton(onClick = { showAppSelector = true }, modifier = Modifier.fillMaxWidth()) {
                                             Icon(Icons.Default.Apps, contentDescription = "Select Apps", modifier = Modifier.size(16.dp))
                                             Spacer(modifier = Modifier.width(4.dp))
@@ -1218,7 +1350,7 @@ fun DashboardScreen(
                                             preselectedApps = allowedApps,
                                             onDismiss = { showAppSelector = false },
                                             onConfirm = { apps ->
-                                                allowedApps = apps
+                                                viewModel.updateFocusWhitelist(apps)
                                                 showAppSelector = false
                                             }
                                         )
@@ -1723,6 +1855,41 @@ fun DashboardScreen(
         }
     }
 
+@Composable
+fun SoundWaveVisualizer(modifier: Modifier = Modifier) {
+    val transition = rememberInfiniteTransition(label = "SoundWave")
+    val pulseOffsets: List<State<Float>> = List(10) { index ->
+        transition.animateFloat(
+            initialValue = 0.15f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(
+                    durationMillis = 350 + (index * 90),
+                    easing = FastOutSlowInEasing
+                ),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "Bar_$index"
+        )
+    }
+
+    Row(
+        modifier = modifier.height(28.dp),
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        pulseOffsets.forEach { heightScale ->
+            Box(
+                modifier = Modifier
+                    .width(3.dp)
+                    .fillMaxHeight(heightScale.value)
+                    .clip(RoundedCornerShape(1.5.dp))
+                    .background(NothingRed)
+            )
+        }
+    }
+}
+
     if (showVoiceDialog) {
         var voiceInputText by remember { mutableStateOf("") }
         var isListeningState by remember { mutableStateOf(false) }
@@ -1777,16 +1944,12 @@ fun DashboardScreen(
                     if (isListeningState) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                strokeWidth = 2.dp,
-                                color = NothingRed
-                            )
+                            SoundWaveVisualizer()
                             Text(
-                                "COMPILING AUDIO SPECTRUM...",
+                                "REC • TRANSCEIVING AUDIO SPECTRUM...",
                                 style = AppTypography.labelSmall.copy(
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 10.sp,
@@ -1937,5 +2100,11 @@ fun DashboardScreen(
 
     activeTileSettings?.let { tile -> 
         com.example.ui.components.TileSettingsModal(tile = tile, onDismiss = { activeTileSettings = null })
+    }
+
+    if (!isBooted) {
+        com.example.ui.components.DotMatrixBootScreen(
+            onComplete = { isBooted = true }
+        )
     }
 }

@@ -37,6 +37,14 @@ data class ToastMessage(
     val timestamp: Long = System.currentTimeMillis()
 )
 
+data class AppNotification(
+    val title: String,
+    val message: String,
+    val timestamp: String,
+    val isSystem: Boolean = false,
+    val id: String = java.util.UUID.randomUUID().toString()
+)
+
 class QSViewModel(application: Application) : AndroidViewModel(application) {
     private val context = application.applicationContext
     private val prefManager = QSPreferenceManager(context)
@@ -71,6 +79,9 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _isHotspotActive = MutableStateFlow(false)
     val isHotspotActive = _isHotspotActive.asStateFlow()
+
+    private val _isAirplaneMode = MutableStateFlow(false)
+    val isAirplaneMode = _isAirplaneMode.asStateFlow()
 
     private val _toastMessage = MutableStateFlow<ToastMessage?>(null)
     val toastMessage = _toastMessage.asStateFlow()
@@ -131,6 +142,18 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
     private val _batteryInfo = MutableStateFlow(BatteryInfo())
     val batteryInfo = _batteryInfo.asStateFlow()
 
+    private val _batteryPrediction = MutableStateFlow<String>("Predicting battery life...")
+    val batteryPrediction = _batteryPrediction.asStateFlow()
+
+    private val _isAnalyzingBattery = MutableStateFlow(false)
+    val isAnalyzingBattery = _isAnalyzingBattery.asStateFlow()
+
+    private val _notifications = MutableStateFlow<List<AppNotification>>(listOf(
+        AppNotification("System", "Device is running optimally.", java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date()), isSystem = true),
+        AppNotification("Security", "App permissions updated.", java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date()), isSystem = true)
+    ))
+    val notifications = _notifications.asStateFlow()
+
     // Weather & Search States
     enum class WeatherState {
         LOADING, SUCCESS, ERROR
@@ -162,6 +185,19 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
     // Gemini Weather summary
     private val _weatherAiSummary = MutableStateFlow<String>("AI: ANALYZING WEATHER PATTERNS...")
     val weatherAiSummary = _weatherAiSummary.asStateFlow()
+
+    private val _recentlyUsedTiles = MutableStateFlow<List<String>>(listOf("TIMEOUT", "CAFFEINE", "WEATHER", "BATTERY"))
+    val recentlyUsedTiles = _recentlyUsedTiles.asStateFlow()
+
+    private val _focusWhitelist = MutableStateFlow<Set<String>>(emptySet())
+    val focusWhitelist = _focusWhitelist.asStateFlow()
+
+    fun updateFocusWhitelist(apps: Set<String>) {
+        _focusWhitelist.value = apps
+        savePref("focus_whitelist", apps.joinToString(","))
+        com.example.utils.FocusDataStore.setAllowedApps(context, apps)
+        showToast("Whitelist synchronized to Firebase.")
+    }
 
     private val weatherApi by lazy { com.example.data.WeatherApi.create() }
 
@@ -202,6 +238,7 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
                 "~${mins / 60}h ${mins % 60}m remaining"
             }
 
+            val previousInfo = _batteryInfo.value
             _batteryInfo.value = BatteryInfo(
                 percentage = pct,
                 status = statusStr,
@@ -209,6 +246,10 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
                 isCharging = isCharging,
                 remainingTimeString = remTime
             )
+
+            if (previousInfo.percentage != pct || previousInfo.isCharging != isCharging || _batteryPrediction.value == "Predicting battery life...") {
+                fetchBatteryPrediction(pct, isCharging)
+            }
         }
     }
 
@@ -252,6 +293,9 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
                         _isHotspotActive.value = it.toBoolean() 
                         com.example.utils.MockSystemApi.updateHotspot(it.toBoolean(), "DATABASE_LOAD")
                     }
+                    prefMap["is_airplane_mode"]?.let { 
+                        _isAirplaneMode.value = it.toBoolean() 
+                    }
 
                     prefMap["quick_toggle_order"]?.let { orderStr ->
                         if (orderStr.isNotEmpty()) {
@@ -275,35 +319,27 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
                     }
                     _tileUsageCounts.value = countsMap
                     checkForReorganization()
+
+                    prefMap["recently_used_tiles"]?.let { recentStr ->
+                        if (recentStr.isNotEmpty()) {
+                            _recentlyUsedTiles.value = recentStr.split(",").filter { it.isNotEmpty() }
+                        }
+                    }
+
+                    prefMap["focus_whitelist"]?.let { whitelistStr ->
+                        if (whitelistStr.isNotEmpty()) {
+                            val apps = whitelistStr.split(",").toSet()
+                            _focusWhitelist.value = apps
+                            com.example.utils.FocusDataStore.setAllowedApps(context, apps)
+                        } else {
+                            _focusWhitelist.value = emptySet()
+                            com.example.utils.FocusDataStore.setAllowedApps(context, emptySet())
+                        }
+                    }
                 }
             }
         }
 
-        // Background listener that automatically syncs the local dashboard toggle states with a mock system API
-        viewModelScope.launch {
-            com.example.utils.MockSystemApi.toggleStates.collect { systemState ->
-                if (_isWifiActive.value != systemState.isWifiActive) {
-                    _isWifiActive.value = systemState.isWifiActive
-                    savePref("is_wifi_active", systemState.isWifiActive.toString())
-                    showToast("Wi-Fi state synchronized with mock system API.")
-                }
-                if (_isBluetoothActive.value != systemState.isBluetoothActive) {
-                    _isBluetoothActive.value = systemState.isBluetoothActive
-                    savePref("is_bluetooth_active", systemState.isBluetoothActive.toString())
-                    showToast("Bluetooth state synchronized with mock system API.")
-                }
-                if (_isDataActive.value != systemState.isDataActive) {
-                    _isDataActive.value = systemState.isDataActive
-                    savePref("is_data_active", systemState.isDataActive.toString())
-                    showToast("Mobile Data state synchronized with mock system API.")
-                }
-                if (_isHotspotActive.value != systemState.isHotspotActive) {
-                    _isHotspotActive.value = systemState.isHotspotActive
-                    savePref("is_hotspot_active", systemState.isHotspotActive.toString())
-                    showToast("Personal Hotspot state synchronized with mock system API.")
-                }
-            }
-        }
         fetchWeather()
     }
 
@@ -476,6 +512,7 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
                 context.stopService(android.content.Intent(context, com.example.services.CaffeineWakeLockService::class.java))
             }
             savePref("is_caffeine_active", active.toString())
+            postNotification("Caffeine Mode", "Caffeine Wake Lock is now ${if (active) "ACTIVE (Screen Awake)" else "INACTIVE"}")
         }
         logTileClick("CAFFEINE")
     }
@@ -493,6 +530,7 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
                 SystemSettingsHelper.setPrivateDns(context, targetDns)
             }
             savePref("is_dns_active", active.toString())
+            postNotification("Private DNS", "Private DNS Secure Tunnel ${if (active) "ESTABLISHED" else "RELEASED"}")
         }
         logTileClick("DNS")
     }
@@ -526,6 +564,7 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
                 _isTheaterActive.value = false
             }
             savePref("is_theater_active", active.toString())
+            postNotification("Theater Mode", "Theater Mode (Silent / Dimmed) is now ${if (active) "ENGAGED" else "DISENGAGED"}")
         }
         logTileClick("THEATER")
     }
@@ -546,6 +585,7 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
                 dataStore.setAppAudioIsolated(false)
             }
             savePref("is_app_audio_isolated", active.toString())
+            postNotification("Audio Isolation", "App direct audio isolation is ${if (active) "ACTIVE" else "INACTIVE"}")
         }
         logTileClick("APP_AUDIO")
     }
@@ -564,6 +604,7 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
             
             val intent = android.content.Intent(context, com.example.services.FocusSandboxService::class.java)
             context.startForegroundService(intent)
+            postNotification("Focus Sandbox", "Locked into Focus Mode sandbox for $durationMins minutes.")
         }
         logTileClick("FOCUS")
     }
@@ -574,6 +615,7 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
             com.example.utils.FocusDataStore.setAllowedApps(context, emptySet())
             val intent = android.content.Intent(context, com.example.services.FocusSandboxService::class.java)
             context.stopService(intent)
+            postNotification("Focus Sandbox", "Focus Mode sandbox has been manually TERMINATED.")
         }
     }
 
@@ -590,7 +632,8 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
         _isWifiActive.value = newVal
         savePref("is_wifi_active", newVal.toString())
         com.example.utils.MockSystemApi.updateWifi(newVal, "UI")
-        showToast("Wi-Fi successfully synchronized and saved to the Firebase database.")
+        logTileStateChange("WIFI")
+        postNotification("Wi-Fi Connection", "Wi-Fi is now ${if (newVal) "ENABLED" else "DISABLED"}")
     }
 
     fun toggleBluetooth() {
@@ -598,7 +641,8 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
         _isBluetoothActive.value = newVal
         savePref("is_bluetooth_active", newVal.toString())
         com.example.utils.MockSystemApi.updateBluetooth(newVal, "UI")
-        showToast("Bluetooth successfully synchronized and saved to the Firebase database.")
+        logTileStateChange("BLUETOOTH")
+        postNotification("Bluetooth Radio", "Bluetooth is now ${if (newVal) "ENABLED" else "DISABLED"}")
     }
 
     fun toggleData() {
@@ -606,7 +650,8 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
         _isDataActive.value = newVal
         savePref("is_data_active", newVal.toString())
         com.example.utils.MockSystemApi.updateData(newVal, "UI")
-        showToast("Cellular Data successfully synchronized and saved to the Firebase database.")
+        logTileStateChange("DATA")
+        postNotification("Cellular Data", "Mobile Data is now ${if (newVal) "CONNECTED" else "DISCONNECTED"}")
     }
 
     fun toggleHotspot() {
@@ -614,7 +659,36 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
         _isHotspotActive.value = newVal
         savePref("is_hotspot_active", newVal.toString())
         com.example.utils.MockSystemApi.updateHotspot(newVal, "UI")
-        showToast("Personal Hotspot successfully synchronized and saved to the Firebase database.")
+        logTileStateChange("HOTSPOT")
+        postNotification("Personal Hotspot", "Personal Hotspot is now ${if (newVal) "BROADCASTING" else "TERMINATED"}")
+    }
+
+    fun toggleAirplaneMode() {
+        val newVal = !_isAirplaneMode.value
+        _isAirplaneMode.value = newVal
+        savePref("is_airplane_mode", newVal.toString())
+        
+        if (newVal) {
+            // Disable transmitters
+            _isWifiActive.value = false
+            _isBluetoothActive.value = false
+            _isDataActive.value = false
+            _isHotspotActive.value = false
+            savePref("is_wifi_active", "false")
+            savePref("is_bluetooth_active", "false")
+            savePref("is_data_active", "false")
+            savePref("is_hotspot_active", "false")
+            com.example.utils.MockSystemApi.updateWifi(false, "SYSTEM")
+            com.example.utils.MockSystemApi.updateBluetooth(false, "SYSTEM")
+            com.example.utils.MockSystemApi.updateData(false, "SYSTEM")
+            com.example.utils.MockSystemApi.updateHotspot(false, "SYSTEM")
+            showToast("AIRPLANE MODE ENGAGED. ALL WIRELESS SIGNALS TERMINATED.")
+            postNotification("Airplane Mode", "Transmitters closed down: AIRPLANE STATE ENGAGED")
+        } else {
+            showToast("AIRPLANE MODE DISENGAGED. WIRELESS RADIO RE-ENABLED.")
+            postNotification("Airplane Mode", "Wireless radios re-enabled: NORMAL STATE RESTORED")
+        }
+        logTileClick("AIRPLANE")
     }
 
     fun triggerSimulatedSystemEvent() {
@@ -692,6 +766,7 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
         _tileUsageCounts.value = currentCounts
         savePref("tile_click_count_$id", newCount.toString())
         checkForReorganization()
+        logTileStateChange(id)
     }
 
     fun checkForReorganization() {
@@ -811,6 +886,213 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
             } catch (e: Exception) {
                 e.printStackTrace()
                 onFinished("AI INTERPRETATION FAULT. VERBAL INPUT NOT RECOGNIZED.")
+            }
+        }
+    }
+
+    fun fetchBatteryPrediction(percentage: Int, isCharging: Boolean) {
+        if (_isAnalyzingBattery.value) return
+        _isAnalyzingBattery.value = true
+        _batteryPrediction.value = "Calibrating AI drain trajectory..."
+        
+        viewModelScope.launch {
+            try {
+                // Generate simulated D3 line chart historic points list (last 12 indexes representing 24 hours)
+                val list = mutableListOf<Float>()
+                val current = percentage.toFloat()
+                if (isCharging) {
+                    val valley = (current - 25f).coerceAtLeast(15f)
+                    val startVal = (current + 15f).coerceAtMost(100f)
+                    for (i in 0..11) {
+                        when {
+                            i < 7 -> {
+                                val t = i / 7f
+                                list.add(startVal - (startVal - valley) * t)
+                            }
+                            else -> {
+                                val t = (i - 7) / 4f
+                                list.add(valley + (current - valley) * t)
+                            }
+                        }
+                    }
+                } else {
+                    val startVal = (current + 35f).coerceAtMost(100f)
+                    for (i in 0..11) {
+                        val t = i / 11f
+                        val wave = kotlin.math.sin(t * Math.PI).toFloat() * 4f
+                        list.add((startVal - (startVal - current) * t + wave).coerceIn(current, 100f))
+                    }
+                }
+                list[list.lastIndex] = current
+                val pointsList = list.map { it.toInt().toString() }.joinToString(", ")
+
+                val systemInstruction = """
+                    You are the Nothing OS Intelligence Engine.
+                    Analyze the historic 24h battery drain data and current percentage.
+                    Provide a highly compact, professional, one-sentence prediction of the remaining runtime or time-to-full.
+                    Strict design rules:
+                    - Keep it short, under 16 words.
+                    - Style must be tech-aesthetic, e.g. "Linear drain profile. Approx. 18 hours 35 minutes of daily runtime available." or "Rapid intake. Full charge estimated in 45 minutes."
+                    - Do NOT use Markdown, lists, or headers. Output the direct raw text sentence.
+                """.trimIndent()
+
+                val prompt = "Current charge: $percentage%. Charging: $isCharging. Hourly historic series of last 24h: [$pointsList]."
+                val response = com.example.data.GeminiService.generateContent(prompt = prompt, systemInstruction = systemInstruction)
+                
+                if (response.isNotBlank()) {
+                    _batteryPrediction.value = response.trim()
+                } else {
+                    _batteryPrediction.value = "Profile steady. " + (if (isCharging) "Charging active." else "Discharging line linear.")
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                _batteryPrediction.value = "AI analysis offset. Calibration pending."
+            } finally {
+                _isAnalyzingBattery.value = false
+            }
+        }
+    }
+
+    fun postNotification(title: String, message: String) {
+        val timeStr = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
+        val newNotification = AppNotification(title, message, timeStr)
+        _notifications.value = listOf(newNotification) + _notifications.value
+        sendLocalSystemNotification(title, message)
+    }
+
+    private fun sendLocalSystemNotification(title: String, message: String) {
+        try {
+            val notificationManager = context.getSystemService(android.content.Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+            val channelId = "quick_settings_alerts"
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                val channel = android.app.NotificationChannel(channelId, "Feature Toggles Alerts", android.app.NotificationManager.IMPORTANCE_DEFAULT)
+                notificationManager.createNotificationChannel(channel)
+            }
+            
+            val builder = androidx.core.app.NotificationCompat.Builder(context, channelId)
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setContentTitle(title)
+                .setContentText(message)
+                .setPriority(androidx.core.app.NotificationCompat.PRIORITY_DEFAULT)
+                .setAutoCancel(true)
+            
+            notificationManager.notify(System.currentTimeMillis().toInt(), builder.build())
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun syncAllStates() {
+        viewModelScope.launch {
+            val userId = _activeUserId.value
+            val isWifi = userRepository.getPreferenceValue(userId, "is_wifi_active")?.toBoolean() ?: _isWifiActive.value
+            val isBt = userRepository.getPreferenceValue(userId, "is_bluetooth_active")?.toBoolean() ?: _isBluetoothActive.value
+            val isData = userRepository.getPreferenceValue(userId, "is_data_active")?.toBoolean() ?: _isDataActive.value
+            val isHotspot = userRepository.getPreferenceValue(userId, "is_hotspot_active")?.toBoolean() ?: _isHotspotActive.value
+            val isPlane = userRepository.getPreferenceValue(userId, "is_airplane_mode")?.toBoolean() ?: _isAirplaneMode.value
+
+            _isWifiActive.value = isWifi
+            _isBluetoothActive.value = isBt
+            _isDataActive.value = isData
+            _isHotspotActive.value = isHotspot
+            _isAirplaneMode.value = isPlane
+
+            com.example.utils.MockSystemApi.updateWifi(isWifi, "DATABASE_LOAD")
+            com.example.utils.MockSystemApi.updateBluetooth(isBt, "DATABASE_LOAD")
+            com.example.utils.MockSystemApi.updateData(isData, "DATABASE_LOAD")
+            com.example.utils.MockSystemApi.updateHotspot(isHotspot, "DATABASE_LOAD")
+
+            showToast("SYNCHRONIZED. All local, DB, and Mock System states updated simultaneously.")
+            postNotification("Sync", "Cloud & System API transmitter sync complete.")
+        }
+    }
+
+    fun logTileStateChange(id: String) {
+        val current = _recentlyUsedTiles.value.toMutableList()
+        current.remove(id)
+        current.add(0, id)
+        val truncated = current.take(5)
+        _recentlyUsedTiles.value = truncated
+        savePref("recently_used_tiles", truncated.joinToString(","))
+        showToast("$id state changes recorded and synchronized to Firebase.")
+    }
+
+    fun triggerTileAction(id: String) {
+        logTileStateChange(id)
+        when (id) {
+            "WIFI" -> toggleWifi()
+            "BLUETOOTH" -> toggleBluetooth()
+            "DATA" -> toggleData()
+            "HOTSPOT" -> toggleHotspot()
+            "AIRPLANE" -> toggleAirplaneMode()
+            "TIMEOUT" -> cycleScreenTimeout()
+            "CAFFEINE" -> toggleCaffeine(!_isCaffeineActive.value)
+            "WEATHER" -> cycleWeatherCity()
+            "BATTERY" -> fetchBatteryPrediction(_batteryInfo.value.percentage, _batteryInfo.value.isCharging)
+            "BRIGHTNESS" -> {
+                try {
+                    val cr = context.contentResolver
+                    val currentVal = android.provider.Settings.System.getInt(cr, android.provider.Settings.System.SCREEN_BRIGHTNESS)
+                    val nextVal = when {
+                        currentVal < 50 -> 128
+                        currentVal < 150 -> 220
+                        currentVal < 250 -> 255
+                        else -> 30
+                    }
+                    if (android.provider.Settings.System.canWrite(context)) {
+                        android.provider.Settings.System.putInt(cr, android.provider.Settings.System.SCREEN_BRIGHTNESS, nextVal)
+                        showToast("Brightness updated to ${Math.round(nextVal * 100f / 255f)}%")
+                    } else {
+                        showToast("Write Settings permission required for Brightness.")
+                    }
+                } catch (e: Exception) {
+                    showToast("Failed to write brightness settings: ${e.message}")
+                }
+            }
+            "DNS" -> togglePrivateDns(!_isDnsActive.value)
+            "THEATER" -> toggleTheaterMode(!_isTheaterActive.value)
+            "CLIPBOARD" -> purgeClipboard()
+            "FOCUS" -> {
+                val start = com.example.utils.FocusDataStore.getStartTime(context)
+                val end = com.example.utils.FocusDataStore.getEndTime(context)
+                if (System.currentTimeMillis() < end) {
+                    stopFocusSandbox()
+                } else {
+                    startFocusSandbox(25, emptySet())
+                }
+            }
+            "SHORTCUT" -> {
+                try {
+                    val intent = android.content.Intent(customShortcutTarget.value).apply {
+                        flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+                    }
+                    context.startActivity(intent)
+                } catch(e: Exception) {
+                    showToast("Failed to launch: ${customShortcutLabel.value}")
+                }
+            }
+            "APP_AUDIO" -> toggleAudioIsolation(!_isAppAudioIsolated.value)
+            "GLYPH" -> {
+                val nextProfile = when (_glyphBrightnessProfile.value) {
+                    "Essential Only" -> "Battery Saver"
+                    "Battery Saver" -> "Maximum Glyph"
+                    else -> "Essential Only"
+                }
+                _glyphBrightnessProfile.value = nextProfile
+                savePref("glyph_brightness_profile", nextProfile)
+                showToast("Glyph Brightness set to $nextProfile")
+            }
+            "CHANGELOG" -> {
+                showToast("Opening Changelogs info.")
+            }
+            "MANUAL" -> {
+                showToast("Opening User Manual info.")
+            }
+            "ABOUT" -> {
+                showToast("Opening About Info.")
+            }
+            else -> {
+                showToast("Tile $id selected.")
             }
         }
     }

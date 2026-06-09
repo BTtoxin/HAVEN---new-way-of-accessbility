@@ -21,6 +21,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.ui.draw.clip
+import coil.compose.AsyncImage
 import com.example.ui.theme.AppTypography
 import com.example.ui.theme.BorderDark
 import com.example.ui.theme.NeutralGray
@@ -112,6 +119,57 @@ fun FocusLockScreen(onEmergencyExit: () -> Unit) {
 
             Spacer(modifier = Modifier.height(32.dp))
             Text("Stay focused.", style = AppTypography.bodyMedium, color = NeutralGray)
+
+            val allowedPackages = remember { FocusDataStore.getAllowedApps(context) }
+            val whitelistedApps = remember {
+                com.example.ui.loadInstalledApps(context).filter { it.packageName in allowedPackages }
+            }
+
+            if (whitelistedApps.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(32.dp))
+                Text("ALLOWED APPS", style = AppTypography.labelSmall, color = NeutralGray, letterSpacing = 2.sp)
+                Spacer(modifier = Modifier.height(16.dp))
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(whitelistedApps) { app ->
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .clickable {
+                                    val launchIntent = context.packageManager.getLaunchIntentForPackage(app.packageName)
+                                    if (launchIntent != null) {
+                                        try {
+                                            context.startActivity(launchIntent)
+                                        } catch (e: Exception) {
+                                            Toast.makeText(context, "Could not launch app", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                }
+                                .padding(8.dp)
+                        ) {
+                            AsyncImage(
+                                model = app.icon,
+                                contentDescription = app.label,
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(CircleShape)
+                                    .border(2.dp, androidx.compose.ui.graphics.Color(0xFF10B981), CircleShape)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = app.label,
+                                style = AppTypography.labelSmall,
+                                color = PureWhite,
+                                maxLines = 1,
+                                fontSize = 10.sp
+                            )
+                        }
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(48.dp))
             TextButton(

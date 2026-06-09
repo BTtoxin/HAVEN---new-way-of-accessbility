@@ -27,15 +27,20 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         // Force Choreographer/Window display mode to prefer 120Hz peak performance
-        try {
-            val params = window.attributes
-            val minField = params::class.java.getField("preferredMinDisplayRefreshRate")
-            val maxField = params::class.java.getField("preferredMaxDisplayRefreshRate")
-            minField.set(params, 120f)
-            maxField.set(params, 120f)
-            window.attributes = params
-        } catch (e: Exception) {
-            // Safe fallback for devices/system builds that do not support it
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            try {
+                val display = window.context.display
+                val modes = display?.supportedModes
+                // Find a mode with high refresh rate (e.g. 120Hz or close to it)
+                val highMode = modes?.find { it.refreshRate >= 119.0f }
+                if (highMode != null) {
+                    val params = window.attributes
+                    params.preferredDisplayModeId = highMode.modeId
+                    window.attributes = params
+                }
+            } catch (e: Throwable) {
+                // Safe fallback for devices/system builds that do not support it
+            }
         }
 
         val openFocus = intent.getBooleanExtra("openFocus", false)
