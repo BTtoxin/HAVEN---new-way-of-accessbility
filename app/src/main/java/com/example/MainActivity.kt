@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Modifier
 import com.example.ui.DashboardScreen
@@ -41,23 +42,41 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val selectedPalette by viewModel.selectedPalette.collectAsStateWithLifecycle()
-            NothingTheme(palette = selectedPalette) {
+            val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+            val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
+            val isDark = when (themeMode) {
+                "DARK" -> true
+                "LIGHT" -> false
+                else -> systemDark
+            }
+            NothingTheme(darkTheme = isDark, palette = selectedPalette) {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    DashboardScreen(
-                        viewModel = viewModel,
-                        initialOpenFocus = openFocus,
-                        onRequestPermission = {
-                            startActivity(
-                                Intent(
-                                    Settings.ACTION_MANAGE_WRITE_SETTINGS,
-                                    Uri.parse("package:$packageName")
+                    var currentScreen by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("dashboard") }
+
+                    if (currentScreen == "dashboard") {
+                        DashboardScreen(
+                            viewModel = viewModel,
+                            initialOpenFocus = openFocus,
+                            onNavigateToSettings = { currentScreen = "settings" },
+                            onRequestPermission = {
+                                startActivity(
+                                    Intent(
+                                        Settings.ACTION_MANAGE_WRITE_SETTINGS,
+                                        Uri.parse("package:$packageName")
+                                    )
                                 )
-                            )
-                        },
-                        onRequestDndPermission = {
-                            startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
-                        }
-                    )
+                            },
+                            onRequestDndPermission = {
+                                startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
+                            }
+                        )
+                    } else {
+                        com.example.ui.SettingsScreen(
+                            onBack = { currentScreen = "dashboard" },
+                            onResetLayout = { viewModel.resetTileOrder() },
+                            onConfirm = { viewModel.checkAllStates() }
+                        )
+                    }
                 }
             }
         }

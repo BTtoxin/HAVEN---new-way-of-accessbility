@@ -2,6 +2,11 @@ package com.example.viewmodel
 
 import android.app.Application
 import android.app.NotificationManager
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.BatteryManager
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.utils.QSPreferenceManager
@@ -11,6 +16,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+
+data class BatteryInfo(
+    val percentage: Int = 100,
+    val status: String = "Unknown",
+    val health: String = "Good",
+    val isCharging: Boolean = false,
+    val remainingTimeString: String = "Calculating..."
+)
 
 class QSViewModel(application: Application) : AndroidViewModel(application) {
     private val context = application.applicationContext
@@ -59,10 +72,71 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
     private val _tileOrder = MutableStateFlow(emptyList<String>())
     val tileOrder = _tileOrder.asStateFlow()
 
+    private val _themeMode = MutableStateFlow("SYSTEM")
+    val themeMode = _themeMode.asStateFlow()
+
+    private val _batteryInfo = MutableStateFlow(BatteryInfo())
+    val batteryInfo = _batteryInfo.asStateFlow()
+
+    private val batteryReceiver = object : BroadcastReceiver() {
+        override fun onReceive(ctx: Context, intent: Intent) {
+            val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+            val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
+            val pct = if (level >= 0 && scale > 0) (level * 100 / scale) else 100
+
+            val statusInt = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
+            val isCharging = statusInt == BatteryManager.BATTERY_STATUS_CHARGING || statusInt == BatteryManager.BATTERY_STATUS_FULL
+            val statusStr = when (statusInt) {
+                BatteryManager.BATTERY_STATUS_CHARGING -> "Charging"
+                BatteryManager.BATTERY_STATUS_DISCHARGING -> "Discharging"
+                BatteryManager.BATTERY_STATUS_FULL -> "Full"
+                BatteryManager.BATTERY_STATUS_NOT_CHARGING -> "Not Charging"
+                else -> "Discharging"
+            }
+
+            val healthInt = intent.getIntExtra(BatteryManager.EXTRA_HEALTH, -1)
+            val healthStr = when (healthInt) {
+                BatteryManager.BATTERY_HEALTH_GOOD -> "Good"
+                BatteryManager.BATTERY_HEALTH_OVERHEAT -> "Overheat"
+                BatteryManager.BATTERY_HEALTH_DEAD -> "Dead"
+                BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE -> "Over Voltage"
+                BatteryManager.BATTERY_HEALTH_COLD -> "Cold"
+                else -> "Normal"
+            }
+
+            val remTime = if (isCharging) {
+                if (pct >= 100) "Fully Charged"
+                else {
+                    val mins = ((100 - pct) * 1.5).toInt()
+                    if (mins >= 60) "~${mins / 60}h ${mins % 60}m to full" else "~${mins}m to full"
+                }
+            } else {
+                val mins = (pct * 9)
+                "~${mins / 60}h ${mins % 60}m remaining"
+            }
+
+            _batteryInfo.value = BatteryInfo(
+                percentage = pct,
+                status = statusStr,
+                health = healthStr,
+                isCharging = isCharging,
+                remainingTimeString = remTime
+            )
+        }
+    }
+
     init {
+        context.registerReceiver(batteryReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
         viewModelScope.launch {
             checkAllStates()
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        try {
+            context.unregisterReceiver(batteryReceiver)
+        } catch (e: Exception) {}
     }
 
     fun checkAllStates() {
@@ -81,9 +155,17 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
             _isAppAudioIsolated.value = dataStore.isAppAudioIsolatedFlow.first()
             _isMonochrome.value = dataStore.isMonochromeFlow.first()
             _selectedPalette.value = dataStore.selectedPaletteFlow.first()
+            _themeMode.value = dataStore.themeModeFlow.first()
             val orderString = dataStore.tileOrderFlow.first()
             val savedOrder = if (orderString.isNotEmpty()) orderString.split(",") else defaultTileOrder()
             _tileOrder.value = savedOrder
+        }
+    }
+    
+    fun setThemeMode(mode: String) {
+        viewModelScope.launch {
+            com.example.utils.SettingsDataStore(context).setThemeMode(mode)
+            _themeMode.value = mode
         }
     }
     

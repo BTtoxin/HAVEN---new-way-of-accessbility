@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
+import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -21,6 +22,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
@@ -38,6 +40,7 @@ import android.hardware.camera2.CameraManager
 fun DashboardScreen(
     viewModel: QSViewModel,
     initialOpenFocus: Boolean = false,
+    onNavigateToSettings: () -> Unit = {},
     onRequestPermission: () -> Unit,
     onRequestDndPermission: () -> Unit
 ) {
@@ -71,7 +74,7 @@ fun DashboardScreen(
     val tileOrderList by viewModel.tileOrder.collectAsStateWithLifecycle()
     val availableOrder = remember(tileOrderList) {
         if (tileOrderList.isEmpty() || !tileOrderList.contains("MANUAL")) {
-            listOf("TIMEOUT", "CAFFEINE", "DNS", "THEATER", "CLIPBOARD", "FOCUS", "SHORTCUT", "APP_AUDIO", "OPERATOR", "GLYPH", "MANUAL", "CHANGELOG", "ABOUT")
+            listOf("TIMEOUT", "CAFFEINE", "BATTERY", "DNS", "THEATER", "CLIPBOARD", "FOCUS", "SHORTCUT", "APP_AUDIO", "OPERATOR", "GLYPH", "MANUAL", "CHANGELOG", "ABOUT")
         } else {
             tileOrderList
         }
@@ -116,7 +119,7 @@ fun DashboardScreen(
                                     val now = System.currentTimeMillis()
                                     if (now - lastTapTime < 500) {
                                         tapCount++
-                                        if (tapCount >= 2) {
+                                        if (tapCount >= 3) {
                                             showSystemMonitor = !showSystemMonitor
                                             tapCount = 0
                                             lastTapTime = 0L
@@ -168,21 +171,44 @@ fun DashboardScreen(
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     val isMonochrome by viewModel.isMonochrome.collectAsStateWithLifecycle()
-                    IconButton(onClick = {
-                        com.example.utils.AudioHapticEngine.triggerClick(context)
-                        showSpecialPaletteSelector = true
-                    }) {
+                    IconButton(
+                        onClick = {
+                            com.example.utils.AudioHapticEngine.triggerClick(context)
+                            showSpecialPaletteSelector = true
+                        },
+                        modifier = Modifier.size(48.dp)
+                    ) {
                         Icon(
                             Icons.Default.Palette,
                             contentDescription = "Toggle Theme Selection",
                             modifier = Modifier.size(24.dp)
                         )
                     }
-                    IconButton(onClick = { isEditMode = !isEditMode }) {
-                        Icon(if (isEditMode) Icons.Default.Done else Icons.Default.Edit, contentDescription = "Edit Layout", modifier = Modifier.size(24.dp))
+                    IconButton(
+                        onClick = {
+                            com.example.utils.AudioHapticEngine.triggerClick(context)
+                            isEditMode = !isEditMode
+                        },
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isEditMode) Icons.Default.Done else Icons.Default.Edit,
+                            contentDescription = "Edit Layout",
+                            modifier = Modifier.size(24.dp)
+                        )
                     }
-                    IconButton(onClick = { showSettingsDialog = true }) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings", modifier = Modifier.size(24.dp))
+                    IconButton(
+                        onClick = {
+                            com.example.utils.AudioHapticEngine.triggerClick(context)
+                            onNavigateToSettings()
+                        },
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Settings",
+                            modifier = Modifier.size(24.dp)
+                        )
                     }
                 }
             }
@@ -444,15 +470,14 @@ fun DashboardScreen(
             }
 
             items(
-                count = availableOrder.size,
-                key = { index -> availableOrder[index] },
-                span = { index ->
-                    val id = availableOrder[index]
-                    if (id in listOf("CAFFEINE", "THEATER", "FOCUS", "GLYPH")) StaggeredGridItemSpan.FullLine
+                items = availableOrder,
+                key = { id -> id },
+                span = { id ->
+                    if (id in listOf("CAFFEINE", "BATTERY", "THEATER", "FOCUS", "GLYPH")) StaggeredGridItemSpan.FullLine
                     else StaggeredGridItemSpan.SingleLane
                 }
-            ) { index ->
-                val id = availableOrder[index]
+            ) { id ->
+                val index = remember(id, availableOrder) { availableOrder.indexOf(id) }
                 Box {
                     when (id) {
                         "TIMEOUT" -> {
@@ -488,6 +513,94 @@ fun DashboardScreen(
                                             .clip(CircleShape)
                                             .background(NothingRed)
                                     )
+                                }
+                            }
+                        }
+                        "BATTERY" -> {
+                            val batteryInfo by viewModel.batteryInfo.collectAsStateWithLifecycle()
+                            val primaryColor = MaterialTheme.colorScheme.primary
+                            BentoCard(
+                                title = "BATTERY STATISTICS",
+                                icon = if (batteryInfo.isCharging) Icons.Default.BatteryChargingFull else Icons.Default.BatteryStd,
+                                onClick = {
+                                    try {
+                                        val batteryIntent = Intent(Intent.ACTION_POWER_USAGE_SUMMARY)
+                                        context.startActivity(batteryIntent)
+                                    } catch(e: Exception) {
+                                        try {
+                                            val intent = Intent(Settings.ACTION_BATTERY_SAVER_SETTINGS)
+                                            context.startActivity(intent)
+                                        } catch (ex: Exception) {}
+                                    }
+                                }
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "${batteryInfo.percentage}%",
+                                            style = AppTypography.displayLarge.copy(fontSize = 32.sp),
+                                            color = if (batteryInfo.percentage <= 20 && !batteryInfo.isCharging) NothingRed else MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = batteryInfo.remainingTimeString.uppercase(),
+                                            style = AppTypography.labelSmall.copy(fontSize = 10.sp),
+                                            color = NeutralGray
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = "HEALTH: ${batteryInfo.health.uppercase()}",
+                                            style = AppTypography.labelSmall.copy(fontSize = 9.sp),
+                                            color = NtSecondary
+                                        )
+                                    }
+                                    
+                                    Box(
+                                        modifier = Modifier.size(54.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        androidx.compose.foundation.Canvas(modifier = Modifier.size(48.dp)) {
+                                            val strokeWidth = 3.dp.toPx()
+                                            
+                                            drawArc(
+                                                color = Color.Gray.copy(alpha = 0.2f),
+                                                startAngle = -90f,
+                                                sweepAngle = 360f,
+                                                useCenter = false,
+                                                style = androidx.compose.ui.graphics.drawscope.Stroke(
+                                                    width = strokeWidth,
+                                                    pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(
+                                                        floatArrayOf(5.dp.toPx(), 4.dp.toPx()), 0f
+                                                    )
+                                                )
+                                            )
+                                            
+                                            drawArc(
+                                                color = if (batteryInfo.percentage <= 20) NothingRed else primaryColor,
+                                                startAngle = -90f,
+                                                sweepAngle = (batteryInfo.percentage / 100f) * 360f,
+                                                useCenter = false,
+                                                style = androidx.compose.ui.graphics.drawscope.Stroke(
+                                                    width = strokeWidth,
+                                                    pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(
+                                                        floatArrayOf(5.dp.toPx(), 4.dp.toPx()), 0f
+                                                    )
+                                                )
+                                            )
+                                        }
+                                        
+                                        Box(
+                                            modifier = Modifier
+                                                .size(8.dp)
+                                                .background(
+                                                    color = if (batteryInfo.isCharging) NothingRed else Color.LightGray,
+                                                    shape = CircleShape
+                                                )
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -812,42 +925,93 @@ fun DashboardScreen(
                         }
                     }
                     if (isEditMode) {
+                        var dragDistanceX by remember { mutableFloatStateOf(0f) }
+                        var dragDistanceY by remember { mutableFloatStateOf(0f) }
                         Box(
                             modifier = Modifier
                                 .matchParentSize()
-                                .background(MaterialTheme.colorScheme.background.copy(alpha = 0.8f))
+                                .background(MaterialTheme.colorScheme.background.copy(alpha = 0.85f))
+                                .pointerInput(index, availableOrder) {
+                                    detectDragGestures(
+                                        onDragStart = { offset ->
+                                            dragDistanceX = 0f
+                                            dragDistanceY = 0f
+                                        },
+                                        onDrag = { change, dragAmount ->
+                                            change.consume()
+                                            dragDistanceX += dragAmount.x
+                                            dragDistanceY += dragAmount.y
+                                        },
+                                        onDragEnd = {
+                                            val threshold = 120f
+                                            if (dragDistanceX < -threshold || dragDistanceY < -threshold) {
+                                                if (index > 0) {
+                                                    val newOrder = availableOrder.toMutableList()
+                                                    java.util.Collections.swap(newOrder, index, index - 1)
+                                                    viewModel.updateTileOrder(newOrder)
+                                                    com.example.utils.AudioHapticEngine.triggerClick(context)
+                                                }
+                                            } else if (dragDistanceX > threshold || dragDistanceY > threshold) {
+                                                if (index < availableOrder.size - 1) {
+                                                    val newOrder = availableOrder.toMutableList()
+                                                    java.util.Collections.swap(newOrder, index, index + 1)
+                                                    viewModel.updateTileOrder(newOrder)
+                                                    com.example.utils.AudioHapticEngine.triggerClick(context)
+                                                }
+                                            }
+                                        }
+                                    )
+                                }
                                 .clickable { /* Consume clicks */ },
                             contentAlignment = Alignment.Center
                         ) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                IconButton(
-                                    onClick = {
-                                        if (index > 0) {
-                                            val newOrder = availableOrder.toMutableList()
-                                            java.util.Collections.swap(newOrder, index, index - 1)
-                                            viewModel.updateTileOrder(newOrder)
-                                        }
-                                    },
-                                    enabled = index > 0,
-                                    colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surface)
+                                Icon(
+                                    imageVector = Icons.Default.DragHandle,
+                                    contentDescription = "Drag to reorder",
+                                    tint = NothingRed,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Text(
+                                    text = "DRAG / SWIPE TO MOVE",
+                                    style = AppTypography.labelSmall.copy(fontSize = 9.sp),
+                                    color = NeutralGray
+                                )
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Icon(Icons.Default.ArrowBack, contentDescription = "Move Left/Up")
-                                }
-                                IconButton(
-                                    onClick = {
-                                        if (index < availableOrder.size - 1) {
-                                            val newOrder = availableOrder.toMutableList()
-                                            java.util.Collections.swap(newOrder, index, index + 1)
-                                            viewModel.updateTileOrder(newOrder)
-                                        }
-                                    },
-                                    enabled = index < availableOrder.size - 1,
-                                    colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surface)
-                                ) {
-                                    Icon(Icons.Default.ArrowForward, contentDescription = "Move Right/Down")
+                                    IconButton(
+                                        onClick = {
+                                            if (index > 0) {
+                                                val newOrder = availableOrder.toMutableList()
+                                                java.util.Collections.swap(newOrder, index, index - 1)
+                                                viewModel.updateTileOrder(newOrder)
+                                                com.example.utils.AudioHapticEngine.triggerClick(context)
+                                            }
+                                        },
+                                        enabled = index > 0,
+                                        colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surface)
+                                    ) {
+                                        Icon(Icons.Default.ArrowBack, contentDescription = "Move Left/Up")
+                                    }
+                                    IconButton(
+                                        onClick = {
+                                            if (index < availableOrder.size - 1) {
+                                                val newOrder = availableOrder.toMutableList()
+                                                java.util.Collections.swap(newOrder, index, index + 1)
+                                                viewModel.updateTileOrder(newOrder)
+                                                com.example.utils.AudioHapticEngine.triggerClick(context)
+                                            }
+                                        },
+                                        enabled = index < availableOrder.size - 1,
+                                        colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surface)
+                                    ) {
+                                        Icon(Icons.Default.ArrowForward, contentDescription = "Move Right/Down")
+                                    }
                                 }
                             }
                         }

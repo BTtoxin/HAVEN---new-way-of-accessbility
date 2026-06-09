@@ -27,6 +27,23 @@ private val NaturalColorScheme = lightColorScheme(
     onSurfaceVariant = NtTextSecondary
 )
 
+private val NaturalDarkColorScheme = lightColorScheme(
+    primary = androidx.compose.ui.graphics.Color(0xFFFFFFFF),
+    onPrimary = androidx.compose.ui.graphics.Color(0xFF000000),
+    primaryContainer = androidx.compose.ui.graphics.Color(0xFFFFFFFF),
+    onPrimaryContainer = androidx.compose.ui.graphics.Color(0xFF000000),
+    secondary = NtSecondary,
+    onSecondary = androidx.compose.ui.graphics.Color(0xFFFFFFFF),
+    surface = androidx.compose.ui.graphics.Color(0xFF161616),
+    onSurface = androidx.compose.ui.graphics.Color(0xFFFFFFFF),
+    background = androidx.compose.ui.graphics.Color(0xFF0C0C0C),
+    onBackground = androidx.compose.ui.graphics.Color(0xFFFFFFFF),
+    error = NtSecondary,
+    outline = androidx.compose.ui.graphics.Color(0xFF2C2C2C),
+    surfaceVariant = androidx.compose.ui.graphics.Color(0xFF1C1C1C),
+    onSurfaceVariant = androidx.compose.ui.graphics.Color(0xFFAAAAAA)
+)
+
 private val MonochromeColorScheme = lightColorScheme(
     primary = MonoPrimary,
     onPrimary = MonoOnPrimary,
@@ -127,12 +144,31 @@ fun NothingTheme(
     }
 
     val selectedScheme = when (palette) {
-        "MONOCHROME" -> MonochromeColorScheme
+        "MONOCHROME" -> {
+            if (darkTheme) MonochromeColorScheme else lightColorScheme(
+                primary = androidx.compose.ui.graphics.Color.Black,
+                onPrimary = androidx.compose.ui.graphics.Color.White,
+                primaryContainer = androidx.compose.ui.graphics.Color.Black,
+                onPrimaryContainer = androidx.compose.ui.graphics.Color.White,
+                secondary = androidx.compose.ui.graphics.Color.DarkGray,
+                onSecondary = androidx.compose.ui.graphics.Color.White,
+                surface = androidx.compose.ui.graphics.Color(0xFFEBEBEB),
+                onSurface = androidx.compose.ui.graphics.Color.Black,
+                background = androidx.compose.ui.graphics.Color(0xFFF9F9F9),
+                onBackground = androidx.compose.ui.graphics.Color.Black,
+                error = NtSecondary,
+                outline = androidx.compose.ui.graphics.Color(0xFFCCCCCC),
+                surfaceVariant = androidx.compose.ui.graphics.Color(0xFFF0F0F0),
+                onSurfaceVariant = androidx.compose.ui.graphics.Color.Gray
+            )
+        }
         "AMBER" -> AmberColorScheme
         "FOREST" -> ForestColorScheme
         "OCEAN" -> OceanColorScheme
         "NEON" -> NeonColorScheme
-        else -> NaturalColorScheme
+        else -> {
+            if (darkTheme) NaturalDarkColorScheme else NaturalColorScheme
+        }
     }
 
     MaterialTheme(

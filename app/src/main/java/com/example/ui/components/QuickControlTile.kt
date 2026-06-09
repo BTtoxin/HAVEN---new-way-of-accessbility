@@ -41,6 +41,7 @@ fun QuickControlTile(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val isHovered by interactionSource.collectIsHoveredAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.92f else 1f,
         animationSpec = androidx.compose.animation.core.spring(
@@ -64,7 +65,10 @@ fun QuickControlTile(
             .combinedClickable(
                 interactionSource = interactionSource,
                 indication = null,
-                onClick = onClick,
+                onClick = {
+                    com.example.utils.AudioHapticEngine.triggerClick(context)
+                    onClick()
+                },
                 onLongClick = onLongClick
             )
             .padding(16.dp)

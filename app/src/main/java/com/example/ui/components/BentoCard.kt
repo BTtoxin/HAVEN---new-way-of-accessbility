@@ -43,6 +43,7 @@ fun BentoCard(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val isHovered by interactionSource.collectIsHoveredAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
     val scale by animateFloatAsState(
         targetValue = if (isPressed && (onClick != null || onLongClick != null)) 0.95f else 1f,
         animationSpec = androidx.compose.animation.core.spring(
@@ -65,7 +66,10 @@ fun BentoCard(
                 if (onClick != null || onLongClick != null) Modifier.combinedClickable(
                     interactionSource = interactionSource,
                     indication = null,
-                    onClick = onClick ?: {},
+                    onClick = {
+                        com.example.utils.AudioHapticEngine.triggerClick(context)
+                        onClick?.invoke()
+                    },
                     onLongClick = onLongClick
                 ) else Modifier
             )

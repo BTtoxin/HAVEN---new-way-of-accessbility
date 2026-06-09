@@ -29,6 +29,7 @@ class SettingsDataStore(private val context: Context) {
         val IS_MONOCHROME = booleanPreferencesKey("is_monochrome")
         val SELECTED_PALETTE = stringPreferencesKey("selected_palette")
         val TILE_ORDER = stringPreferencesKey("tile_order")
+        val THEME_MODE = stringPreferencesKey("theme_mode")
     }
 
     val caffeineDurationFlow: Flow<Int> = context.dataStore.data.map { it[CAFFEINE_DURATION] ?: -1 }
@@ -49,6 +50,7 @@ class SettingsDataStore(private val context: Context) {
     val isMonochromeFlow: Flow<Boolean> = context.dataStore.data.map { it[IS_MONOCHROME] ?: false }
     val selectedPaletteFlow: Flow<String> = context.dataStore.data.map { it[SELECTED_PALETTE] ?: "NATURAL" }
     val tileOrderFlow: Flow<String> = context.dataStore.data.map { it[TILE_ORDER] ?: "" }
+    val themeModeFlow: Flow<String> = context.dataStore.data.map { it[THEME_MODE] ?: "SYSTEM" }
 
     suspend fun setCaffeineDuration(duration: Int) { context.dataStore.edit { it[CAFFEINE_DURATION] = duration } }
     suspend fun setCaffeineActive(isActive: Boolean) { context.dataStore.edit { it[IS_CAFFEINE_ACTIVE] = isActive } }
@@ -71,4 +73,5 @@ class SettingsDataStore(private val context: Context) {
     suspend fun setMonochrome(isMonochrome: Boolean) { context.dataStore.edit { it[IS_MONOCHROME] = isMonochrome } }
     suspend fun setSelectedPalette(palette: String) { context.dataStore.edit { it[SELECTED_PALETTE] = palette } }
     suspend fun setTileOrder(order: String) { context.dataStore.edit { it[TILE_ORDER] = order } }
+    suspend fun setThemeMode(mode: String) { context.dataStore.edit { it[THEME_MODE] = mode } }
 }

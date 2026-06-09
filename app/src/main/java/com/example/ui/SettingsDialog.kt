@@ -40,6 +40,7 @@ fun SettingsDialog(onDismiss: () -> Unit, onResetLayout: () -> Unit = {}, onConf
     var clipboardInterval by remember { mutableIntStateOf(0) }
     var tempDns by remember { mutableStateOf("") }
     var tempPalette by remember { mutableStateOf("NATURAL") }
+    var tempThemeMode by remember { mutableStateOf("SYSTEM") }
     
     // Add custom shortcut stuff that is supposed to be here as per step 7 
     var tempShortcutLabel by remember { mutableStateOf("") }
@@ -54,6 +55,7 @@ fun SettingsDialog(onDismiss: () -> Unit, onResetLayout: () -> Unit = {}, onConf
         clipboardInterval = dataStore.clipboardIntervalFlow.first()
         tempDns = dataStore.privateDnsFlow.first().let { if(it=="off") "" else it }
         tempPalette = dataStore.selectedPaletteFlow.first()
+        tempThemeMode = dataStore.themeModeFlow.first()
         
         val pm = com.example.utils.QSPreferenceManager(context)
         tempShortcutLabel = pm.getCustomShortcutLabel()
@@ -197,6 +199,47 @@ fun SettingsDialog(onDismiss: () -> Unit, onResetLayout: () -> Unit = {}, onConf
                 HorizontalDivider(color = BorderDark, thickness = 0.5.dp)
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // SECTION 6.5: DARK THEME MODE
+                Text("DARK THEME MODE", style = AppTypography.labelSmall, color = NeutralGray)
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf("SYSTEM", "LIGHT", "DARK").forEach { mode ->
+                        val isSelected = (tempThemeMode == mode)
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .border(
+                                    width = if (isSelected) 2.dp else 1.dp,
+                                    color = if (isSelected) NothingRed else BorderDark,
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .background(
+                                    color = if (isSelected) NothingRed.copy(alpha = 0.1f) else androidx.compose.ui.graphics.Color.Transparent,
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .clickable {
+                                    tempThemeMode = mode
+                                    com.example.utils.AudioHapticEngine.triggerClick(context)
+                                }
+                                .padding(vertical = 10.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = mode,
+                                style = AppTypography.labelSmall.copy(fontSize = 11.sp),
+                                color = if (isSelected) NothingRed else MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider(color = BorderDark, thickness = 0.5.dp)
+                Spacer(modifier = Modifier.height(16.dp))
+
                 // SECTION 7: THEMING
                 Text("COLOR PALETTE", style = AppTypography.labelSmall, color = NeutralGray)
                 Spacer(modifier = Modifier.height(12.dp))
@@ -204,56 +247,61 @@ fun SettingsDialog(onDismiss: () -> Unit, onResetLayout: () -> Unit = {}, onConf
                 val paletteList = listOf(
                     Triple("NATURAL", "Cream", androidx.compose.ui.graphics.Color(0xFFFDF8F6)),
                     Triple("MONOCHROME", "Mono", androidx.compose.ui.graphics.Color(0xFF1C1C1C)),
+                    Triple("NEON", "Neon", androidx.compose.ui.graphics.Color(0xFF39FF14)),
                     Triple("AMBER", "Amber", androidx.compose.ui.graphics.Color(0xFFFFB300)),
                     Triple("FOREST", "Forest", androidx.compose.ui.graphics.Color(0xFF81C784)),
                     Triple("OCEAN", "Ocean", androidx.compose.ui.graphics.Color(0xFF4FC3F7))
                 )
                 
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    paletteList.forEach { (id, label, previewColor) ->
-                        val isSelected = (tempPalette == id)
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable {
-                                    tempPalette = id
-                                    com.example.utils.AudioHapticEngine.triggerClick(context)
-                                }
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    paletteList.chunked(3).forEach { rowList ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .background(
-                                        color = previewColor,
-                                        shape = androidx.compose.foundation.shape.CircleShape
-                                    )
-                                    .border(
-                                        width = if (isSelected) 3.dp else 1.dp,
-                                        color = if (isSelected) NothingRed else BorderDark,
-                                        shape = androidx.compose.foundation.shape.CircleShape
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                if (isSelected) {
-                                    Icon(
-                                        Icons.Default.Check,
-                                        contentDescription = "Selected",
-                                        tint = if (id == "NATURAL" || id == "AMBER" || id == "FOREST" || id == "OCEAN") androidx.compose.ui.graphics.Color.Black else androidx.compose.ui.graphics.Color.White,
-                                        modifier = Modifier.size(16.dp)
+                            rowList.forEach { (id, label, previewColor) ->
+                                val isSelected = (tempPalette == id)
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable {
+                                            tempPalette = id
+                                            com.example.utils.AudioHapticEngine.triggerClick(context)
+                                        }
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(36.dp)
+                                            .background(
+                                                color = previewColor,
+                                                shape = androidx.compose.foundation.shape.CircleShape
+                                            )
+                                            .border(
+                                                width = if (isSelected) 3.dp else 1.dp,
+                                                color = if (isSelected) NothingRed else BorderDark,
+                                                shape = androidx.compose.foundation.shape.CircleShape
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        if (isSelected) {
+                                            Icon(
+                                                Icons.Default.Check,
+                                                contentDescription = "Selected",
+                                                tint = if (id == "NATURAL" || id == "AMBER" || id == "FOREST" || id == "OCEAN" || id == "NEON") androidx.compose.ui.graphics.Color.Black else androidx.compose.ui.graphics.Color.White,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = label,
+                                        style = AppTypography.labelSmall.copy(fontSize = 11.sp),
+                                        color = if (isSelected) NothingRed else NeutralGray
                                     )
                                 }
                             }
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = label,
-                                style = AppTypography.labelSmall.copy(fontSize = 9.sp),
-                                color = if (isSelected) NothingRed else NeutralGray
-                            )
                         }
                     }
                 }
@@ -301,6 +349,7 @@ fun SettingsDialog(onDismiss: () -> Unit, onResetLayout: () -> Unit = {}, onConf
                         }
                         dataStore.setSelectedPalette(tempPalette)
                         dataStore.setMonochrome(tempPalette != "NATURAL")
+                        dataStore.setThemeMode(tempThemeMode)
                         
                         val pm = com.example.utils.QSPreferenceManager(context)
                         pm.setCustomShortcutLabel(tempShortcutLabel)
