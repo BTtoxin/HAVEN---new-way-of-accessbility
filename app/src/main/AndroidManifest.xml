@@ -165,6 +165,26 @@
             <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
         </service>
 
+        <service android:name=".services.SessionPasswordTileService" android:exported="true"
+            android:label="Session Password" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
+        <service android:name=".services.BatterySaverProfileTileService" android:exported="true"
+            android:label="Extreme Saver" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
+        <service android:name=".services.RamCleanerTileService" android:exported="true"
+            android:label="RAM Cleaner" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
+        <service android:name=".services.PanicClearTileService" android:exported="true"
+            android:label="Panic Clear" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
+        </service>
+
         <service android:name=".services.AdaptiveBrightnessTileService" android:exported="true"
             android:label="Adaptive Brightness" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>

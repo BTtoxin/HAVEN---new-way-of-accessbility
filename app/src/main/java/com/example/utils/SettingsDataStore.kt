@@ -31,6 +31,7 @@ class SettingsDataStore(private val context: Context) {
         val TILE_ORDER = stringPreferencesKey("tile_order")
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val HAS_SEEN_ONBOARDING = booleanPreferencesKey("has_seen_onboarding")
+        val GRID_LAYOUT_COLUMNS = intPreferencesKey("grid_layout_columns")
     }
 
     val caffeineDurationFlow: Flow<Int> = context.dataStore.data.map { it[CAFFEINE_DURATION] ?: -1 }
@@ -53,16 +54,30 @@ class SettingsDataStore(private val context: Context) {
     val tileOrderFlow: Flow<String> = context.dataStore.data.map { it[TILE_ORDER] ?: "" }
     val themeModeFlow: Flow<String> = context.dataStore.data.map { it[THEME_MODE] ?: "SYSTEM" }
     val hasSeenOnboardingFlow: Flow<Boolean> = context.dataStore.data.map { it[HAS_SEEN_ONBOARDING] ?: false }
+    val gridLayoutColumnsFlow: Flow<Int> = context.dataStore.data.map { it[GRID_LAYOUT_COLUMNS] ?: 2 }
 
     suspend fun setCaffeineDuration(duration: Int) { context.dataStore.edit { it[CAFFEINE_DURATION] = duration } }
     suspend fun setCaffeineActive(isActive: Boolean) { context.dataStore.edit { it[IS_CAFFEINE_ACTIVE] = isActive } }
     suspend fun setTheaterActive(isActive: Boolean) { context.dataStore.edit { it[IS_THEATER_ACTIVE] = isActive } }
     suspend fun setTheaterBrightness(brightness: Int) { context.dataStore.edit { it[THEATER_BRIGHTNESS] = brightness } }
-    suspend fun setTheaterSystemAudio(vol: Int) { context.dataStore.edit { it[THEATER_SYSTEM_AUDIO] = vol } }
-    suspend fun setTheaterAppAudio(vol: Int) { context.dataStore.edit { it[THEATER_APP_AUDIO] = vol } }
-    suspend fun setTheaterDnd(enabled: Boolean) { context.dataStore.edit { it[THEATER_DND] = enabled } }
+    suspend fun setTheaterSystemAudio(audio: Int) { context.dataStore.edit { it[THEATER_SYSTEM_AUDIO] = audio } }
+    suspend fun setTheaterAppAudio(audio: Int) { context.dataStore.edit { it[THEATER_APP_AUDIO] = audio } }
+    suspend fun setTheaterDnd(dnd: Boolean) { context.dataStore.edit { it[THEATER_DND] = dnd } }
     suspend fun setClipboardInterval(interval: Int) { context.dataStore.edit { it[CLIPBOARD_INTERVAL] = interval } }
     suspend fun setPrivateDns(dns: String) { context.dataStore.edit { it[PRIVATE_DNS] = dns } }
+    suspend fun setIsDnsActive(isActive: Boolean) { context.dataStore.edit { it[IS_DNS_ACTIVE] = isActive } }
+    suspend fun setIsAppAudioIsolated(isActive: Boolean) { context.dataStore.edit { it[IS_APP_AUDIO_ISOLATED] = isActive } }
+    suspend fun setFocusSandboxActive(isActive: Boolean) { context.dataStore.edit { it[FOCUS_SANDBOX_ACTIVE] = isActive } }
+    suspend fun setFocusEndTime(time: Long) { context.dataStore.edit { it[FOCUS_END_TIME] = time } }
+    suspend fun setFocusStartTime(time: Long) { context.dataStore.edit { it[FOCUS_START_TIME] = time } }
+    suspend fun setFocusAllowedApps(apps: Set<String>) { context.dataStore.edit { it[FOCUS_ALLOWED_APPS] = apps } }
+    suspend fun setMonochrome(isActive: Boolean) { context.dataStore.edit { it[IS_MONOCHROME] = isActive } }
+    suspend fun setSelectedPalette(palette: String) { context.dataStore.edit { it[SELECTED_PALETTE] = palette } }
+    suspend fun setTileOrder(order: String) { context.dataStore.edit { it[TILE_ORDER] = order } }
+    suspend fun setThemeMode(mode: String) { context.dataStore.edit { it[THEME_MODE] = mode } }
+    suspend fun setHasSeenOnboarding(hasSeen: Boolean) { context.dataStore.edit { it[HAS_SEEN_ONBOARDING] = hasSeen } }
+    suspend fun setGridLayoutColumns(columns: Int) { context.dataStore.edit { it[GRID_LAYOUT_COLUMNS] = columns } }
+
     suspend fun setDnsActive(active: Boolean) { context.dataStore.edit { it[IS_DNS_ACTIVE] = active } }
     suspend fun setAppAudioIsolated(isIsolated: Boolean) { context.dataStore.edit { it[IS_APP_AUDIO_ISOLATED] = isIsolated } }
     suspend fun setSandboxActive(active: Boolean, endTime: Long = 0L) {
@@ -72,9 +87,4 @@ class SettingsDataStore(private val context: Context) {
         }
     }
     suspend fun setAllowedApps(apps: Set<String>) { context.dataStore.edit { it[FOCUS_ALLOWED_APPS] = apps } }
-    suspend fun setMonochrome(isMonochrome: Boolean) { context.dataStore.edit { it[IS_MONOCHROME] = isMonochrome } }
-    suspend fun setSelectedPalette(palette: String) { context.dataStore.edit { it[SELECTED_PALETTE] = palette } }
-    suspend fun setTileOrder(order: String) { context.dataStore.edit { it[TILE_ORDER] = order } }
-    suspend fun setThemeMode(mode: String) { context.dataStore.edit { it[THEME_MODE] = mode } }
-    suspend fun setHasSeenOnboarding(hasSeen: Boolean) { context.dataStore.edit { it[HAS_SEEN_ONBOARDING] = hasSeen } }
 }

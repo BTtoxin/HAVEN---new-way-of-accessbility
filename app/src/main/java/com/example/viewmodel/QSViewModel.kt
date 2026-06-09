@@ -134,6 +134,9 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
     private val _hasSeenOnboarding = MutableStateFlow(false)
     val hasSeenOnboarding = _hasSeenOnboarding.asStateFlow()
 
+    private val _gridLayoutColumns = MutableStateFlow(2)
+    val gridLayoutColumns = _gridLayoutColumns.asStateFlow()
+
     private val _quickToggleOrder = MutableStateFlow(listOf("WIFI", "BLUETOOTH", "DATA", "HOTSPOT"))
     val quickToggleOrder = _quickToggleOrder.asStateFlow()
 
@@ -405,6 +408,7 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
             _selectedPalette.value = dataStore.selectedPaletteFlow.first()
             _themeMode.value = dataStore.themeModeFlow.first()
             _hasSeenOnboarding.value = dataStore.hasSeenOnboardingFlow.first()
+            _gridLayoutColumns.value = dataStore.gridLayoutColumnsFlow.first()
             val orderString = dataStore.tileOrderFlow.first()
             val savedOrder = if (orderString.isNotEmpty()) orderString.split(",") else defaultTileOrder()
             _tileOrder.value = savedOrder
@@ -429,6 +433,13 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             com.example.utils.SettingsDataStore(context).setHasSeenOnboarding(true)
             _hasSeenOnboarding.value = true
+        }
+    }
+
+    fun setGridLayoutColumns(columns: Int) {
+        viewModelScope.launch {
+            com.example.utils.SettingsDataStore(context).setGridLayoutColumns(columns)
+            _gridLayoutColumns.value = columns
         }
     }
     

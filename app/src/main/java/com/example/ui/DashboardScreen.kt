@@ -280,6 +280,7 @@ fun DashboardScreen(
 
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val aiLayoutSuggestion by viewModel.aiLayoutSuggestion.collectAsStateWithLifecycle()
+    val gridLayoutColumns by viewModel.gridLayoutColumns.collectAsStateWithLifecycle()
     val filteredOrder = remember(availableOrder, searchQuery) {
         if (searchQuery.isBlank()) {
             availableOrder
@@ -317,7 +318,7 @@ fun DashboardScreen(
             .statusBarsPadding()
     ) {
         LazyVerticalStaggeredGrid(
-            columns = StaggeredGridCells.Fixed(2),
+            columns = StaggeredGridCells.Fixed(gridLayoutColumns),
             contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 96.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalItemSpacing = 12.dp,
@@ -391,6 +392,108 @@ fun DashboardScreen(
                             style = AppTypography.labelSmall.copy(fontSize = 12.sp, letterSpacing = 4.sp),
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                         )
+                    }
+                }
+            }
+
+            // BATTERY STATS DASHBOARD CARD
+            item(span = StaggeredGridItemSpan.FullLine) {
+                var batteryPct by remember { mutableFloatStateOf(0f) }
+                var batteryTemp by remember { mutableFloatStateOf(0f) }
+                var batteryVoltage by remember { mutableIntStateOf(0) }
+                var batteryHealth by remember { mutableStateOf("Unknown") }
+                var isCharging by remember { mutableStateOf(false) }
+                var timeToFull by remember { mutableLongStateOf(-1L) }
+                var chargeRateW by remember { mutableFloatStateOf(0f) }
+
+                LaunchedEffect(Unit) {
+                    val filter = android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED)
+                    while (true) {
+                        val intent = context.registerReceiver(null, filter)
+                        if (intent != null) {
+                            val level = intent.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1)
+                            val scale = intent.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1)
+                            if (level != -1 && scale != -1) {
+                                batteryPct = level * 100 / scale.toFloat()
+                            }
+                            batteryTemp = intent.getIntExtra(android.os.BatteryManager.EXTRA_TEMPERATURE, 0) / 10f
+                            batteryVoltage = intent.getIntExtra(android.os.BatteryManager.EXTRA_VOLTAGE, 0)
+                            
+                            val healthInt = intent.getIntExtra(android.os.BatteryManager.EXTRA_HEALTH, 0)
+                            batteryHealth = when (healthInt) {
+                                android.os.BatteryManager.BATTERY_HEALTH_GOOD -> "Good"
+                                android.os.BatteryManager.BATTERY_HEALTH_OVERHEAT -> "Overheat"
+                                android.os.BatteryManager.BATTERY_HEALTH_DEAD -> "Dead"
+                                android.os.BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE -> "Over Voltage"
+                                android.os.BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE -> "Failure"
+                                android.os.BatteryManager.BATTERY_HEALTH_COLD -> "Cold"
+                                else -> "Unknown"
+                            }
+                            val status = intent.getIntExtra(android.os.BatteryManager.EXTRA_STATUS, -1)
+                            isCharging = status == android.os.BatteryManager.BATTERY_STATUS_CHARGING || status == android.os.BatteryManager.BATTERY_STATUS_FULL
+                            
+                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                                val bm = context.getSystemService(android.os.BatteryManager::class.java)
+                                timeToFull = bm.computeChargeTimeRemaining()
+                            }
+                            
+                            val bm = context.getSystemService(android.os.BatteryManager::class.java)
+                            val currentMicroAmps = bm.getLongProperty(android.os.BatteryManager.BATTERY_PROPERTY_CURRENT_NOW)
+                            // voltage is in mV, current in uA -> Watts = (V * I) / 10^9
+                            if (currentMicroAmps > 0) {
+                                chargeRateW = (batteryVoltage.toFloat() * currentMicroAmps.toFloat()) / 1_000_000_000f
+                            } else {
+                                chargeRateW = 0f
+                            }
+                        }
+                        kotlinx.coroutines.delay(10000)
+                    }
+                }
+
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                    shape = RoundedCornerShape(24.dp)
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.BatteryChargingFull, contentDescription = "Battery", tint = NothingRed, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("BATTERY STATS", style = AppTypography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp, color = NothingRed))
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Column {
+                                Text("Level", style = AppTypography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
+                                Text("${batteryPct.toInt()}%", style = AppTypography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                            }
+                            Column {
+                                Text("Temp", style = AppTypography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
+                                Text("${batteryTemp}°C", style = AppTypography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                            }
+                            Column {
+                                Text("Voltage", style = AppTypography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
+                                Text("${batteryVoltage}mV", style = AppTypography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                            }
+                            Column {
+                                Text("Health", style = AppTypography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
+                                Text(batteryHealth, style = AppTypography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                            }
+                        }
+                        
+                        if (isCharging) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Box(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), RoundedCornerShape(8.dp)).padding(12.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Bolt, contentDescription = "Charging", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        if (timeToFull > 0) "Est ${timeToFull / 60000} mins to full • ${String.format("%.1f", chargeRateW)}W" else "Charging • ${String.format("%.1f", chargeRateW)}W",
+                                        style = AppTypography.labelSmall.copy(fontWeight = FontWeight.Bold)
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -580,6 +683,19 @@ fun DashboardScreen(
                         },
                         onClick = {
                             showSpecialPaletteSelector = true
+                        }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    HeaderActionButton(
+                        icon = if (gridLayoutColumns == 2) Icons.Default.ViewAgenda else Icons.Default.GridView,
+                        contentDescription = "Toggle Grid Layout",
+                        tooltipText = if (gridLayoutColumns == 2) "List Layout" else "Grid Layout",
+                        extraModifier = Modifier.graphicsLayer {
+                            scaleX = otherScale
+                            scaleY = otherScale
+                        },
+                        onClick = {
+                            viewModel.setGridLayoutColumns(if (gridLayoutColumns == 2) 1 else 2)
                         }
                     )
                     Spacer(modifier = Modifier.width(8.dp))
