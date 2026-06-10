@@ -21,6 +21,7 @@ import com.example.ui.components.GlyphSlider
 import com.example.ui.components.GlyphSwitch
 import com.example.ui.theme.*
 import com.example.utils.SettingsDataStore
+import kotlinx.coroutines.launch
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.viewmodel.QSViewModel
 
@@ -426,6 +427,8 @@ fun SettingsScreen(
             // SECTION 8: ABOUT
             val appVersion = remember { com.example.utils.VersionManager.getAppVersion(context).first }
             val hasDiscrepancy = remember { com.example.utils.VersionManager.checkVersionDiscrepancy(context) }
+            val coroutineScope = rememberCoroutineScope()
+            var isCheckingUpdate by remember { mutableStateOf(false) }
             
             SettingsCard(title = "ABOUT RELEASES") {
                 Row(
@@ -464,16 +467,36 @@ fun SettingsScreen(
                     Button(
                         onClick = {
                             com.example.utils.AudioHapticEngine.triggerClick(context)
-                            android.widget.Toast.makeText(context, "System Update: Simulated version increment (requires workspace access).", android.widget.Toast.LENGTH_LONG).show()
+                            isCheckingUpdate = true
+                            coroutineScope.launch {
+                                val releaseInfo = com.example.utils.GitHubUpdater.checkUpdate()
+                                isCheckingUpdate = false
+                                if (releaseInfo != null) {
+                                    val currentVer = "v${com.example.BuildConfig.METADATA_VERSION}"
+                                    if (releaseInfo.version != currentVer) {
+                                        android.widget.Toast.makeText(context, "Downloading update ${releaseInfo.version} from GitHub...", android.widget.Toast.LENGTH_LONG).show()
+                                        com.example.utils.GitHubUpdater.downloadAndInstall(context, releaseInfo.downloadUrl, releaseInfo.version)
+                                    } else {
+                                        android.widget.Toast.makeText(context, "App is already up to date.", android.widget.Toast.LENGTH_SHORT).show()
+                                    }
+                                } else {
+                                    android.widget.Toast.makeText(context, "Unable to check for updates.", android.widget.Toast.LENGTH_SHORT).show()
+                                }
+                            }
                         },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary
                         ),
                         modifier = Modifier.weight(1f).height(48.dp),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        enabled = !isCheckingUpdate
                     ) {
-                        Text("CHECK UPDATE", style = AppTypography.labelSmall)
+                        if (isCheckingUpdate) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
+                        } else {
+                            Text("CHECK UPDATE", style = AppTypography.labelSmall)
+                        }
                     }
                 }
             }

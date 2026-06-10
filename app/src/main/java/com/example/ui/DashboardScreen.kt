@@ -876,15 +876,22 @@ fun DashboardScreen(
                         Column {
                             Text(
                                 text = "HAVEN",
-                                style = AppTypography.displayLarge,
+                                style = AppTypography.displayLarge.copy(
+                                    fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
+                                    fontSize = 42.sp,
+                                    letterSpacing = 4.sp
+                                ),
                                 fontFamily = FontFamily.SansSerif,
                                 color = MaterialTheme.colorScheme.onBackground
                             )
                             Text(
                                 text = "by ashu mehta",
-                                style = AppTypography.labelSmall,
+                                style = AppTypography.labelMedium.copy(
+                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+                                    fontSize = 12.sp
+                                ),
                                 color = NtSecondary,
-                                letterSpacing = 1.sp
+                                letterSpacing = 2.sp
                             )
                         }
                     }
