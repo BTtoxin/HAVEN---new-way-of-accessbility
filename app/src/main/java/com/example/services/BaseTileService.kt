@@ -44,9 +44,19 @@ abstract class BaseTileService : TileService() {
 
     protected fun launchSafeIntentAndCollapse(intent: Intent) {
         try {
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            @Suppress("DEPRECATION")
-            startActivityAndCollapse(intent)
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                val pendingIntent = android.app.PendingIntent.getActivity(
+                    this,
+                    0,
+                    intent,
+                    android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT
+                )
+                startActivityAndCollapse(pendingIntent)
+            } else {
+                @Suppress("DEPRECATION")
+                startActivityAndCollapse(intent)
+            }
         } catch (e: Exception) {
             Toast.makeText(this, "Cannot open: ${e.message}", Toast.LENGTH_SHORT).show()
         }

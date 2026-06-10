@@ -21,7 +21,9 @@ class GrayscaleTileService : BaseTileService() {
             Settings.Secure.putInt(contentResolver, "accessibility_display_daltonizer", 0)
             Settings.Secure.putInt(contentResolver, "accessibility_display_daltonizer_enabled", if (enabled) 0 else 1)
         } catch (e: Exception) {
-            Toast.makeText(this, "Requires WRITE_SECURE_SETTINGS permission via ADB", Toast.LENGTH_LONG).show()
+            val intent = android.content.Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+            launchSafeIntentAndCollapse(intent)
+            Toast.makeText(this, "Requires WRITE_SECURE_SETTINGS. Opening Settings...", Toast.LENGTH_SHORT).show()
         }
         updateState()
     }

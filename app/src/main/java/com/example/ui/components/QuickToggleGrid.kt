@@ -609,7 +609,7 @@ fun QuickToggleTile(
             color = if (isActive) {
                 MaterialTheme.colorScheme.primary
             } else {
-                MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
+                MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f)
             }
         )
     ) {
@@ -653,11 +653,12 @@ fun QuickToggleTile(
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = title,
+                        text = title.uppercase(),
                         style = AppTypography.bodySmall.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
-                            lineHeight = 14.sp
+                            lineHeight = 14.sp,
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
                         ),
                         color = if (isActive) {
                             MaterialTheme.colorScheme.onPrimary
@@ -670,7 +671,8 @@ fun QuickToggleTile(
                         text = if (isActive) "ON" else "OFF",
                         style = AppTypography.labelSmall.copy(
                             fontSize = 8.sp,
-                            fontWeight = FontWeight.ExtraBold
+                            fontWeight = FontWeight.ExtraBold,
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
                         ),
                         color = if (isActive) {
                             MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
@@ -736,11 +738,12 @@ fun QuickToggleTile(
 
                     Column {
                         Text(
-                            text = title,
+                            text = title.uppercase(),
                             style = AppTypography.bodySmall.copy(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 12.sp,
-                                lineHeight = 14.sp
+                                lineHeight = 14.sp,
+                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
                             ),
                             color = if (isActive) {
                                 MaterialTheme.colorScheme.onPrimary
@@ -754,7 +757,8 @@ fun QuickToggleTile(
                             style = AppTypography.labelSmall.copy(
                                 fontSize = 9.sp,
                                 fontWeight = FontWeight.ExtraBold,
-                                letterSpacing = 0.5.sp
+                                letterSpacing = 0.5.sp,
+                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
                             ),
                             color = if (isActive) {
                                 MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
@@ -873,10 +877,11 @@ fun QuickToggleTile(
 
                 Column {
                     Text(
-                        text = title,
+                        text = title.uppercase(),
                         style = AppTypography.bodySmall.copy(
                             fontWeight = FontWeight.Bold,
-                            lineHeight = 16.sp
+                            lineHeight = 16.sp,
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
                         ),
                         color = if (isActive) {
                             MaterialTheme.colorScheme.onPrimary
@@ -890,7 +895,8 @@ fun QuickToggleTile(
                         style = AppTypography.labelSmall.copy(
                             fontSize = 9.sp,
                             letterSpacing = 0.8.sp,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
                         ),
                         color = if (isActive) {
                             MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)

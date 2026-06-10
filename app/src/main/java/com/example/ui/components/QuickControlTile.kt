@@ -4,6 +4,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -86,8 +87,9 @@ fun QuickControlTile(
             .alpha(popAlpha)
             .scale(popScale * scale)
             .alpha(opacity)
-            .clip(RoundedCornerShape(24.dp))
+            .clip(RoundedCornerShape(20.dp))
             .background(containerColor)
+            .border(1.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f), RoundedCornerShape(20.dp))
             .hoverable(interactionSource = interactionSource)
             .combinedClickable(
                 interactionSource = interactionSource,
@@ -126,13 +128,13 @@ fun QuickControlTile(
             
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
-                    text = title,
-                    style = AppTypography.bodyMedium, // Actually use bodyMedium or titleSmall
+                    text = title.uppercase(),
+                    style = AppTypography.labelSmall.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onBackground
                 )
                 Text(
                     text = subtitle,
-                    style = AppTypography.labelSmall,
+                    style = AppTypography.labelSmall.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace),
                     color = subtitleColor
                 )
             }

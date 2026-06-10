@@ -44,6 +44,15 @@ class MainActivity : ComponentActivity() {
         }
 
         val openFocus = intent.getBooleanExtra("openFocus", false)
+        var initialScreen = "dashboard"
+
+        if (intent.action == android.service.quicksettings.TileService.ACTION_QS_TILE_PREFERENCES) {
+            val component = intent.getParcelableExtra<android.content.ComponentName>(android.content.Intent.EXTRA_COMPONENT_NAME)
+            if (component != null) {
+                // Determine screen based on component, for now just open app
+                initialScreen = "dashboard"
+            }
+        }
 
         setContent {
             val selectedPalette by viewModel.selectedPalette.collectAsStateWithLifecycle()
@@ -57,7 +66,7 @@ class MainActivity : ComponentActivity() {
             }
             NothingTheme(darkTheme = isDark, palette = selectedPalette) {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    var currentScreen by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("dashboard") }
+                    var currentScreen by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(initialScreen) }
 
                     if (!hasSeenOnboarding) {
                         com.example.ui.OnboardingScreen(onComplete = { viewModel.completeOnboarding() })

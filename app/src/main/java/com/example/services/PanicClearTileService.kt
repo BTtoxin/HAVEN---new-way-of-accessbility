@@ -36,8 +36,7 @@ class PanicClearTileService : BaseTileService() {
         try {
             val startMain = Intent(Intent.ACTION_MAIN)
             startMain.addCategory(Intent.CATEGORY_HOME)
-            startMain.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            startActivityAndCollapse(startMain)
+            launchSafeIntentAndCollapse(startMain)
         } catch (e: Exception) {}
 
         Toast.makeText(this, "Panic Mode Enabled", Toast.LENGTH_SHORT).show()
