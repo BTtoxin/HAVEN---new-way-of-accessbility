@@ -1,0 +1,44 @@
+{
+  "currentVersion": "v1.4.0",
+  "lastUpdated": "June 10, 2026",
+  "history": [
+    {
+      "version": "v1.4.0",
+      "date": "June 10, 2026, 13:24 PM",
+      "changes": [
+        {"text": "Added daily focus-streak badge on dashboard utilizing Room database.", "tag": "Feature", "details": "The dashboard now pulls the active focus streak directly from the Room database, keeping track of consecutive days the user has completed focus sessions without breaking the chain."},
+        {"text": "Merged SettingsDialog and SettingsScreen into a unified configuration manager utilizing QSViewModel.", "tag": "Refactor", "details": "Migrated from duplicated settings elements to a single unified view ensuring consistency across layout and functionality, managed effectively by QSViewModel."},
+        {"text": "Created interactive FocusHistoryScreen with Recharts-inspired rendering for session durations.", "tag": "Feature", "details": "Added a new full-screen graph showing the session durations with smooth transitions and an aesthetic matching the Nothing OS style."},
+        {"text": "Implemented Room database setup for Automation rules and Focus sessions.", "tag": "Feature", "details": "Created DAOs and database instances locally to ensure data persists offline."}
+      ]
+    },
+    {
+      "version": "v1.3.0",
+      "date": "June 9, 2026, 11:21 AM",
+      "changes": [
+        {"text": "Added Nothing style animated switch toggles.", "tag": "Feature", "details": "Replaced standard Material switches with custom-designed switch components offering satisfying snap animations."},
+        {"text": "Refactored QSViewModel for better state synchronization.", "tag": "Refactor", "details": "Improved the internal data flow between the view model and the UI components, preventing race conditions during rapid state changes."},
+        {"text": "Included Focus mode overlay feature.", "tag": "Feature", "details": "Users can now trigger a system-level overlay to block out distractions while using the Focus mode timer."},
+        {"text": "Optimized app footprint and build configuration.", "tag": "Optimization", "details": "Trimmed down unused dependencies to reduce the APK size by roughly 15% and improve startup time."}
+      ]
+    },
+    {
+      "version": "v1.2.0",
+      "date": "May 30, 2026, 09:10 AM",
+      "changes": [
+        {"text": "Introduced Nothing 2.0 styled widgets.", "tag": "Feature", "details": "Added monochrome styled widgets mirroring the brand design language."},
+        {"text": "Resolved quick setting drag and drop jitter.", "tag": "Bug Fix", "details": "Addressed a rendering issue during the drag-and-drop actions on quick settings tiles that caused random skipping."},
+        {"text": "Minor performance improvements in Background services.", "tag": "Optimization", "details": "Cleaned up the coroutine scope management to prevent memory leaks."}
+      ]
+    },
+    {
+      "version": "v1.1.0",
+      "date": "May 15, 2026, 16:45 PM",
+      "changes": [
+        {"text": "Initial Release.", "tag": "Release", "details": "First stable launch of the application with core features."},
+        {"text": "Core Quick Settings toggles working.", "tag": "Feature", "details": "Wi-Fi, Bluetooth, Data, and simple toggles are fully operational and testable."},
+        {"text": "Volume and Brightness sliders included.", "tag": "Feature", "details": "Draggable sliders for system adjustments added to the main interface."}
+      ]
+    }
+  ]
+}

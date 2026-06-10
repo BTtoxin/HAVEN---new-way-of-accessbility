@@ -219,6 +219,16 @@ fun AboutOverlay(onDismiss: () -> Unit) {
 fun ChangelogOverlay(onDismiss: () -> Unit) {
     val updates = listOf(
         ChangelogItem(
+            version = "v1.4.0",
+            date = "June 10, 2026, 13:24 PM",
+            changes = listOf(
+                "Added daily focus-streak badge on dashboard utilizing Room database.",
+                "Merged SettingsDialog and SettingsScreen into a unified configuration manager utilizing QSViewModel.",
+                "Created interactive FocusHistoryScreen with Recharts-inspired rendering for session durations.",
+                "Implemented Room database setup for Automation rules and Focus sessions."
+            )
+        ),
+        ChangelogItem(
             version = "v1.3.0",
             date = "June 9, 2026, 11:21 AM",
             changes = listOf(

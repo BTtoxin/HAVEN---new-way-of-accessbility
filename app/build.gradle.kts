@@ -14,8 +14,20 @@ android {
     applicationId = "com.aistudio.glyphqs.kjmz"
     minSdk = 24
     targetSdk = 36
-    versionCode = 1
-    versionName = "1.0"
+    versionCode = 4
+    versionName = "1.4.0"
+
+    val metadataFile = project.rootProject.file("metadata.json")
+    var metadataVersion = "1.4.0"
+    if (metadataFile.exists()) {
+        val metadataText = metadataFile.readText()
+        val versionRegex = "\"version\"\\s*:\\s*\"([^\"]+)\"".toRegex()
+        val match = versionRegex.find(metadataText)
+        if (match != null) {
+            metadataVersion = match.groupValues[1]
+        }
+    }
+    buildConfigField("String", "METADATA_VERSION", "\"${metadataVersion}\"")
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }

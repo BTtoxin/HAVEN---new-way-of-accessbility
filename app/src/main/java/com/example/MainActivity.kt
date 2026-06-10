@@ -150,11 +150,16 @@ class MainActivity : ComponentActivity() {
                             viewModel = viewModel,
                             onBack = { currentScreen = "dashboard" }
                         )
+                    } else if (currentScreen == "changelog") {
+                        com.example.ui.ChangelogScreen(
+                            onBack = { currentScreen = "settings" }
+                        )
                     } else {
                         com.example.ui.SettingsScreen(
                             viewModel = viewModel,
                             onBack = { currentScreen = "dashboard" },
                             onNavigateToPermissions = { currentScreen = "permissions" },
+                            onNavigateToChangelog = { currentScreen = "changelog" },
                             onResetLayout = { viewModel.resetTileOrder() },
                             onConfirm = { viewModel.checkAllStates() }
                         )

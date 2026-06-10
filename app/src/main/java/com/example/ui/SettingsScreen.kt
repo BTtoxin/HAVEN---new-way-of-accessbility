@@ -30,6 +30,7 @@ fun SettingsScreen(
     viewModel: QSViewModel,
     onBack: () -> Unit,
     onNavigateToPermissions: () -> Unit = {},
+    onNavigateToChangelog: () -> Unit = {},
     onResetLayout: () -> Unit = {},
     onConfirm: () -> Unit = {}
 ) {
@@ -416,6 +417,63 @@ fun SettingsScreen(
                                 }
                             }
                         }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // SECTION 8: ABOUT
+            val appVersion = remember { com.example.utils.VersionManager.getAppVersion(context).first }
+            val hasDiscrepancy = remember { com.example.utils.VersionManager.checkVersionDiscrepancy(context) }
+            
+            SettingsCard(title = "ABOUT RELEASES") {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Software Version", style = AppTypography.labelSmall, color = NeutralGray)
+                    Text(
+                        appVersion, 
+                        style = AppTypography.labelSmall, 
+                        color = if (hasDiscrepancy) com.example.ui.theme.NothingRed else MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                if (hasDiscrepancy) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Version mismatch detected between metadata.json (v${com.example.BuildConfig.METADATA_VERSION}) and changelog.json ($appVersion).",
+                        style = AppTypography.bodySmall,
+                        color = com.example.ui.theme.NothingRed
+                    )
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = {
+                            com.example.utils.AudioHapticEngine.triggerClick(context)
+                            onNavigateToChangelog()
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("VIEW CHANGELOG", style = AppTypography.labelSmall)
+                    }
+                    Button(
+                        onClick = {
+                            com.example.utils.AudioHapticEngine.triggerClick(context)
+                            android.widget.Toast.makeText(context, "System Update: Simulated version increment (requires workspace access).", android.widget.Toast.LENGTH_LONG).show()
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        ),
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("CHECK UPDATE", style = AppTypography.labelSmall)
                     }
                 }
             }
