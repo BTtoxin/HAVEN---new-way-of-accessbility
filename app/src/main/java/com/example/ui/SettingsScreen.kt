@@ -21,20 +21,32 @@ import com.example.ui.components.GlyphSlider
 import com.example.ui.components.GlyphSwitch
 import com.example.ui.theme.*
 import com.example.utils.SettingsDataStore
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.viewmodel.QSViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
+    viewModel: QSViewModel,
     onBack: () -> Unit,
     onNavigateToPermissions: () -> Unit = {},
     onResetLayout: () -> Unit = {},
     onConfirm: () -> Unit = {}
 ) {
     val context = LocalContext.current
-    val dataStore = remember { SettingsDataStore(context) }
     val scope = rememberCoroutineScope()
+
+    val initialCaffeine by viewModel.caffeineDuration.collectAsStateWithLifecycle()
+    val initialBrightness by viewModel.theaterBrightness.collectAsStateWithLifecycle()
+    val initialSysAudio by viewModel.theaterSystemAudio.collectAsStateWithLifecycle()
+    val initialAppAudio by viewModel.theaterAppAudio.collectAsStateWithLifecycle()
+    val initialDnd by viewModel.theaterDnd.collectAsStateWithLifecycle()
+    val initialClipInterval by viewModel.clipboardInterval.collectAsStateWithLifecycle()
+    val initialDns by viewModel.privateDns.collectAsStateWithLifecycle()
+    val initialPalette by viewModel.selectedPalette.collectAsStateWithLifecycle()
+    val initialThemeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+    val initialShortcutLabel by viewModel.customShortcutLabel.collectAsStateWithLifecycle()
+    val initialShortcutTarget by viewModel.customShortcutTarget.collectAsStateWithLifecycle()
 
     var tempCaffeineDuration by remember { mutableIntStateOf(30) }
     var theaterBrightness by remember { mutableIntStateOf(5) }
@@ -49,20 +61,22 @@ fun SettingsScreen(
     var tempShortcutLabel by remember { mutableStateOf("") }
     var tempShortcutTarget by remember { mutableStateOf("") }
 
-    LaunchedEffect(Unit) {
-        tempCaffeineDuration = dataStore.caffeineDurationFlow.first().let { if(it<0) 30 else it }
-        theaterBrightness = dataStore.theaterBrightnessFlow.first()
-        theaterSystemAudio = dataStore.theaterSystemAudioFlow.first()
-        theaterAppAudio = dataStore.theaterAppAudioFlow.first()
-        tempDnd = dataStore.theaterDndFlow.first()
-        clipboardInterval = dataStore.clipboardIntervalFlow.first()
-        tempDns = dataStore.privateDnsFlow.first().let { if(it=="off") "" else it }
-        tempPalette = dataStore.selectedPaletteFlow.first()
-        tempThemeMode = dataStore.themeModeFlow.first()
-        
-        val pm = com.example.utils.QSPreferenceManager(context)
-        tempShortcutLabel = pm.getCustomShortcutLabel()
-        tempShortcutTarget = pm.getCustomShortcutTarget()
+    LaunchedEffect(
+        initialCaffeine, initialBrightness, initialSysAudio, initialAppAudio, initialDnd,
+        initialClipInterval, initialDns, initialPalette, initialThemeMode, 
+        initialShortcutLabel, initialShortcutTarget
+    ) {
+        tempCaffeineDuration = initialCaffeine.let { if(it<0) 30 else it }
+        theaterBrightness = initialBrightness
+        theaterSystemAudio = initialSysAudio
+        theaterAppAudio = initialAppAudio
+        tempDnd = initialDnd
+        clipboardInterval = initialClipInterval
+        tempDns = initialDns.let { if(it=="off") "" else it }
+        tempPalette = initialPalette
+        tempThemeMode = initialThemeMode
+        tempShortcutLabel = initialShortcutLabel
+        tempShortcutTarget = initialShortcutTarget
     }
 
     Scaffold(
@@ -124,28 +138,21 @@ fun SettingsScreen(
                     Button(
                         onClick = {
                             com.example.utils.AudioHapticEngine.triggerClick(context)
-                            scope.launch {
-                                dataStore.setCaffeineDuration(tempCaffeineDuration)
-                                dataStore.setTheaterBrightness(theaterBrightness)
-                                dataStore.setTheaterSystemAudio(theaterSystemAudio)
-                                dataStore.setTheaterAppAudio(theaterAppAudio)
-                                dataStore.setTheaterDnd(tempDnd)
-                                dataStore.setClipboardInterval(clipboardInterval)
-                                if (tempDns.isBlank()) {
-                                    dataStore.setPrivateDns("off")
-                                } else {
-                                    dataStore.setPrivateDns(tempDns)
-                                }
-                                dataStore.setSelectedPalette(tempPalette)
-                                dataStore.setMonochrome(tempPalette != "NATURAL")
-                                dataStore.setThemeMode(tempThemeMode)
-                                
-                                val pm = com.example.utils.QSPreferenceManager(context)
-                                pm.setCustomShortcutLabel(tempShortcutLabel)
-                                pm.setCustomShortcutTarget(tempShortcutTarget)
-                                onConfirm()
-                                onBack()
-                            }
+                            viewModel.submitSettings(
+                                caffeineDur = tempCaffeineDuration,
+                                tBrightness = theaterBrightness,
+                                tSystemAudio = theaterSystemAudio,
+                                tAppAudio = theaterAppAudio,
+                                tDnd = tempDnd,
+                                clipInterval = clipboardInterval,
+                                pDns = tempDns,
+                                palette = tempPalette,
+                                tMode = tempThemeMode,
+                                sLabel = tempShortcutLabel,
+                                sTarget = tempShortcutTarget
+                            )
+                            onConfirm()
+                            onBack()
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         modifier = Modifier

@@ -5,10 +5,12 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [UserEntity::class, UserPreferenceEntity::class], version = 1, exportSchema = false)
+@Database(entities = [UserEntity::class, UserPreferenceEntity::class, FocusSessionEntity::class, AutomationRuleEntity::class], version = 2, exportSchema = false)
 abstract class UserPrefDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao
     abstract fun userPreferenceDao(): UserPreferenceDao
+    abstract fun focusSessionDao(): FocusSessionDao
+    abstract fun automationRuleDao(): AutomationRuleDao
 
     companion object {
         @Volatile

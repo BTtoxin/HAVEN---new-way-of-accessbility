@@ -25,6 +25,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import com.example.ui.components.TactileButton as Button
@@ -35,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.graphicsLayer
@@ -186,6 +188,7 @@ fun DashboardScreen(
     onNavigateToAutomation: () -> Unit = {},
     onNavigateToClipboard: () -> Unit = {},
     onNavigateToSensors: () -> Unit = {},
+    onNavigateToFocusHistory: () -> Unit = {},
     onRequestPermission: () -> Unit,
     onRequestDndPermission: () -> Unit
 ) {
@@ -393,6 +396,22 @@ fun DashboardScreen(
                             style = AppTypography.labelSmall.copy(fontSize = 12.sp, letterSpacing = 4.sp),
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                         )
+                        
+                        val streak by viewModel.focusStreak.collectAsStateWithLifecycle()
+                        if (streak > 0) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Row(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(NothingRed.copy(alpha = 0.15f))
+                                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.Whatshot, contentDescription = "Streak", tint = NothingRed, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("$streak Day Streak", style = AppTypography.labelSmall.copy(fontWeight = FontWeight.Bold), color = NothingRed)
+                            }
+                        }
                     }
                 }
             }
@@ -594,6 +613,8 @@ fun DashboardScreen(
             item(span = StaggeredGridItemSpan.FullLine) {
                 var localIp by remember { mutableStateOf("192.168.1.XX") }
                 var isVpn by remember { mutableStateOf(false) }
+                var rxMbps by remember { mutableStateOf("0.0") }
+                var txMbps by remember { mutableStateOf("0.0") }
 
                 LaunchedEffect(Unit) {
                     try {
@@ -616,6 +637,35 @@ fun DashboardScreen(
                     } catch (e: Exception) {}
                 }
 
+                LaunchedEffect(Unit) {
+                    var lastRxTime = System.currentTimeMillis()
+                    var lastRxBytes = android.net.TrafficStats.getTotalRxBytes()
+                    var lastTxBytes = android.net.TrafficStats.getTotalTxBytes()
+                    
+                    while(true) {
+                        kotlinx.coroutines.delay(1500)
+                        val now = System.currentTimeMillis()
+                        val rxBytes = android.net.TrafficStats.getTotalRxBytes()
+                        val txBytes = android.net.TrafficStats.getTotalTxBytes()
+                        
+                        val timeDiffSecs = (now - lastRxTime) / 1000f
+                        if (timeDiffSecs > 0) {
+                            val rxDiffBytes = (rxBytes - lastRxBytes).coerceAtLeast(0)
+                            val txDiffBytes = (txBytes - lastTxBytes).coerceAtLeast(0)
+                            
+                            val rxMb = rxDiffBytes / 125000f // bytes to megabits
+                            val txMb = txDiffBytes / 125000f
+                            
+                            rxMbps = String.format("%.1f", rxMb / timeDiffSecs)
+                            txMbps = String.format("%.1f", txMb / timeDiffSecs)
+                        }
+                        
+                        lastRxTime = now
+                        lastRxBytes = rxBytes
+                        lastTxBytes = txBytes
+                    }
+                }
+
                 Card(
                     modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
@@ -634,6 +684,13 @@ fun DashboardScreen(
                                 Text(localIp, style = AppTypography.titleMedium.copy(fontWeight = FontWeight.Bold))
                             }
                             Column(horizontalAlignment = Alignment.End) {
+                                Text("Current Speed", style = AppTypography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
+                                Text("↓$rxMbps Mbps · ↑$txMbps Mbps", style = AppTypography.titleMedium.copy(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary))
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Column {
                                 Text("VPN Security", style = AppTypography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
                                 Text(if (isVpn) "Secured" else "Exposed", style = AppTypography.titleMedium.copy(fontWeight = FontWeight.Bold, color = if (isVpn) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error))
                             }
@@ -1605,8 +1662,11 @@ fun DashboardScreen(
                                     val isDark = MaterialTheme.colorScheme.background != androidx.compose.ui.graphics.Color(0xFFFDF8F6)
                                     var isSessionActive by remember { mutableStateOf(com.example.utils.FocusDataStore.isSandboxActive(context)) }
                                     var remainingSeconds by remember { mutableLongStateOf(0L) }
+                                    var isPomodoroMode by remember { mutableStateOf(false) }
+                                    var isBreakTime by remember { mutableStateOf(false) }
+                                    var breakEndTime by remember { mutableLongStateOf(0L) }
                                     
-                                    LaunchedEffect(isSessionActive) {
+                                    LaunchedEffect(isSessionActive, isBreakTime) {
                                         if (isSessionActive) {
                                             while (true) {
                                                 val endTime = com.example.utils.FocusDataStore.getEndTime(context)
@@ -1614,6 +1674,21 @@ fun DashboardScreen(
                                                 val diff = (endTime - now) / 1000
                                                 if (diff <= 0) {
                                                     isSessionActive = false
+                                                    if (isPomodoroMode) {
+                                                        isBreakTime = true
+                                                        breakEndTime = System.currentTimeMillis() + (5 * 60_000L)
+                                                    }
+                                                    break
+                                                }
+                                                remainingSeconds = diff
+                                                kotlinx.coroutines.delay(1000)
+                                            }
+                                        } else if (isBreakTime) {
+                                            while (true) {
+                                                val now = System.currentTimeMillis()
+                                                val diff = (breakEndTime - now) / 1000
+                                                if (diff <= 0) {
+                                                    isBreakTime = false
                                                     break
                                                 }
                                                 remainingSeconds = diff
@@ -1622,37 +1697,42 @@ fun DashboardScreen(
                                         }
                                     }
 
-                                    if (isSessionActive) {
+                                    if (isSessionActive || isBreakTime) {
                                         val mins = remainingSeconds / 60
                                         val secs = remainingSeconds % 60
                                         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                                            Text("SESSION TIME REMAINING", style = AppTypography.labelSmall, color = NothingRed)
+                                            Text(if (isBreakTime) "BREAK TIME REMAINING" else "SESSION TIME REMAINING", style = AppTypography.labelSmall, color = if (isBreakTime) androidx.compose.ui.graphics.Color(0xFF10B981) else NothingRed)
                                             Spacer(modifier = Modifier.height(6.dp))
                                             Text(
                                                 text = String.format("%02d:%02d", mins, secs),
                                                 style = AppTypography.displayLarge.copy(fontSize = 32.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Black),
-                                                color = MaterialTheme.colorScheme.primary
+                                                color = if (isBreakTime) androidx.compose.ui.graphics.Color(0xFF10B981) else MaterialTheme.colorScheme.primary
                                             )
                                             Spacer(modifier = Modifier.height(10.dp))
+                                            val progressDuration = if (isBreakTime) 5f else selectedDuration.toFloat()
                                             LinearProgressIndicator(
-                                                progress = (remainingSeconds.toFloat() / (selectedDuration * 60f)).coerceIn(0f, 1f),
+                                                progress = (remainingSeconds.toFloat() / (progressDuration * 60f)).coerceIn(0f, 1f),
                                                 modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
-                                                color = NothingRed,
+                                                color = if (isBreakTime) androidx.compose.ui.graphics.Color(0xFF10B981) else NothingRed,
                                                 trackColor = BorderDark
                                             )
                                             Spacer(modifier = Modifier.height(12.dp))
                                             Button(
                                                 onClick = {
                                                     com.example.utils.AudioHapticEngine.triggerClick(context)
-                                                    viewModel.stopFocusSandbox()
-                                                    isSessionActive = false
+                                                    if (isSessionActive) {
+                                                        viewModel.stopFocusSandbox()
+                                                        isSessionActive = false
+                                                    } else {
+                                                        isBreakTime = false
+                                                    }
                                                 },
                                                 modifier = Modifier.fillMaxWidth(),
                                                 colors = ButtonDefaults.buttonColors(containerColor = NothingRed)
                                             ) {
                                                 Icon(Icons.Default.Stop, contentDescription = "Stop", tint = Color.White, modifier = Modifier.size(16.dp))
                                                 Spacer(modifier = Modifier.width(4.dp))
-                                                Text("STOP FOCUS", style = AppTypography.labelSmall, color = Color.White)
+                                                Text(if (isBreakTime) "SKIP BREAK" else "STOP FOCUS", style = AppTypography.labelSmall, color = Color.White)
                                             }
                                         }
                                     } else {
@@ -1710,6 +1790,20 @@ fun DashboardScreen(
                                             Spacer(modifier = Modifier.width(4.dp))
                                             Text("${allowedApps.size} APPS ALLOWED", style = AppTypography.labelSmall)
                                         }
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text("Pomodoro Mode (5m breaks)", style = AppTypography.bodySmall)
+                                            Switch(
+                                                checked = isPomodoroMode,
+                                                onCheckedChange = { isPomodoroMode = it },
+                                                colors = SwitchDefaults.colors(checkedThumbColor = NothingRed, checkedTrackColor = NothingRed.copy(alpha = 0.5f)),
+                                                modifier = Modifier.scale(0.8f)
+                                            )
+                                        }
+
                                         Spacer(modifier = Modifier.height(8.dp))
                                         Button(
                                             onClick = {
@@ -1726,19 +1820,23 @@ fun DashboardScreen(
                                         }
                                     }
                                     
-                                    val sessionHistory = remember(isSessionActive) {
-                                        com.example.utils.FocusDataStore.getSessionHistory(context).take(3)
-                                    }
+                                    val sessionHistoryState by viewModel.focusSessionHistory.collectAsStateWithLifecycle()
+                                    val sessionHistory = sessionHistoryState.take(3)
                                     if (sessionHistory.isNotEmpty()) {
                                         Spacer(modifier = Modifier.height(16.dp))
                                         HorizontalDivider(color = BorderDark, thickness = 0.5.dp)
                                         Spacer(modifier = Modifier.height(8.dp))
-                                        Text("RECENT SESSIONS", style = AppTypography.labelSmall, color = NeutralGray)
+                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                            Text("RECENT SESSIONS", style = AppTypography.labelSmall, color = NeutralGray)
+                                            IconButton(onClick = onNavigateToFocusHistory, modifier = Modifier.size(24.dp)) {
+                                                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "View History", tint = NeutralGray)
+                                            }
+                                        }
                                         Spacer(modifier = Modifier.height(8.dp))
                                         sessionHistory.forEach { session ->
-                                            val durationMins = (session.end - session.start) / 60000
+                                            val durationMins = (session.endTime - session.startTime) / 60000
                                             val dateFormatter = java.text.SimpleDateFormat("MMM dd, HH:mm", java.util.Locale.getDefault())
-                                            val dateStr = dateFormatter.format(java.util.Date(session.start))
+                                            val dateStr = dateFormatter.format(java.util.Date(session.startTime))
                                             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                                 Text(dateStr, style = AppTypography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
                                                 Row(verticalAlignment = Alignment.CenterVertically) {

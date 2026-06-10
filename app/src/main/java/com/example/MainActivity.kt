@@ -22,9 +22,46 @@ import com.example.viewmodel.QSViewModel
 class MainActivity : ComponentActivity() {
     private val viewModel: QSViewModel by viewModels()
 
+    private var sensorManager: android.hardware.SensorManager? = null
+    private var accelSensor: android.hardware.Sensor? = null
+    private var lastUpdate: Long = 0
+    private var last_x = 0f
+    private var last_y = 0f
+    private var last_z = 0f
+    private val SHAKE_THRESHOLD = 800
+
+    private val shakeListener = object : android.hardware.SensorEventListener {
+        override fun onSensorChanged(event: android.hardware.SensorEvent) {
+            val curTime = System.currentTimeMillis()
+            if ((curTime - lastUpdate) > 100) {
+                val diffTime = curTime - lastUpdate
+                lastUpdate = curTime
+                val x = event.values[0]
+                val y = event.values[1]
+                val z = event.values[2]
+                val speed = Math.abs(x + y + z - last_x - last_y - last_z) / diffTime * 10000
+                if (speed > SHAKE_THRESHOLD) {
+                    val clipboard = getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                    clipboard.setPrimaryClip(android.content.ClipData.newPlainText("", ""))
+                    android.widget.Toast.makeText(this@MainActivity, "Clipboard Purged (Shake)", android.widget.Toast.LENGTH_SHORT).show()
+                }
+                last_x = x
+                last_y = y
+                last_z = z
+            }
+        }
+        override fun onAccuracyChanged(sensor: android.hardware.Sensor, accuracy: Int) {}
+    }
+
+    private fun setupShakeToPurgeClipboard() {
+        sensorManager = getSystemService(android.content.Context.SENSOR_SERVICE) as android.hardware.SensorManager
+        accelSensor = sensorManager?.getDefaultSensor(android.hardware.Sensor.TYPE_ACCELEROMETER)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        setupShakeToPurgeClipboard()
 
         // Force Choreographer/Window display mode to prefer 120Hz peak performance
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
@@ -78,6 +115,7 @@ class MainActivity : ComponentActivity() {
                             onNavigateToAutomation = { currentScreen = "automation" },
                             onNavigateToClipboard = { currentScreen = "clipboard" },
                             onNavigateToSensors = { currentScreen = "sensors" },
+                            onNavigateToFocusHistory = { currentScreen = "focus_history" },
                             onRequestPermission = {
                                 startActivity(
                                     Intent(
@@ -96,6 +134,7 @@ class MainActivity : ComponentActivity() {
                         )
                     } else if (currentScreen == "automation") {
                         com.example.ui.AutomationScreen(
+                            viewModel = viewModel,
                             onBack = { currentScreen = "dashboard" }
                         )
                     } else if (currentScreen == "clipboard") {
@@ -106,8 +145,14 @@ class MainActivity : ComponentActivity() {
                         com.example.ui.SensorScreen(
                             onBack = { currentScreen = "dashboard" }
                         )
+                    } else if (currentScreen == "focus_history") {
+                        com.example.ui.FocusHistoryScreen(
+                            viewModel = viewModel,
+                            onBack = { currentScreen = "dashboard" }
+                        )
                     } else {
                         com.example.ui.SettingsScreen(
+                            viewModel = viewModel,
                             onBack = { currentScreen = "dashboard" },
                             onNavigateToPermissions = { currentScreen = "permissions" },
                             onResetLayout = { viewModel.resetTileOrder() },
@@ -122,5 +167,11 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         viewModel.checkAllStates()
+        accelSensor?.let { sensorManager?.registerListener(shakeListener, it, android.hardware.SensorManager.SENSOR_DELAY_NORMAL) }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        sensorManager?.unregisterListener(shakeListener)
     }
 }

@@ -14,6 +14,7 @@ import com.example.utils.SystemSettingsHelper
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import com.example.data.UserPrefDatabase
@@ -137,6 +138,27 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
     private val _gridLayoutColumns = MutableStateFlow(2)
     val gridLayoutColumns = _gridLayoutColumns.asStateFlow()
 
+    private val _caffeineDuration = MutableStateFlow(30)
+    val caffeineDuration = _caffeineDuration.asStateFlow()
+
+    private val _theaterBrightness = MutableStateFlow(5)
+    val theaterBrightness = _theaterBrightness.asStateFlow()
+
+    private val _theaterSystemAudio = MutableStateFlow(50)
+    val theaterSystemAudio = _theaterSystemAudio.asStateFlow()
+
+    private val _theaterAppAudio = MutableStateFlow(30)
+    val theaterAppAudio = _theaterAppAudio.asStateFlow()
+
+    private val _theaterDnd = MutableStateFlow(true)
+    val theaterDnd = _theaterDnd.asStateFlow()
+
+    private val _clipboardInterval = MutableStateFlow(0)
+    val clipboardInterval = _clipboardInterval.asStateFlow()
+    
+    private val _privateDns = MutableStateFlow("off")
+    val privateDns = _privateDns.asStateFlow()
+
     private val _quickToggleOrder = MutableStateFlow(listOf("WIFI", "BLUETOOTH", "DATA", "HOTSPOT"))
     val quickToggleOrder = _quickToggleOrder.asStateFlow()
 
@@ -197,6 +219,71 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _focusWhitelist = MutableStateFlow<Set<String>>(emptySet())
     val focusWhitelist = _focusWhitelist.asStateFlow()
+
+    val focusSessionHistory = db.focusSessionDao().getAllSessions()
+        .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val focusStreak = focusSessionHistory.map { history ->
+        val completed = history.filter { it.completed }
+        if (completed.isEmpty()) 0
+        else {
+            var streak = 0
+            val cal = java.util.Calendar.getInstance()
+            cal.set(java.util.Calendar.HOUR_OF_DAY, 0)
+            cal.set(java.util.Calendar.MINUTE, 0)
+            cal.set(java.util.Calendar.SECOND, 0)
+            cal.set(java.util.Calendar.MILLISECOND, 0)
+            var currentDate = cal.timeInMillis
+
+            val daysWithSessions = completed.map {
+                val sessionCal = java.util.Calendar.getInstance().apply { timeInMillis = it.startTime }
+                sessionCal.set(java.util.Calendar.HOUR_OF_DAY, 0)
+                sessionCal.set(java.util.Calendar.MINUTE, 0)
+                sessionCal.set(java.util.Calendar.SECOND, 0)
+                sessionCal.set(java.util.Calendar.MILLISECOND, 0)
+                sessionCal.timeInMillis
+            }.toSet()
+            
+            // check today
+            if (daysWithSessions.contains(currentDate)) {
+                streak++
+                currentDate -= 86400000L
+                while (daysWithSessions.contains(currentDate)) {
+                    streak++
+                    currentDate -= 86400000L
+                }
+            } else {
+                // check yesterday
+                currentDate -= 86400000L
+                while (daysWithSessions.contains(currentDate)) {
+                    streak++
+                    currentDate -= 86400000L
+                }
+            }
+            streak
+        }
+    }.stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000), 0)
+
+    val automationRules = db.automationRuleDao().getAllRules()
+        .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun insertAutomationRule(rule: com.example.data.AutomationRuleEntity) {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            db.automationRuleDao().insertRule(rule)
+        }
+    }
+
+    fun deleteAutomationRule(id: String) {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            db.automationRuleDao().deleteRuleById(id)
+        }
+    }
+
+    fun toggleAutomationRule(id: String, enabled: Boolean) {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            db.automationRuleDao().updateEnableStatus(id, enabled)
+        }
+    }
 
     fun updateFocusWhitelist(apps: Set<String>) {
         _focusWhitelist.value = apps
@@ -409,6 +496,13 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
             _themeMode.value = dataStore.themeModeFlow.first()
             _hasSeenOnboarding.value = dataStore.hasSeenOnboardingFlow.first()
             _gridLayoutColumns.value = dataStore.gridLayoutColumnsFlow.first()
+            _caffeineDuration.value = dataStore.caffeineDurationFlow.first().let { if(it<0) 30 else it }
+            _theaterBrightness.value = dataStore.theaterBrightnessFlow.first()
+            _theaterSystemAudio.value = dataStore.theaterSystemAudioFlow.first()
+            _theaterAppAudio.value = dataStore.theaterAppAudioFlow.first()
+            _theaterDnd.value = dataStore.theaterDndFlow.first()
+            _clipboardInterval.value = dataStore.clipboardIntervalFlow.first()
+            _privateDns.value = dataStore.privateDnsFlow.first()
             val orderString = dataStore.tileOrderFlow.first()
             val savedOrder = if (orderString.isNotEmpty()) orderString.split(",") else defaultTileOrder()
             _tileOrder.value = savedOrder
@@ -418,6 +512,44 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
     private fun savePref(key: String, value: String) {
         viewModelScope.launch {
             userRepository.savePreference(_activeUserId.value, key, value)
+        }
+    }
+
+    fun submitSettings(
+        caffeineDur: Int,
+        tBrightness: Int,
+        tSystemAudio: Int,
+        tAppAudio: Int,
+        tDnd: Boolean,
+        clipInterval: Int,
+        pDns: String,
+        palette: String,
+        tMode: String,
+        sLabel: String,
+        sTarget: String
+    ) {
+        viewModelScope.launch {
+            _caffeineDuration.value = caffeineDur
+            _theaterBrightness.value = tBrightness
+            _theaterSystemAudio.value = tSystemAudio
+            _theaterAppAudio.value = tAppAudio
+            _theaterDnd.value = tDnd
+            _clipboardInterval.value = clipInterval
+            _privateDns.value = pDns
+            
+            setThemeMode(tMode)
+            setSelectedPalette(palette)
+            setMonochrome(palette != "NATURAL")
+            setCustomShortcut(sTarget, sLabel)
+
+            val dataStore = com.example.utils.SettingsDataStore(context)
+            dataStore.setCaffeineDuration(caffeineDur)
+            dataStore.setTheaterBrightness(tBrightness)
+            dataStore.setTheaterSystemAudio(tSystemAudio)
+            dataStore.setTheaterAppAudio(tAppAudio)
+            dataStore.setTheaterDnd(tDnd)
+            dataStore.setClipboardInterval(clipInterval)
+            dataStore.setPrivateDns(if (pDns.isBlank()) "off" else pDns)
         }
     }
 

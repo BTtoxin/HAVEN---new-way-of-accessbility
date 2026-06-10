@@ -18,60 +18,36 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.ui.theme.AppTypography
 import com.example.ui.theme.NothingRed
-
-import android.content.Context
-import androidx.compose.ui.platform.LocalContext
+import com.example.viewmodel.QSViewModel
+import com.example.data.AutomationRuleEntity
 import org.json.JSONArray
-import org.json.JSONObject
-
-data class AutomationRule(val id: String, val name: String, val triggerType: String, val actionCount: Int, var enabled: Boolean)
+import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AutomationScreen(onBack: () -> Unit) {
-    val context = LocalContext.current
-    val prefs = remember { context.getSharedPreferences("automation_rules", Context.MODE_PRIVATE) }
-    
-    var rules by remember { mutableStateOf(listOf<AutomationRule>()) }
-    
-    LaunchedEffect(Unit) {
-        val savedRulesStr = prefs.getString("rules", null)
-        if (savedRulesStr == null) {
-            rules = listOf(
-                AutomationRule("1", "Cinema Mode", "Time (20:00)", 3, true),
-                AutomationRule("2", "Low Battery Saver", "Battery < 20%", 2, true),
-                AutomationRule("3", "Driving Mode", "Bluetooth Connected", 4, false)
-            )
-        } else {
-            val savedList = mutableListOf<AutomationRule>()
-            try {
-                val array = JSONArray(savedRulesStr)
-                for (i in 0 until array.length()) {
-                    val obj = array.getJSONObject(i)
-                    savedList.add(AutomationRule(obj.getString("id"), obj.getString("name"), obj.getString("triggerType"), obj.getInt("actionCount"), obj.getBoolean("enabled")))
-                }
-            } catch (e: Exception) {}
-            rules = savedList
-        }
-    }
-    
-    LaunchedEffect(rules) {
-        if (rules.isNotEmpty()) {
-            val array = JSONArray()
-            rules.forEach { rule ->
-                val obj = JSONObject().apply {
-                    put("id", rule.id)
-                    put("name", rule.name)
-                    put("triggerType", rule.triggerType)
-                    put("actionCount", rule.actionCount)
-                    put("enabled", rule.enabled)
-                }
-                array.put(obj)
+fun AutomationScreen(viewModel: QSViewModel, onBack: () -> Unit) {
+    val rules by viewModel.automationRules.collectAsStateWithLifecycle()
+    var showBuilder by remember { mutableStateOf(false) }
+
+    if (showBuilder) {
+        MacroBuilderDialog(
+            onDismiss = { showBuilder = false },
+            onSave = { name, trigger, actions ->
+                val newRule = AutomationRuleEntity(
+                    id = UUID.randomUUID().toString(),
+                    name = name,
+                    triggerType = trigger,
+                    actionCount = actions.size,
+                    enabled = true,
+                    actions = JSONArray(actions).toString()
+                )
+                viewModel.insertAutomationRule(newRule)
+                showBuilder = false
             }
-            prefs.edit().putString("rules", array.toString()).apply()
-        }
+        )
     }
 
     Scaffold(
@@ -88,10 +64,7 @@ fun AutomationScreen(onBack: () -> Unit) {
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = {
-                    // Placeholder for adding new rule
-                    rules = rules + AutomationRule("temp", "New Macro", "Trigger", 1, true)
-                },
+                onClick = { showBuilder = true },
                 containerColor = NothingRed,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
@@ -114,7 +87,7 @@ fun AutomationScreen(onBack: () -> Unit) {
             ) {
                 items(rules) { rule ->
                     Card(
-                        modifier = Modifier.fillMaxWidth().clickable { /* Edit */ },
+                        modifier = Modifier.fillMaxWidth().clickable { /* Could show details */ },
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                         shape = RoundedCornerShape(16.dp)
                     ) {
@@ -137,11 +110,14 @@ fun AutomationScreen(onBack: () -> Unit) {
                                     style = AppTypography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                                 )
                             }
+                            IconButton(onClick = { viewModel.deleteAutomationRule(rule.id) }) {
+                                Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
                             Spacer(modifier = Modifier.width(8.dp))
                             Switch(
                                 checked = rule.enabled,
                                 onCheckedChange = { isChecked ->
-                                    rules = rules.map { if (it.id == rule.id) it.copy(enabled = isChecked) else it }
+                                    viewModel.toggleAutomationRule(rule.id, isChecked)
                                 },
                                 colors = SwitchDefaults.colors(checkedThumbColor = NothingRed, checkedTrackColor = NothingRed.copy(alpha = 0.5f))
                             )
@@ -151,4 +127,71 @@ fun AutomationScreen(onBack: () -> Unit) {
             }
         }
     }
+}
+
+@Composable
+fun MacroBuilderDialog(onDismiss: () -> Unit, onSave: (String, String, List<String>) -> Unit) {
+    var name by remember { mutableStateOf("") }
+    var trigger by remember { mutableStateOf("Time (08:00)") }
+    var actions by remember { mutableStateOf(listOf<String>()) }
+    
+    val availableActions = listOf("Toggle Wi-Fi", "Turn on Bluetooth", "Start Focus Mode", "Enable DND", "Set Brightness 50%")
+    var expanded by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Build Automation", style = AppTypography.titleMedium) },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Macro Name") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = trigger,
+                    onValueChange = { trigger = it },
+                    label = { Text("Trigger Condition") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Action Sequence:", style = AppTypography.labelLarge)
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                actions.forEachIndexed { index, action ->
+                    Text("${index + 1}. $action", style = AppTypography.bodyMedium)
+                }
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                Box {
+                    OutlinedButton(onClick = { expanded = true }) {
+                        Text("+ Add Action")
+                    }
+                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                        availableActions.forEach { act ->
+                            DropdownMenuItem(
+                                text = { Text(act) },
+                                onClick = { 
+                                    actions = actions + act
+                                    expanded = false 
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onSave(name.ifEmpty { "New Macro" }, trigger, actions) },
+                colors = ButtonDefaults.buttonColors(containerColor = NothingRed),
+                enabled = actions.isNotEmpty()
+            ) { Text("Save Macro") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
 }

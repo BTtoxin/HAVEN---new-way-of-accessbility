@@ -1,6 +1,9 @@
 package com.example.utils
 
 import android.content.Context
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -35,18 +38,16 @@ object FocusDataStore {
     }
 
     private fun logCompletedSession(context: Context, start: Long, end: Long, completed: Boolean) {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val historyStr = prefs.getString("session_history", "[]") ?: "[]"
-        try {
-            val array = JSONArray(historyStr)
-            val obj = JSONObject().apply {
-                put("start", start)
-                put("end", end)
-                put("completed", completed)
-            }
-            array.put(obj)
-            prefs.edit().putString("session_history", array.toString()).apply()
-        } catch (e: Exception) {}
+        kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            val db = com.example.data.UserPrefDatabase.getDatabase(context)
+            db.focusSessionDao().insertSession(
+                com.example.data.FocusSessionEntity(
+                    startTime = start,
+                    endTime = end,
+                    completed = completed
+                )
+            )
+        }
     }
 
     fun getSessionHistory(context: Context): List<FocusSession> {
