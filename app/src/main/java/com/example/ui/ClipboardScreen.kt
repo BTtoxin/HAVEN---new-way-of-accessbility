@@ -26,28 +26,55 @@ import androidx.compose.ui.unit.sp
 import com.example.ui.theme.AppTypography
 import com.example.ui.theme.NothingRed
 
+import org.json.JSONArray
+import org.json.JSONObject
+
 data class ClipboardEntry(val id: Int, val text: String, var isVaulted: Boolean)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClipboardScreen(onBack: () -> Unit) {
     val context = LocalContext.current
+    val prefs = remember { context.getSharedPreferences("clipboard_vault", Context.MODE_PRIVATE) }
+    
     var entries by remember { mutableStateOf(listOf<ClipboardEntry>()) }
 
     LaunchedEffect(Unit) {
-        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        if (clipboard.hasPrimaryClip()) {
-            val text = clipboard.primaryClip?.getItemAt(0)?.text?.toString()
-            if (text != null) {
-                entries = listOf(ClipboardEntry(1, text, false)) + entries
+        val savedEntriesStr = prefs.getString("entries", "[]") ?: "[]"
+        val savedList = mutableListOf<ClipboardEntry>()
+        try {
+            val array = JSONArray(savedEntriesStr)
+            for (i in 0 until array.length()) {
+                val obj = array.getJSONObject(i)
+                savedList.add(ClipboardEntry(obj.getInt("id"), obj.getString("text"), obj.getBoolean("isVaulted")))
             }
+        } catch (e: Exception) {}
+        
+        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        var newText: String? = null
+        if (clipboard.hasPrimaryClip()) {
+            newText = clipboard.primaryClip?.getItemAt(0)?.text?.toString()
         }
-        if (entries.isEmpty()) {
-            entries = listOf(
-                ClipboardEntry(2, "https://github.com/glyphqs", true),
-                ClipboardEntry(3, "123456", false)
-            )
+        
+        if (newText != null && savedList.none { it.text == newText }) {
+            val newId = (savedList.maxOfOrNull { it.id } ?: 0) + 1
+            savedList.add(0, ClipboardEntry(newId, newText, false))
         }
+        
+        entries = savedList
+    }
+    
+    LaunchedEffect(entries) {
+        val array = JSONArray()
+        entries.forEach { entry ->
+            val obj = JSONObject().apply {
+                put("id", entry.id)
+                put("text", entry.text)
+                put("isVaulted", entry.isVaulted)
+            }
+            array.put(obj)
+        }
+        prefs.edit().putString("entries", array.toString()).apply()
     }
 
     Scaffold(

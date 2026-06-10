@@ -82,7 +82,7 @@ fun BrightnessSlider(
             ) {
                 Text(
                     text = "Brightness • ${((brightnessState / 255f) * 100).roundToInt()}%",
-                    style = AppTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                    style = AppTypography.bodySmall.copy(fontWeight = FontWeight.Bold, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace),
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
                 Icon(
@@ -122,12 +122,12 @@ fun BrightnessSlider(
             ) {
                 Text(
                     text = "Media Volume • ${volumeState.roundToInt()}%",
-                    style = AppTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                    style = AppTypography.bodySmall.copy(fontWeight = FontWeight.Bold, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace),
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
                 Text(
                     text = "Vol",
-                    style = AppTypography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
+                    style = AppTypography.labelSmall.copy(fontWeight = FontWeight.ExtraBold, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace),
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
                 )
             }

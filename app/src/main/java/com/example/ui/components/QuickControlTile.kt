@@ -93,7 +93,7 @@ fun QuickControlTile(
             .hoverable(interactionSource = interactionSource)
             .combinedClickable(
                 interactionSource = interactionSource,
-                indication = null,
+                indication = androidx.compose.material3.ripple(color = MaterialTheme.colorScheme.onBackground),
                 onClick = {
                     com.example.utils.AudioHapticEngine.triggerClick(context)
                     onClick()

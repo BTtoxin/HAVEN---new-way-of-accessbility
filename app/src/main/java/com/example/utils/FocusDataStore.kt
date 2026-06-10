@@ -1,6 +1,8 @@
 package com.example.utils
 
 import android.content.Context
+import org.json.JSONArray
+import org.json.JSONObject
 
 object FocusDataStore {
     private const val PREFS_NAME = "focus_prefs"
@@ -14,10 +16,50 @@ object FocusDataStore {
     }
 
     fun setTimes(context: Context, startTime: Long, endTime: Long) {
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val oldStart = prefs.getLong("start_time", 0L)
+        val oldEnd = prefs.getLong("end_time", 0L)
+        
+        // Log previous session if it just ended or was cancelled
+        if (oldEnd > 0 && endTime == 0L) {
+            val actualEnd = System.currentTimeMillis().coerceAtMost(oldEnd)
+            if (actualEnd > oldStart) {
+                logCompletedSession(context, oldStart, actualEnd, actualEnd >= oldEnd)
+            }
+        }
+
+        prefs.edit()
             .putLong("start_time", startTime)
             .putLong("end_time", endTime)
             .apply()
+    }
+
+    private fun logCompletedSession(context: Context, start: Long, end: Long, completed: Boolean) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val historyStr = prefs.getString("session_history", "[]") ?: "[]"
+        try {
+            val array = JSONArray(historyStr)
+            val obj = JSONObject().apply {
+                put("start", start)
+                put("end", end)
+                put("completed", completed)
+            }
+            array.put(obj)
+            prefs.edit().putString("session_history", array.toString()).apply()
+        } catch (e: Exception) {}
+    }
+
+    fun getSessionHistory(context: Context): List<FocusSession> {
+        val historyStr = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString("session_history", "[]") ?: "[]"
+        val list = mutableListOf<FocusSession>()
+        try {
+            val array = JSONArray(historyStr)
+            for (i in 0 until array.length()) {
+                val obj = array.getJSONObject(i)
+                list.add(FocusSession(obj.getLong("start"), obj.getLong("end"), obj.getBoolean("completed")))
+            }
+        } catch (e: Exception) {}
+        return list.reversed()
     }
 
     fun getAllowedApps(context: Context): Set<String> {
@@ -34,3 +76,6 @@ object FocusDataStore {
         return getEndTime(context) > System.currentTimeMillis()
     }
 }
+
+data class FocusSession(val start: Long, val end: Long, val completed: Boolean)
+

@@ -39,19 +39,44 @@ import kotlinx.coroutines.launch
 import com.example.utils.FocusDataStore
 import kotlinx.coroutines.delay
 
-class FocusLockOverlayActivity : ComponentActivity() {
+import androidx.fragment.app.FragmentActivity
+import androidx.biometric.BiometricPrompt
+import androidx.core.content.ContextCompat
+
+class FocusLockOverlayActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             NothingTheme(darkTheme = true) {
-                FocusLockScreen(onEmergencyExit = { 
-                    val intent = android.content.Intent(this@FocusLockOverlayActivity, com.example.services.FocusSandboxService::class.java)
-                    stopService(intent)
-                    lifecycleScope.launch {
-                        com.example.utils.FocusDataStore.setTimes(this@FocusLockOverlayActivity, 0, 0)
-                        finish()
-                    }
+                FocusLockScreen(onEmergencyExit = {
+                    val executor = ContextCompat.getMainExecutor(this@FocusLockOverlayActivity)
+                    val biometricPrompt = BiometricPrompt(this@FocusLockOverlayActivity, executor,
+                        object : BiometricPrompt.AuthenticationCallback() {
+                            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                                super.onAuthenticationError(errorCode, errString)
+                                Toast.makeText(applicationContext, "Authentication error: $errString", Toast.LENGTH_SHORT).show()
+                            }
+                            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                                super.onAuthenticationSucceeded(result)
+                                val intent = android.content.Intent(this@FocusLockOverlayActivity, com.example.services.FocusSandboxService::class.java)
+                                stopService(intent)
+                                lifecycleScope.launch {
+                                    com.example.utils.FocusDataStore.setTimes(this@FocusLockOverlayActivity, 0, 0)
+                                    finish()
+                                }
+                            }
+                            override fun onAuthenticationFailed() {
+                                super.onAuthenticationFailed()
+                                Toast.makeText(applicationContext, "Authentication failed", Toast.LENGTH_SHORT).show()
+                            }
+                        })
+                    val promptInfo = BiometricPrompt.PromptInfo.Builder()
+                        .setTitle("Emergency Exit")
+                        .setSubtitle("Confirm your identity to exit Focus Mode")
+                        .setNegativeButtonText("Cancel")
+                        .build()
+                    biometricPrompt.authenticate(promptInfo)
                 })
             }
         }
@@ -173,44 +198,10 @@ fun FocusLockScreen(onEmergencyExit: () -> Unit) {
 
             Spacer(modifier = Modifier.height(48.dp))
             TextButton(
-                onClick = {
-                    tapCount++
-                    if (tapCount >= 3) {
-                        showExitConfirm = true
-                    } else {
-                        Toast.makeText(context, "Tap ${3 - tapCount} more times to exit", Toast.LENGTH_SHORT).show()
-                    }
-                }
+                onClick = onEmergencyExit
             ) {
                 Text("emergency exit", style = AppTypography.labelSmall, color = BorderDark)
             }
         }
-    }
-
-    if (showExitConfirm) {
-        AlertDialog(
-            onDismissRequest = {
-                showExitConfirm = false
-                tapCount = 0
-            },
-            title = { Text("EXIT FOCUS?") },
-            text = { Text("This will end your Focus session early.") },
-            confirmButton = {
-                Button(
-                    onClick = onEmergencyExit,
-                    colors = ButtonDefaults.buttonColors(containerColor = NothingRed)
-                ) {
-                    Text("EXIT")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    showExitConfirm = false
-                    tapCount = 0
-                }) {
-                    Text("STAY")
-                }
-            }
-        )
     }
 }

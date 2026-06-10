@@ -13,6 +13,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -438,6 +439,7 @@ fun RenderTile(
     onToggleFlashlight: () -> Unit,
     viewModel: QSViewModel
 ) {
+    val context = LocalContext.current
     when (id) {
         "WIFI" -> QuickToggleTile(
             id = id,
@@ -447,6 +449,9 @@ fun RenderTile(
             onToggle = { 
                 viewModel.toggleWifi() 
                 viewModel.logTileClick("WIFI")
+                try {
+                    context.startActivity(android.content.Intent(android.provider.Settings.Panel.ACTION_WIFI).apply { flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK })
+                } catch (e: Exception) {}
             },
             activeIcon = Icons.Default.Wifi,
             inactiveIcon = Icons.Default.Wifi,
@@ -464,6 +469,9 @@ fun RenderTile(
             onToggle = { 
                 viewModel.toggleBluetooth() 
                 viewModel.logTileClick("BLUETOOTH")
+                try {
+                    context.startActivity(android.content.Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS).apply { flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK })
+                } catch (e: Exception) {}
             },
             activeIcon = Icons.Default.Bluetooth,
             inactiveIcon = Icons.Default.Bluetooth,
@@ -481,6 +489,9 @@ fun RenderTile(
             onToggle = { 
                 viewModel.toggleData() 
                 viewModel.logTileClick("DATA")
+                try {
+                    context.startActivity(android.content.Intent(android.provider.Settings.Panel.ACTION_INTERNET_CONNECTIVITY).apply { flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK })
+                } catch (e: Exception) {}
             },
             activeIcon = Icons.Default.SignalCellularAlt,
             inactiveIcon = Icons.Default.SignalCellularAlt,
@@ -498,6 +509,9 @@ fun RenderTile(
             onToggle = { 
                 viewModel.toggleHotspot() 
                 viewModel.logTileClick("HOTSPOT")
+                try {
+                    context.startActivity(android.content.Intent(android.provider.Settings.ACTION_WIRELESS_SETTINGS).apply { flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK })
+                } catch (e: Exception) {}
             },
             activeIcon = Icons.Default.WifiTethering,
             inactiveIcon = Icons.Default.WifiTethering,
@@ -552,8 +566,11 @@ fun QuickToggleTile(
     val context = LocalContext.current
     var showMenu by remember { mutableStateOf(false) }
     
+    val interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
     val scale by animateFloatAsState(
-        targetValue = if (isActive) 1.02f else 1f,
+        targetValue = if (isPressed) 0.95f else if (isActive) 1.02f else 1f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessLow
@@ -581,6 +598,36 @@ fun QuickToggleTile(
         label = "PulseAlpha"
     )
 
+    val animatedContainerColor by animateColorAsState(
+        targetValue = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+        label = "containerColor"
+    )
+
+    val animatedBorderColor by animateColorAsState(
+        targetValue = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f),
+        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+        label = "borderColor"
+    )
+
+    val animatedOnColor by animateColorAsState(
+        targetValue = if (isActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+        label = "onColor"
+    )
+    
+    val animatedTextColor by animateColorAsState(
+        targetValue = if (isActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+        label = "textColor"
+    )
+    
+    val animatedSubtitleColor by animateColorAsState(
+        targetValue = if (isActive) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+        label = "subtitleColor"
+    )
+
     Box(modifier = modifier) {
         Card(
             modifier = Modifier
@@ -590,6 +637,8 @@ fun QuickToggleTile(
                     scaleY = scale
                 }
                 .combinedClickable(
+                    interactionSource = interactionSource,
+                    indication = androidx.compose.material3.ripple(color = MaterialTheme.colorScheme.onBackground),
                     onClick = { onToggle() },
                     onLongClick = {
                         showMenu = true
@@ -598,19 +647,11 @@ fun QuickToggleTile(
                 ),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isActive) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.surfaceVariant
-            }
+            containerColor = animatedContainerColor
         ),
         border = BorderStroke(
             width = 1.dp,
-            color = if (isActive) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f)
-            }
+            color = animatedBorderColor
         )
     ) {
         if (tileSize == "COMPACT") {
@@ -637,11 +678,7 @@ fun QuickToggleTile(
                     Icon(
                         imageVector = if (isActive) activeIcon else inactiveIcon,
                         contentDescription = title,
-                        tint = if (isActive) {
-                            MaterialTheme.colorScheme.onPrimary
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
+                        tint = animatedOnColor,
                         modifier = Modifier
                             .size(20.dp)
                             .graphicsLayer {
@@ -660,11 +697,7 @@ fun QuickToggleTile(
                             lineHeight = 14.sp,
                             fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
                         ),
-                        color = if (isActive) {
-                            MaterialTheme.colorScheme.onPrimary
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        },
+                        color = animatedTextColor,
                         maxLines = 1
                     )
                     Text(
@@ -717,11 +750,7 @@ fun QuickToggleTile(
                             Icon(
                                 imageVector = if (isActive) activeIcon else inactiveIcon,
                                 contentDescription = title,
-                                tint = if (isActive) {
-                                    MaterialTheme.colorScheme.onPrimary
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                },
+                                tint = animatedOnColor,
                                 modifier = Modifier
                                     .size(24.dp)
                                     .graphicsLayer {
@@ -745,11 +774,7 @@ fun QuickToggleTile(
                                 lineHeight = 14.sp,
                                 fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
                             ),
-                            color = if (isActive) {
-                                MaterialTheme.colorScheme.onPrimary
-                            } else {
-                                MaterialTheme.colorScheme.onSurface
-                            },
+                            color = animatedTextColor,
                             maxLines = 1
                         )
                         Text(
@@ -760,11 +785,7 @@ fun QuickToggleTile(
                                 letterSpacing = 0.5.sp,
                                 fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
                             ),
-                            color = if (isActive) {
-                                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                            }
+                            color = animatedSubtitleColor
                         )
                     }
                 }
@@ -795,11 +816,7 @@ fun QuickToggleTile(
                             fontWeight = FontWeight.Black,
                             letterSpacing = 0.8.sp
                         ),
-                        color = if (isActive) {
-                            MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                        }
+                        color = animatedSubtitleColor
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     D3MicroChart(isActive = isActive, chartType = id, modifier = Modifier.fillMaxWidth())
@@ -833,11 +850,7 @@ fun QuickToggleTile(
                         Icon(
                             imageVector = if (isActive) activeIcon else inactiveIcon,
                             contentDescription = title,
-                            tint = if (isActive) {
-                                MaterialTheme.colorScheme.onPrimary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            },
+                            tint = animatedOnColor,
                             modifier = Modifier
                                 .size(24.dp)
                                 .graphicsLayer {
@@ -883,11 +896,7 @@ fun QuickToggleTile(
                             lineHeight = 16.sp,
                             fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
                         ),
-                        color = if (isActive) {
-                            MaterialTheme.colorScheme.onPrimary
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        }
+                        color = animatedTextColor
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
@@ -898,11 +907,7 @@ fun QuickToggleTile(
                             fontWeight = FontWeight.Bold,
                             fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
                         ),
-                        color = if (isActive) {
-                            MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                        }
+                        color = animatedSubtitleColor
                     )
                 }
             }

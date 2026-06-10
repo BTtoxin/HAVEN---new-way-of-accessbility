@@ -48,11 +48,13 @@ fun NothingSlider(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(44.dp)
+            .height(56.dp)
             .padding(vertical = 4.dp)
             .graphicsLayer {
                 scaleX = trackScale
                 scaleY = trackScale
+                clip = true
+                shape = androidx.compose.foundation.shape.CircleShape
             }
             .pointerInput(Unit) {
                 detectTapGestures(
@@ -81,7 +83,7 @@ fun NothingSlider(
             }
     ) {
         Canvas(modifier = Modifier.matchParentSize()) {
-            val cornerRadius = CornerRadius(16.dp.toPx())
+            val cornerRadius = CornerRadius(size.height / 2)
             
             // Background track
             drawRoundRect(

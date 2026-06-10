@@ -15,6 +15,7 @@
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" tools:ignore="QueryAllPackagesPermission" />
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
     <application
         android:allowBackup="true"
@@ -56,11 +57,6 @@
 
         <service android:name=".services.NetworkShortcutTileService" android:exported="true"
             android:label="Network Prefs" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
-            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
-        </service>
-
-        <service android:name=".services.DnsShortcutTileService" android:exported="true"
-            android:label="Private DNS" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
         </service>
 
@@ -116,11 +112,6 @@
 
         <service android:name=".services.MuteMicTileService" android:exported="true"
             android:label="Mute Mic" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
-            <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
-        </service>
-
-        <service android:name=".services.SoundProfileCycleTileService" android:exported="true"
-            android:label="Sound Profile" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter> <action android:name="android.service.quicksettings.action.QS_TILE" /> </intent-filter>
         </service>
 

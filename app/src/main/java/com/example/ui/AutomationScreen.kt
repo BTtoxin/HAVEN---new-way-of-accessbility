@@ -21,17 +21,57 @@ import androidx.compose.ui.unit.sp
 import com.example.ui.theme.AppTypography
 import com.example.ui.theme.NothingRed
 
+import android.content.Context
+import androidx.compose.ui.platform.LocalContext
+import org.json.JSONArray
+import org.json.JSONObject
+
 data class AutomationRule(val id: String, val name: String, val triggerType: String, val actionCount: Int, var enabled: Boolean)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AutomationScreen(onBack: () -> Unit) {
-    var rules by remember { 
-        mutableStateOf(listOf(
-            AutomationRule("1", "Cinema Mode", "Time (20:00)", 3, true),
-            AutomationRule("2", "Low Battery Saver", "Battery < 20%", 2, true),
-            AutomationRule("3", "Driving Mode", "Bluetooth Connected", 4, false)
-        )) 
+    val context = LocalContext.current
+    val prefs = remember { context.getSharedPreferences("automation_rules", Context.MODE_PRIVATE) }
+    
+    var rules by remember { mutableStateOf(listOf<AutomationRule>()) }
+    
+    LaunchedEffect(Unit) {
+        val savedRulesStr = prefs.getString("rules", null)
+        if (savedRulesStr == null) {
+            rules = listOf(
+                AutomationRule("1", "Cinema Mode", "Time (20:00)", 3, true),
+                AutomationRule("2", "Low Battery Saver", "Battery < 20%", 2, true),
+                AutomationRule("3", "Driving Mode", "Bluetooth Connected", 4, false)
+            )
+        } else {
+            val savedList = mutableListOf<AutomationRule>()
+            try {
+                val array = JSONArray(savedRulesStr)
+                for (i in 0 until array.length()) {
+                    val obj = array.getJSONObject(i)
+                    savedList.add(AutomationRule(obj.getString("id"), obj.getString("name"), obj.getString("triggerType"), obj.getInt("actionCount"), obj.getBoolean("enabled")))
+                }
+            } catch (e: Exception) {}
+            rules = savedList
+        }
+    }
+    
+    LaunchedEffect(rules) {
+        if (rules.isNotEmpty()) {
+            val array = JSONArray()
+            rules.forEach { rule ->
+                val obj = JSONObject().apply {
+                    put("id", rule.id)
+                    put("name", rule.name)
+                    put("triggerType", rule.triggerType)
+                    put("actionCount", rule.actionCount)
+                    put("enabled", rule.enabled)
+                }
+                array.put(obj)
+            }
+            prefs.edit().putString("rules", array.toString()).apply()
+        }
     }
 
     Scaffold(

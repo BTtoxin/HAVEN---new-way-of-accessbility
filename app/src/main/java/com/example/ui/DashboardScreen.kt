@@ -224,7 +224,6 @@ fun DashboardScreen(
     val isDnsActive by viewModel.isDnsActive.collectAsStateWithLifecycle()
     val isAudioIsolated by viewModel.isAppAudioIsolated.collectAsStateWithLifecycle()
 
-    var showSettingsDialog by remember { mutableStateOf(false) }
     var isEditing by remember { mutableStateOf(false) }
 
     val editRotation by animateFloatAsState(
@@ -1726,6 +1725,35 @@ fun DashboardScreen(
                                             Text("START FOCUS", style = AppTypography.labelSmall, color = if (isDark) PitchBlack else PureWhite)
                                         }
                                     }
+                                    
+                                    val sessionHistory = remember(isSessionActive) {
+                                        com.example.utils.FocusDataStore.getSessionHistory(context).take(3)
+                                    }
+                                    if (sessionHistory.isNotEmpty()) {
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        HorizontalDivider(color = BorderDark, thickness = 0.5.dp)
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text("RECENT SESSIONS", style = AppTypography.labelSmall, color = NeutralGray)
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        sessionHistory.forEach { session ->
+                                            val durationMins = (session.end - session.start) / 60000
+                                            val dateFormatter = java.text.SimpleDateFormat("MMM dd, HH:mm", java.util.Locale.getDefault())
+                                            val dateStr = dateFormatter.format(java.util.Date(session.start))
+                                            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                                Text(dateStr, style = AppTypography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    Icon(
+                                                        if (session.completed) Icons.Default.CheckCircle else Icons.Default.Cancel,
+                                                        contentDescription = null,
+                                                        tint = if (session.completed) androidx.compose.ui.graphics.Color(0xFF10B981) else NothingRed,
+                                                        modifier = Modifier.size(14.dp)
+                                                    )
+                                                    Spacer(modifier = Modifier.width(4.dp))
+                                                    Text("${durationMins}m", style = AppTypography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
+                                                }
+                                            }
+                                        }
+                                    }
 
                                     if (showAppSelector) {
                                         AppSelectorDialog(
@@ -1752,7 +1780,7 @@ fun DashboardScreen(
                                     overflow = TextOverflow.Ellipsis
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
-                                OutlinedButton(onClick = { showSettingsDialog = true }, modifier = Modifier.fillMaxWidth()) {
+                                OutlinedButton(onClick = { onNavigateToSettings() }, modifier = Modifier.fillMaxWidth()) {
                                     Text("CONFIGURE", style = AppTypography.labelSmall)
                                 }
                             }
@@ -2405,13 +2433,7 @@ fun SoundWaveVisualizer(modifier: Modifier = Modifier) {
         )
     }
 
-    if (showSettingsDialog) {
-        SettingsDialog(
-            onDismiss = { showSettingsDialog = false },
-            onResetLayout = { viewModel.resetTileOrder() },
-            onConfirm = { viewModel.checkAllStates() }
-        )
-    }
+
 
     if (showAuthModal) {
         com.example.ui.components.AuthModal(
