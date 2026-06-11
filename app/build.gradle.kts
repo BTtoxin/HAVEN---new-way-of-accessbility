@@ -99,7 +99,14 @@ android {
   testOptions { unitTests { isIncludeAndroidResources = true } }
 }
 
-// Configure the Secrets Gradle Plugin to use .env and .env.example files
+tasks.register<Copy>("copyApk") {
+    dependsOn("assembleDebug")
+    from(layout.buildDirectory.dir("outputs/apk/debug")) {
+        include("app-debug.apk")
+    }
+    into(rootProject.layout.projectDirectory.dir("build-output/apk"))
+}
+
 // to match the convention used in Web projects.
 secrets {
   propertiesFileName = ".env"
