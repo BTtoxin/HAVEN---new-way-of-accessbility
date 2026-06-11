@@ -362,7 +362,29 @@ fun Modifier.draggableTile(
     onDragEnd: () -> Unit,
     onDrag: (Float, Float) -> Unit
 ): Modifier {
-    return this
+    return this.pointerInput(id) {
+        var offsetX = 0f
+        var offsetY = 0f
+        detectDragGesturesAfterLongPress(
+            onDragStart = {
+                onDragStart()
+                offsetX = 0f
+                offsetY = 0f
+            },
+            onDragEnd = {
+                onDragEnd()
+            },
+            onDragCancel = {
+                onDragEnd()
+            },
+            onDrag = { change, dragAmount ->
+                change.consume()
+                offsetX += dragAmount.x
+                offsetY += dragAmount.y
+                onDrag(offsetX, offsetY)
+            }
+        )
+    }
 }
 
 fun Modifier.tileSwipeListener(
@@ -370,7 +392,38 @@ fun Modifier.tileSwipeListener(
     onSwipeUp: () -> Unit = {},
     onSwipeDown: () -> Unit = {}
 ): Modifier {
-    return this
+    return this.pointerInput(id) {
+        awaitEachGesture {
+            val down = awaitFirstDown(requireUnconsumed = false)
+            var totalDragY = 0f
+            var triggered = false
+            while (true) {
+                val event = awaitPointerEvent()
+                val anyPressed = event.changes.any { it.pressed }
+                if (!anyPressed) break
+                
+                val change = event.changes.firstOrNull()
+                if (change != null) {
+                    val dragY = change.position.y - change.previousPosition.y
+                    totalDragY += dragY
+                    if (!triggered) {
+                        if (totalDragY < -75f) {
+                            triggered = true
+                            onSwipeUp()
+                            change.consume()
+                        } else if (totalDragY > 75f) {
+                            triggered = true
+                            onSwipeDown()
+                            change.consume()
+                        }
+                    }
+                    if (triggered) {
+                        change.consume()
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable

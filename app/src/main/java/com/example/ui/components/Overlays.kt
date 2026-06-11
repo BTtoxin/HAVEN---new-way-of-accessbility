@@ -134,6 +134,22 @@ fun NotificationsOverlay(onDismiss: () -> Unit) {
                 .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
                 .background(MaterialTheme.colorScheme.surface)
                 .clickable(enabled = false) {}
+                .pointerInput(Unit) {
+                    detectVerticalDragGestures(
+                        onDragEnd = {
+                            if (dragOffset < -150f) {
+                                dragOffset = minOffset
+                            } else {
+                                dragOffset = maxOffset
+                            }
+                        }
+                    ) { _, dragAmount ->
+                        val newOffset = dragOffset + dragAmount
+                        if (newOffset <= 0) {
+                            dragOffset = newOffset
+                        }
+                    }
+                }
         ) {
             Column(modifier = Modifier.padding(top = 48.dp, start = 16.dp, end = 16.dp, bottom = 16.dp)) {
                 Row(

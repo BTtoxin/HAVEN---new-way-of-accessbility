@@ -167,74 +167,6 @@ private val NeonColorScheme = lightColorScheme(
     onSurfaceVariant = NeonOnBackground
 )
 
-private val GoldColorScheme = lightColorScheme(
-    primary = GoldPrimary,
-    onPrimary = GoldOnPrimary,
-    primaryContainer = GoldPrimary,
-    onPrimaryContainer = GoldOnPrimary,
-    secondary = GoldSecondary,
-    onSecondary = GoldBackground,
-    surface = GoldSurface,
-    onSurface = GoldOnBackground,
-    background = GoldBackground,
-    onBackground = GoldOnBackground,
-    error = GoldSecondary,
-    outline = GoldBorder,
-    surfaceVariant = GoldSurfaceVariant,
-    onSurfaceVariant = GoldOnBackground
-)
-
-private val SapphireColorScheme = lightColorScheme(
-    primary = SapphirePrimary,
-    onPrimary = SapphireOnPrimary,
-    primaryContainer = SapphirePrimary,
-    onPrimaryContainer = SapphireOnPrimary,
-    secondary = SapphireSecondary,
-    onSecondary = SapphireBackground,
-    surface = SapphireSurface,
-    onSurface = SapphireOnBackground,
-    background = SapphireBackground,
-    onBackground = SapphireOnBackground,
-    error = SapphireSecondary,
-    outline = SapphireBorder,
-    surfaceVariant = SapphireSurfaceVariant,
-    onSurfaceVariant = SapphireOnBackground
-)
-
-private val EmeraldColorScheme = lightColorScheme(
-    primary = EmeraldPrimary,
-    onPrimary = EmeraldOnPrimary,
-    primaryContainer = EmeraldPrimary,
-    onPrimaryContainer = EmeraldOnPrimary,
-    secondary = EmeraldSecondary,
-    onSecondary = EmeraldBackground,
-    surface = EmeraldSurface,
-    onSurface = EmeraldOnBackground,
-    background = EmeraldBackground,
-    onBackground = EmeraldOnBackground,
-    error = EmeraldSecondary,
-    outline = EmeraldBorder,
-    surfaceVariant = EmeraldSurfaceVariant,
-    onSurfaceVariant = EmeraldOnBackground
-)
-
-private val AmethystColorScheme = lightColorScheme(
-    primary = AmethystPrimary,
-    onPrimary = AmethystOnPrimary,
-    primaryContainer = AmethystPrimary,
-    onPrimaryContainer = AmethystOnPrimary,
-    secondary = AmethystSecondary,
-    onSecondary = AmethystBackground,
-    surface = AmethystSurface,
-    onSurface = AmethystOnBackground,
-    background = AmethystBackground,
-    onBackground = AmethystOnBackground,
-    error = AmethystSecondary,
-    outline = AmethystBorder,
-    surfaceVariant = AmethystSurfaceVariant,
-    onSurfaceVariant = AmethystOnBackground
-)
-
 @Composable
 fun NothingTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -273,10 +205,6 @@ fun NothingTheme(
         "FOREST" -> ForestColorScheme
         "OCEAN" -> OceanColorScheme
         "NEON" -> NeonColorScheme
-        "ROYAL GOLD" -> GoldColorScheme
-        "SAPPHIRE BLUE" -> SapphireColorScheme
-        "EMERALD GREEN" -> EmeraldColorScheme
-        "AMETHYST PURPLE" -> AmethystColorScheme
         "NATURAL" -> {
             if (darkTheme) NaturalDarkColorScheme else NaturalColorScheme
         }
