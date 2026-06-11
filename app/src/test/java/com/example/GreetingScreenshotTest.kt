@@ -10,7 +10,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
 import com.example.ui.components.BentoCard
-import com.example.ui.theme.NothingTheme
+import com.example.ui.theme.PremiumTheme
 import com.github.takahirom.roborazzi.RobolectricDeviceQualifiers
 import com.github.takahirom.roborazzi.captureRoboImage
 import org.junit.Rule
@@ -30,7 +30,7 @@ class GreetingScreenshotTest {
   @Test
   fun greeting_screenshot() {
     composeTestRule.setContent {
-      NothingTheme {
+      PremiumTheme {
         Box(modifier = Modifier.padding(16.dp)) {
           BentoCard(title = "TEST TILE", icon = Icons.Default.Settings) {
             Text("This is a test tile.")

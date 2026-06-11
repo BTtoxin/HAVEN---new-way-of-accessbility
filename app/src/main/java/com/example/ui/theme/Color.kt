@@ -88,6 +88,46 @@ val NeonOnPrimary = Color(0xFF070B14)
 val NeonSecondary = Color(0xFFFF007F) // Hot Neon Pink Accent
 val NeonBorder = Color(0xFF1E293B)
 
+// Royal Gold Palette
+val GoldBackground = Color(0xFF0D0D0D)
+val GoldOnBackground = Color(0xFFF9F7E8)
+val GoldSurface = Color(0xFF1A1A1A)
+val GoldSurfaceVariant = Color(0xFF262626)
+val GoldPrimary = Color(0xFFD4AF37)
+val GoldOnPrimary = Color(0xFF0D0D0D)
+val GoldSecondary = Color(0xFFA67C00)
+val GoldBorder = Color(0xFF332D1A)
+
+// Sapphire Blue Palette
+val SapphireBackground = Color(0xFF050B14)
+val SapphireOnBackground = Color(0xFFE8F1F8)
+val SapphireSurface = Color(0xFF0C1929)
+val SapphireSurfaceVariant = Color(0xFF142944)
+val SapphirePrimary = Color(0xFF0F52BA)
+val SapphireOnPrimary = Color(0xFFFFFFFF)
+val SapphireSecondary = Color(0xFF084199)
+val SapphireBorder = Color(0xFF1A3355)
+
+// Emerald Green Palette
+val EmeraldBackground = Color(0xFF041208)
+val EmeraldOnBackground = Color(0xFFE6F5EB)
+val EmeraldSurface = Color(0xFF0A2410)
+val EmeraldSurfaceVariant = Color(0xFF133F1E)
+val EmeraldPrimary = Color(0xFF50C878)
+val EmeraldOnPrimary = Color(0xFF041208)
+val EmeraldSecondary = Color(0xFF3B995A)
+val EmeraldBorder = Color(0xFF1C4D28)
+
+// Amethyst Purple Palette
+val AmethystBackground = Color(0xFF0D0514)
+val AmethystOnBackground = Color(0xFFF2EAF8)
+val AmethystSurface = Color(0xFF1A0A29)
+val AmethystSurfaceVariant = Color(0xFF2A1344)
+val AmethystPrimary = Color(0xFF9966CC)
+val AmethystOnPrimary = Color(0xFF0D0514)
+val AmethystSecondary = Color(0xFF7A4AA6)
+val AmethystBorder = Color(0xFF3B205C)
+
 // Dummy mappings to existing names so we don't break usages where imported
 val PitchBlack = HavenDarkBg
 val DarkGray = HavenDarkSurface

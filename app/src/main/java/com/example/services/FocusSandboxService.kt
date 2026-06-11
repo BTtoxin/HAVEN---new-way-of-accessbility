@@ -51,7 +51,11 @@ class FocusSandboxService : Service() {
 
         monitorJob?.cancel()
         monitorJob = scope.launch(Dispatchers.IO) {
-            val usageManager = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+            val usageManager = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                createAttributionContext("default").getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+            } else {
+                getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+            }
             val allowedApps = FocusDataStore.getAllowedApps(this@FocusSandboxService)
             while (isActive && System.currentTimeMillis() < endTime) {
                 val now = System.currentTimeMillis()

@@ -32,7 +32,7 @@ import com.example.ui.theme.AppTypography
 import com.example.ui.theme.BorderDark
 import com.example.ui.theme.NeutralGray
 import com.example.ui.theme.NothingRed
-import com.example.ui.theme.NothingTheme
+import com.example.ui.theme.PremiumTheme
 import com.example.ui.theme.PureWhite
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
@@ -48,7 +48,7 @@ class FocusLockOverlayActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            NothingTheme(darkTheme = true) {
+            PremiumTheme(darkTheme = true) {
                 FocusLockScreen(onEmergencyExit = {
                     val executor = ContextCompat.getMainExecutor(this@FocusLockOverlayActivity)
                     val biometricPrompt = BiometricPrompt(this@FocusLockOverlayActivity, executor,

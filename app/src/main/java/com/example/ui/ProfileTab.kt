@@ -34,6 +34,7 @@ fun ProfileTab(
 ) {
     val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
     var showAuthModal by remember { mutableStateOf(false) }
+    var showAboutDialog by remember { mutableStateOf(false) }
 
     LazyColumn(
         modifier = Modifier
@@ -123,8 +124,8 @@ fun ProfileTab(
                     Triple(Icons.Default.Lock, "Permissions", onNavigateToPermissions),
                     Triple(Icons.Default.History, "Changelog", onNavigateToChangelog),
                     Triple(Icons.Default.SystemUpdate, "Check for Updates", { viewModel.checkForUpdatesExplicit(context) }),
-                    Triple(Icons.Default.Help, "FAQ / Manual", {}),
-                    Triple(Icons.Default.Info, "About", {})
+                    Triple(Icons.Default.Help, "FAQ / Manual", { android.widget.Toast.makeText(context, "User Manual coming soon", android.widget.Toast.LENGTH_SHORT).show() }),
+                    Triple(Icons.Default.Info, "About", { showAboutDialog = true })
                 )
 
                 settingsItems.forEach { (icon, title, action) ->
@@ -152,6 +153,26 @@ fun ProfileTab(
         com.example.ui.components.AuthModal(
             viewModel = viewModel,
             onDismiss = { showAuthModal = false }
+        )
+    }
+
+    if (showAboutDialog) {
+        AlertDialog(
+            onDismissRequest = { showAboutDialog = false },
+            title = { Text("About HAVEN", style = AppTypography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+            text = { 
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Version: ${com.example.BuildConfig.METADATA_VERSION}", style = AppTypography.bodyMedium)
+                    Text("Developed by ashu mehta", style = AppTypography.bodyMedium)
+                    Text("A modern control center and automation dashboard.", style = AppTypography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showAboutDialog = false }) { Text("Close", color = HavenCyan) }
+            },
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            textContentColor = MaterialTheme.colorScheme.onSurface
         )
     }
 }

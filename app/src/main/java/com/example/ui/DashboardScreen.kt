@@ -187,6 +187,7 @@ fun DashboardScreen(
     onNavigateToAutomation: () -> Unit = {},
     onNavigateToClipboard: () -> Unit = {},
     onNavigateToSensors: () -> Unit = {},
+    onNavigateToFocus: () -> Unit = {},
     onNavigateToFocusHistory: () -> Unit = {},
     onRequestPermission: () -> Unit,
     onRequestDndPermission: () -> Unit
@@ -275,9 +276,9 @@ fun DashboardScreen(
     val tileOrderList by viewModel.tileOrder.collectAsStateWithLifecycle()
     val availableOrder = remember(tileOrderList) {
         if (tileOrderList.isEmpty() || !tileOrderList.contains("MANUAL")) {
-            listOf("TIMEOUT", "CAFFEINE", "WEATHER", "BATTERY", "BRIGHTNESS", "DNS", "THEATER", "CLIPBOARD", "FOCUS", "SHORTCUT", "APP_AUDIO", "OPERATOR", "GLYPH", "MANUAL", "CHANGELOG", "ABOUT")
+            listOf("TIMEOUT", "CAFFEINE", "WEATHER", "BATTERY", "BRIGHTNESS", "DNS", "THEATER", "CLIPBOARD", "FOCUS", "SHORTCUT", "APP_AUDIO", "OPERATOR", "GLYPH")
         } else {
-            tileOrderList
+            tileOrderList.filter { it !in listOf("MANUAL", "CHANGELOG", "ABOUT") }
         }
     }
 
@@ -1164,236 +1165,16 @@ fun DashboardScreen(
                         }
                         "FOCUS" -> {
                             BentoCard(title = "DEEP FOCUS", icon = Icons.Default.Lock) {
-                                var selectedDuration by remember { mutableIntStateOf(25) }
-                                var showAppSelector by remember { mutableStateOf(false) }
-                                val allowedApps by viewModel.focusWhitelist.collectAsStateWithLifecycle()
-                                
-                                val appOps = context.getSystemService(android.content.Context.APP_OPS_SERVICE) as android.app.AppOpsManager
-                                val usageMode = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                                    appOps.unsafeCheckOpNoThrow(android.app.AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), context.packageName)
-                                } else {
-                                    appOps.checkOpNoThrow(android.app.AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), context.packageName)
-                                }
-                                val hasUsageStats = usageMode == android.app.AppOpsManager.MODE_ALLOWED
-                                val hasOverlay = android.provider.Settings.canDrawOverlays(context)
-                                
-                                if (!hasUsageStats || !hasOverlay) {
-                                    if (!hasUsageStats) {
-                                        Button(onClick = {
-                                            context.startActivity(Intent(android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK })
-                                        }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = NothingRed)) { Text("GRANT USAGE ACCESS") }
-                                    }
-                                    if (!hasOverlay) {
-                                        Spacer(Modifier.height(8.dp))
-                                        Button(onClick = {
-                                            context.startActivity(Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION, android.net.Uri.parse("package:${context.packageName}")).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK })
-                                        }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = NothingRed)) { Text("GRANT OVERLAY PERMISSION") }
-                                    }
-                                } else {
-                                    val isDark = MaterialTheme.colorScheme.background != androidx.compose.ui.graphics.Color(0xFFFDF8F6)
-                                    var isSessionActive by remember { mutableStateOf(com.example.utils.FocusDataStore.isSandboxActive(context)) }
-                                    var remainingSeconds by remember { mutableLongStateOf(0L) }
-                                    var isPomodoroMode by remember { mutableStateOf(false) }
-                                    var isBreakTime by remember { mutableStateOf(false) }
-                                    var breakEndTime by remember { mutableLongStateOf(0L) }
-                                    
-                                    LaunchedEffect(isSessionActive, isBreakTime) {
-                                        if (isSessionActive) {
-                                            while (true) {
-                                                val endTime = com.example.utils.FocusDataStore.getEndTime(context)
-                                                val now = System.currentTimeMillis()
-                                                val diff = (endTime - now) / 1000
-                                                if (diff <= 0) {
-                                                    isSessionActive = false
-                                                    if (isPomodoroMode) {
-                                                        isBreakTime = true
-                                                        breakEndTime = System.currentTimeMillis() + (5 * 60_000L)
-                                                    }
-                                                    break
-                                                }
-                                                remainingSeconds = diff
-                                                kotlinx.coroutines.delay(1000)
-                                            }
-                                        } else if (isBreakTime) {
-                                            while (true) {
-                                                val now = System.currentTimeMillis()
-                                                val diff = (breakEndTime - now) / 1000
-                                                if (diff <= 0) {
-                                                    isBreakTime = false
-                                                    break
-                                                }
-                                                remainingSeconds = diff
-                                                kotlinx.coroutines.delay(1000)
-                                            }
-                                        }
-                                    }
-
-                                    if (isSessionActive || isBreakTime) {
-                                        val mins = remainingSeconds / 60
-                                        val secs = remainingSeconds % 60
-                                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                                            Text(if (isBreakTime) "BREAK TIME REMAINING" else "SESSION TIME REMAINING", style = AppTypography.labelSmall, color = if (isBreakTime) androidx.compose.ui.graphics.Color(0xFF10B981) else NothingRed)
-                                            Spacer(modifier = Modifier.height(6.dp))
-                                            Text(
-                                                text = String.format("%02d:%02d", mins, secs),
-                                                style = AppTypography.displayLarge.copy(fontSize = 32.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Black),
-                                                color = if (isBreakTime) androidx.compose.ui.graphics.Color(0xFF10B981) else MaterialTheme.colorScheme.primary
-                                            )
-                                            Spacer(modifier = Modifier.height(10.dp))
-                                            val progressDuration = if (isBreakTime) 5f else selectedDuration.toFloat()
-                                            LinearProgressIndicator(
-                                                progress = (remainingSeconds.toFloat() / (progressDuration * 60f)).coerceIn(0f, 1f),
-                                                modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
-                                                color = if (isBreakTime) androidx.compose.ui.graphics.Color(0xFF10B981) else NothingRed,
-                                                trackColor = BorderDark
-                                            )
-                                            Spacer(modifier = Modifier.height(12.dp))
-                                            Button(
-                                                onClick = {
-                                                    com.example.utils.AudioHapticEngine.triggerClick(context)
-                                                    if (isSessionActive) {
-                                                        viewModel.stopFocusSandbox()
-                                                        isSessionActive = false
-                                                    } else {
-                                                        isBreakTime = false
-                                                    }
-                                                },
-                                                modifier = Modifier.fillMaxWidth(),
-                                                colors = ButtonDefaults.buttonColors(containerColor = NothingRed)
-                                            ) {
-                                                Icon(Icons.Default.Stop, contentDescription = "Stop", tint = Color.White, modifier = Modifier.size(16.dp))
-                                                Spacer(modifier = Modifier.width(4.dp))
-                                                Text(if (isBreakTime) "SKIP BREAK" else "STOP FOCUS", style = AppTypography.labelSmall, color = Color.White)
-                                            }
-                                        }
-                                    } else {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Text(selectedDuration.toString(), style = AppTypography.displayLarge)
-                                            Text(" MIN", style = AppTypography.labelSmall, color = NeutralGray)
-                                            Spacer(modifier = Modifier.weight(1f))
-                                            IconButton(onClick = { if (selectedDuration > 5) selectedDuration -= 5 }) {
-                                                Icon(Icons.Default.Remove, contentDescription = "Decrease")
-                                            }
-                                            IconButton(onClick = { if (selectedDuration < 120) selectedDuration += 5 }) {
-                                                Icon(Icons.Default.Add, contentDescription = "Increase")
-                                            }
-                                        }
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        
-                                        val allApps = remember { com.example.ui.loadInstalledApps(context) }
-                                        val whitelistedDashboardApps = remember(allowedApps, allApps) {
-                                            allApps.filter { it.packageName in allowedApps }
-                                        }
-
-                                        if (whitelistedDashboardApps.isNotEmpty()) {
-                                            val scrollState = rememberScrollState()
-                                            Row(
-                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                                modifier = Modifier.fillMaxWidth().horizontalScroll(scrollState).padding(bottom = 8.dp)
-                                            ) {
-                                                whitelistedDashboardApps.forEach { app ->
-                                                    coil.compose.AsyncImage(
-                                                        model = app.icon,
-                                                        contentDescription = app.label,
-                                                        modifier = Modifier
-                                                            .size(32.dp)
-                                                            .clip(CircleShape)
-                                                            .border(1.5.dp, androidx.compose.ui.graphics.Color(0xFF10B981), CircleShape)
-                                                            .clickable {
-                                                                if (isSessionActive) {
-                                                                    val launchIntent = context.packageManager.getLaunchIntentForPackage(app.packageName)
-                                                                    if (launchIntent != null) {
-                                                                        try {
-                                                                            context.startActivity(launchIntent)
-                                                                        } catch (e: Exception) {
-                                                                            android.widget.Toast.makeText(context, "Could not launch app", android.widget.Toast.LENGTH_SHORT).show()
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                    )
-                                                }
-                                            }
-                                        }
-
-                                        OutlinedButton(onClick = { showAppSelector = true }, modifier = Modifier.fillMaxWidth()) {
-                                            Icon(Icons.Default.Apps, contentDescription = "Select Apps", modifier = Modifier.size(16.dp))
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text("${allowedApps.size} APPS ALLOWED", style = AppTypography.labelSmall)
-                                        }
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            Text("Pomodoro Mode (5m breaks)", style = AppTypography.bodySmall)
-                                            Switch(
-                                                checked = isPomodoroMode,
-                                                onCheckedChange = { isPomodoroMode = it },
-                                                colors = SwitchDefaults.colors(checkedThumbColor = NothingRed, checkedTrackColor = NothingRed.copy(alpha = 0.5f)),
-                                                modifier = Modifier.scale(0.8f)
-                                            )
-                                        }
-
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        Button(
-                                            onClick = {
-                                                com.example.utils.AudioHapticEngine.triggerClick(context)
-                                                viewModel.startFocusSandbox(selectedDuration, allowedApps)
-                                                isSessionActive = true
-                                            },
-                                            modifier = Modifier.fillMaxWidth(),
-                                            colors = ButtonDefaults.buttonColors(containerColor = if (isDark) PureWhite else PitchBlack)
-                                        ) {
-                                            Icon(Icons.Default.PlayArrow, contentDescription = "Start Focus", tint = if (isDark) PitchBlack else PureWhite)
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text("START FOCUS", style = AppTypography.labelSmall, color = if (isDark) PitchBlack else PureWhite)
-                                        }
-                                    }
-                                    
-                                    val sessionHistoryState by viewModel.focusSessionHistory.collectAsStateWithLifecycle()
-                                    val sessionHistory = sessionHistoryState.take(3)
-                                    if (sessionHistory.isNotEmpty()) {
-                                        Spacer(modifier = Modifier.height(16.dp))
-                                        HorizontalDivider(color = BorderDark, thickness = 0.5.dp)
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                            Text("RECENT SESSIONS", style = AppTypography.labelSmall, color = NeutralGray)
-                                            IconButton(onClick = onNavigateToFocusHistory, modifier = Modifier.size(24.dp)) {
-                                                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "View History", tint = NeutralGray)
-                                            }
-                                        }
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        sessionHistory.forEach { session ->
-                                            val durationMins = (session.endTime - session.startTime) / 60000
-                                            val dateFormatter = java.text.SimpleDateFormat("MMM dd, HH:mm", java.util.Locale.getDefault())
-                                            val dateStr = dateFormatter.format(java.util.Date(session.startTime))
-                                            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                                Text(dateStr, style = AppTypography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
-                                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                                    Icon(
-                                                        if (session.completed) Icons.Default.CheckCircle else Icons.Default.Cancel,
-                                                        contentDescription = null,
-                                                        tint = if (session.completed) androidx.compose.ui.graphics.Color(0xFF10B981) else NothingRed,
-                                                        modifier = Modifier.size(14.dp)
-                                                    )
-                                                    Spacer(modifier = Modifier.width(4.dp))
-                                                    Text("${durationMins}m", style = AppTypography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    if (showAppSelector) {
-                                        AppSelectorDialog(
-                                            preselectedApps = allowedApps,
-                                            onDismiss = { showAppSelector = false },
-                                            onConfirm = { apps ->
-                                                viewModel.updateFocusWhitelist(apps)
-                                                showAppSelector = false
-                                            }
-                                        )
-                                    }
+                                Text("DISTRACTION FREE", style = AppTypography.displayLarge)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Button(
+                                    onClick = { onNavigateToFocus() },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = ButtonDefaults.buttonColors(containerColor = NothingRed)
+                                ) {
+                                    Icon(Icons.Default.SelfImprovement, contentDescription = "Open FocusHub", modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("OPEN FOCUS HUB", style = AppTypography.labelSmall)
                                 }
                             }
                         }
@@ -1536,37 +1317,6 @@ fun DashboardScreen(
                             modifier = Modifier
                                 .matchParentSize()
                                 .background(MaterialTheme.colorScheme.background.copy(alpha = 0.85f))
-                                .pointerInput(index, availableOrder) {
-                                    detectDragGestures(
-                                        onDragStart = { offset ->
-                                            dragDistanceX = 0f
-                                            dragDistanceY = 0f
-                                        },
-                                        onDrag = { change, dragAmount ->
-                                            change.consume()
-                                            dragDistanceX += dragAmount.x
-                                            dragDistanceY += dragAmount.y
-                                        },
-                                        onDragEnd = {
-                                            val threshold = 120f
-                                            if (dragDistanceX < -threshold || dragDistanceY < -threshold) {
-                                                if (index > 0) {
-                                                    val newOrder = availableOrder.toMutableList()
-                                                    java.util.Collections.swap(newOrder, index, index - 1)
-                                                    viewModel.updateTileOrder(newOrder)
-                                                    com.example.utils.AudioHapticEngine.triggerClick(context)
-                                                }
-                                            } else if (dragDistanceX > threshold || dragDistanceY > threshold) {
-                                                if (index < availableOrder.size - 1) {
-                                                    val newOrder = availableOrder.toMutableList()
-                                                    java.util.Collections.swap(newOrder, index, index + 1)
-                                                    viewModel.updateTileOrder(newOrder)
-                                                    com.example.utils.AudioHapticEngine.triggerClick(context)
-                                                }
-                                            }
-                                        }
-                                    )
-                                }
                                 .clickable { /* Consume clicks */ },
                             contentAlignment = Alignment.Center
                         ) {
@@ -1576,12 +1326,12 @@ fun DashboardScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.DragHandle,
-                                    contentDescription = "Drag to reorder",
+                                    contentDescription = "Edit mode",
                                     tint = NothingRed,
                                     modifier = Modifier.size(24.dp)
                                 )
                                 Text(
-                                    text = "DRAG / SWIPE TO MOVE",
+                                    text = "TAP ARROWS TO MOVE",
                                     style = AppTypography.labelSmall.copy(fontSize = 9.sp),
                                     color = NeutralGray
                                 )
@@ -1633,13 +1383,6 @@ fun DashboardScreen(
                 .fillMaxWidth()
                 .height(80.dp)
                 .align(Alignment.TopCenter)
-                .pointerInput(Unit) {
-                    detectVerticalDragGestures { _, dragAmount ->
-                        if (dragAmount > 20) {
-                            showNotifications = true
-                        }
-                    }
-                }
         )
 
         SnackbarHost(
