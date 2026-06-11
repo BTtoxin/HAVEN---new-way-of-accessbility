@@ -598,6 +598,43 @@ fun DashboardScreen(
                 )
             }
 
+            // PRODUCTIVITY SHORTCUT SECTION
+            item {
+                Column(modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Productivity Shortcut", style = AppTypography.bodyLarge, color = MaterialTheme.colorScheme.onBackground)
+                    }
+                    Card(
+                        modifier = Modifier.fillMaxWidth().height(100.dp).clickable { onNavigateToFocus() },
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxSize().padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.SelfImprovement, contentDescription = "Deep Focus Center", tint = MaterialTheme.colorScheme.primary)
+                            }
+                            Spacer(Modifier.width(16.dp))
+                            Column {
+                                Text("Deep Focus Center", style = AppTypography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                                Text("Enter Pomodoro timer & block distractions", style = AppTypography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+                }
+            }
+
             // QUICK CONTROLS SECTION
             item {
                 Column(modifier = Modifier.fillMaxWidth()) {
@@ -606,7 +643,7 @@ fun DashboardScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Quick Controls", style = AppTypography.bodyLarge, color = MaterialTheme.colorScheme.onBackground)
+                        Text("Device Management", style = AppTypography.bodyLarge, color = MaterialTheme.colorScheme.onBackground)
                         Text("Swipe for more", style = AppTypography.labelSmall, color = NtSecondary)
                     }
                     androidx.compose.foundation.lazy.LazyRow(

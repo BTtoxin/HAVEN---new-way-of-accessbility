@@ -35,6 +35,15 @@ fun ProfileTab(
     val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
     var showAuthModal by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
+    var showThemeDialog by remember { mutableStateOf(false) }
+    var showLanguageDialog by remember { mutableStateOf(false) }
+    val currentTheme by viewModel.themeMode.collectAsStateWithLifecycle()
+    val availableThemes = listOf("ROYAL GOLD", "SAPPHIRE BLUE", "EMERALD GREEN", "AMETHYST PURPLE")
+
+    // Assuming we don't have an explicit language preference in VM yet, let's keep local state or use shared preferences.
+    // For now we'll simulate language change with a Toast.
+    var currentLanguage by remember { mutableStateOf("English") }
+    val availableLanguages = listOf("English", "Hindi", "Bengali", "Tamil", "Telugu", "Kannada", "Malayalam", "Marathi", "Gujarati", "Punjabi")
 
     LazyColumn(
         modifier = Modifier
@@ -117,15 +126,14 @@ fun ProfileTab(
                 
                 val context = androidx.compose.ui.platform.LocalContext.current
                 val settingsItems = listOf(
-                    Triple(Icons.Default.Settings, "Settings", onNavigateToSettings),
-                    Triple(Icons.Default.Palette, "Theme", {}),
-                    Triple(Icons.Default.Language, "Language", {}),
+                    Triple(Icons.Default.Palette, "Theme", { showThemeDialog = true }),
+                    Triple(Icons.Default.Language, "Language", { showLanguageDialog = true }),
                     Triple(Icons.Default.Notifications, "Notifications", {}),
-                    Triple(Icons.Default.Lock, "Permissions", onNavigateToPermissions),
+                    Triple(Icons.Default.Security, "Permissions", onNavigateToPermissions),
+                    Triple(Icons.Default.Info, "About", { showAboutDialog = true }),
                     Triple(Icons.Default.History, "Changelog", onNavigateToChangelog),
-                    Triple(Icons.Default.SystemUpdate, "Check for Updates", { viewModel.checkForUpdatesExplicit(context) }),
-                    Triple(Icons.Default.Help, "FAQ / Manual", { android.widget.Toast.makeText(context, "User Manual coming soon", android.widget.Toast.LENGTH_SHORT).show() }),
-                    Triple(Icons.Default.Info, "About", { showAboutDialog = true })
+                    Triple(Icons.Default.LibraryBooks, "Manual", { android.widget.Toast.makeText(context, "User Manual coming soon", android.widget.Toast.LENGTH_SHORT).show() }),
+                    Triple(Icons.Default.SupportAgent, "Support", { android.widget.Toast.makeText(context, "Support coming soon", android.widget.Toast.LENGTH_SHORT).show() })
                 )
 
                 settingsItems.forEach { (icon, title, action) ->
@@ -169,6 +177,75 @@ fun ProfileTab(
             },
             confirmButton = {
                 TextButton(onClick = { showAboutDialog = false }) { Text("Close", color = HavenCyan) }
+            },
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            textContentColor = MaterialTheme.colorScheme.onSurface
+        )
+    }
+
+    if (showThemeDialog) {
+        AlertDialog(
+            onDismissRequest = { showThemeDialog = false },
+            title = { Text("Select Theme", style = AppTypography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+            text = {
+                Column {
+                    availableThemes.forEach { theme ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.setThemeMode(theme)
+                                    showThemeDialog = false
+                                }
+                                .padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(theme, style = AppTypography.bodyLarge, modifier = Modifier.weight(1f))
+                            if (currentTheme == theme) {
+                                Icon(Icons.Default.Check, contentDescription = "Active", tint = HavenCyan)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showThemeDialog = false }) { Text("Close", color = HavenCyan) }
+            },
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            textContentColor = MaterialTheme.colorScheme.onSurface
+        )
+    }
+
+    if (showLanguageDialog) {
+        AlertDialog(
+            onDismissRequest = { showLanguageDialog = false },
+            title = { Text("Select Language", style = AppTypography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+            text = {
+                LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 300.dp)) {
+                    items(availableLanguages.size) { index ->
+                        val lang = availableLanguages[index]
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    currentLanguage = lang
+                                    showLanguageDialog = false
+                                }
+                                .padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(lang, style = AppTypography.bodyLarge, modifier = Modifier.weight(1f))
+                            if (currentLanguage == lang) {
+                                Icon(Icons.Default.Check, contentDescription = "Active", tint = HavenCyan)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showLanguageDialog = false }) { Text("Close", color = HavenCyan) }
             },
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
             titleContentColor = MaterialTheme.colorScheme.onSurface,
