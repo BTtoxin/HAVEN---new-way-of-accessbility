@@ -73,6 +73,33 @@ object VersionManager {
                 )
             )
         }
+        
+        // Check for remote latest version in preferences
+        val prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+        val remoteVersion = prefs.getString("latest_remote_version", "")
+        val remoteChangelog = prefs.getString("latest_remote_changelog", "")
+        
+        if (!remoteVersion.isNullOrEmpty() && !remoteChangelog.isNullOrEmpty()) {
+            val isNewer = entries.isEmpty() || remoteVersion != entries.first().version
+            if (isNewer) {
+                // Parse markdown-like bullet points to list of ChangeItems
+                val changeItems = mutableListOf<ChangeItem>()
+                val lines = remoteChangelog.split("\n")
+                for (line in lines) {
+                    val trimmed = line.trim()
+                    if (trimmed.startsWith("-") || trimmed.startsWith("*")) {
+                        changeItems.add(ChangeItem(trimmed.substring(1).trim(), "Update", "From GitHub Release"))
+                    }
+                }
+                if (changeItems.isEmpty()) {
+                    changeItems.add(ChangeItem(remoteChangelog, "Update", "From GitHub Release"))
+                }
+                
+                // Add at the top
+                entries.add(0, ChangelogEntry(remoteVersion, "Latest Remote Release", changeItems))
+            }
+        }
+        
         return entries
     }
 }

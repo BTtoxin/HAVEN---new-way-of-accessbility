@@ -333,6 +333,32 @@ fun DashboardScreen(
                     alpha = entranceAlpha
                 }
         ) {
+            // HAVEN BRANDING HEADER
+            item(span = StaggeredGridItemSpan.FullLine) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "HAVEN",
+                        style = AppTypography.headlineLarge.copy(
+                            fontSize = 36.sp,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
+                            letterSpacing = 10.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "DASHBOARD",
+                        style = AppTypography.labelSmall.copy(fontSize = 12.sp, letterSpacing = 4.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
+                        color = NothingRed
+                    )
+                }
+            }
+
             // DIGITAL CLOCK WIDGET
             item(span = StaggeredGridItemSpan.FullLine) {
                 var currentTime by remember { mutableStateOf(java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date())) }
@@ -876,22 +902,15 @@ fun DashboardScreen(
                         Column {
                             Text(
                                 text = "HAVEN",
-                                style = AppTypography.displayLarge.copy(
-                                    fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
-                                    fontSize = 42.sp,
-                                    letterSpacing = 4.sp
-                                ),
+                                style = AppTypography.displayLarge,
                                 fontFamily = FontFamily.SansSerif,
                                 color = MaterialTheme.colorScheme.onBackground
                             )
                             Text(
                                 text = "by ashu mehta",
-                                style = AppTypography.labelMedium.copy(
-                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
-                                    fontSize = 12.sp
-                                ),
+                                style = AppTypography.labelSmall,
                                 color = NtSecondary,
-                                letterSpacing = 2.sp
+                                letterSpacing = 1.sp
                             )
                         }
                     }
