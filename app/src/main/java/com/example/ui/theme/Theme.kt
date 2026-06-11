@@ -10,6 +10,44 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
+private val HavenLightColorScheme = lightColorScheme(
+    primary = HavenCyan,
+    onPrimary = HavenTextLight,
+    primaryContainer = androidx.compose.ui.graphics.Color(0xFFE0F7FD),
+    onPrimaryContainer = androidx.compose.ui.graphics.Color(0xFF006070),
+    secondary = HavenMint,
+    onSecondary = HavenTextDark,
+    surface = HavenBgLight,
+    onSurface = HavenTextDark,
+    surfaceVariant = HavenBgNearWhite,
+    onSurfaceVariant = HavenTextSecondary,
+    background = HavenBgLight,
+    onBackground = HavenTextDark,
+    error = HavenRed,
+    onError = HavenTextLight,
+    outline = HavenBorder,
+    outlineVariant = HavenBorder,
+)
+
+private val HavenDarkColorScheme = androidx.compose.material3.darkColorScheme(
+    primary = HavenCyan,
+    onPrimary = HavenTextDark,
+    primaryContainer = androidx.compose.ui.graphics.Color(0xFF004D5C),
+    onPrimaryContainer = HavenCyan,
+    secondary = HavenMint,
+    onSecondary = HavenTextDark,
+    surface = HavenDarkSurface,
+    onSurface = HavenTextLight,
+    surfaceVariant = HavenDarkSurface2,
+    onSurfaceVariant = HavenTextSecondary,
+    background = HavenDarkBg,
+    onBackground = HavenTextLight,
+    error = HavenRed,
+    onError = HavenTextLight,
+    outline = HavenDarkSurface2,
+    outlineVariant = HavenDarkSurface2,
+)
+
 private val NaturalColorScheme = lightColorScheme(
     primary = NtPrimary,
     onPrimary = NtOnPrimary,
@@ -144,6 +182,7 @@ fun NothingTheme(
     }
 
     val selectedScheme = when (palette) {
+        "HAVEN" -> if(darkTheme) HavenDarkColorScheme else HavenLightColorScheme
         "MONOCHROME" -> {
             if (darkTheme) MonochromeColorScheme else lightColorScheme(
                 primary = androidx.compose.ui.graphics.Color.Black,
@@ -166,8 +205,11 @@ fun NothingTheme(
         "FOREST" -> ForestColorScheme
         "OCEAN" -> OceanColorScheme
         "NEON" -> NeonColorScheme
-        else -> {
+        "NATURAL" -> {
             if (darkTheme) NaturalDarkColorScheme else NaturalColorScheme
+        }
+        else -> {
+            if (darkTheme) HavenDarkColorScheme else HavenLightColorScheme
         }
     }
 

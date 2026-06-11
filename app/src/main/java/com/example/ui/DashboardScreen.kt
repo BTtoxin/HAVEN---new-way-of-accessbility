@@ -19,10 +19,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
-import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
-import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
-import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
-import androidx.compose.foundation.lazy.staggeredgrid.items
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
@@ -321,11 +319,9 @@ fun DashboardScreen(
             .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding()
     ) {
-        LazyVerticalStaggeredGrid(
-            columns = StaggeredGridCells.Fixed(gridLayoutColumns),
-            contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 96.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalItemSpacing = 12.dp,
+        LazyColumn(
+            contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 100.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer {
@@ -334,7 +330,7 @@ fun DashboardScreen(
                 }
         ) {
             // HAVEN BRANDING HEADER
-            item(span = StaggeredGridItemSpan.FullLine) {
+            item {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -360,7 +356,7 @@ fun DashboardScreen(
             }
 
             // DIGITAL CLOCK WIDGET
-            item(span = StaggeredGridItemSpan.FullLine) {
+            item {
                 var currentTime by remember { mutableStateOf(java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date())) }
                 var currentDate by remember { mutableStateOf(java.text.SimpleDateFormat("EEEE, MMMM dd, yyyy", java.util.Locale.getDefault()).format(java.util.Date())) }
                 var networkType by remember { mutableStateOf("4G LTE") }
@@ -443,7 +439,7 @@ fun DashboardScreen(
             }
 
             // BATTERY STATS DASHBOARD CARD
-            item(span = StaggeredGridItemSpan.FullLine) {
+            item {
                 var batteryPct by remember { mutableFloatStateOf(0f) }
                 var batteryTemp by remember { mutableFloatStateOf(0f) }
                 var batteryVoltage by remember { mutableIntStateOf(0) }
@@ -545,7 +541,7 @@ fun DashboardScreen(
             }
 
             // CPU & RAM Live Card
-            item(span = StaggeredGridItemSpan.FullLine) {
+            item {
                 var availRam by remember { mutableLongStateOf(0L) }
                 var totalRam by remember { mutableLongStateOf(0L) }
                 
@@ -593,7 +589,7 @@ fun DashboardScreen(
             }
 
             // STORAGE ANALYZER CARD
-            item(span = StaggeredGridItemSpan.FullLine) {
+            item {
                 var totalSpace by remember { mutableLongStateOf(1L) }
                 var freeSpace by remember { mutableLongStateOf(1L) }
                 
@@ -636,7 +632,7 @@ fun DashboardScreen(
             }
 
             // IP INFO CARD
-            item(span = StaggeredGridItemSpan.FullLine) {
+            item {
                 var localIp by remember { mutableStateOf("192.168.1.XX") }
                 var isVpn by remember { mutableStateOf(false) }
                 var rxMbps by remember { mutableStateOf("0.0") }
@@ -726,7 +722,7 @@ fun DashboardScreen(
             }
 
             // OEM UNLOCK CARD
-            item(span = StaggeredGridItemSpan.FullLine) {
+            item {
                 var oemUnlocked by remember { mutableStateOf(false) }
                 
                 LaunchedEffect(Unit) {
@@ -764,7 +760,7 @@ fun DashboardScreen(
 
             // AI REORGANIZATION SUGGESTION BANNER
             if (false && aiLayoutSuggestion != null) {
-                item(span = StaggeredGridItemSpan.FullLine) {
+                item {
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -851,7 +847,7 @@ fun DashboardScreen(
             }
 
             // HEADER
-            item(span = StaggeredGridItemSpan.FullLine) {
+            item {
                 var currentTime by remember { mutableStateOf(java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date())) }
                 var currentDate by remember { mutableStateOf(java.text.SimpleDateFormat("EEE, MMM dd", java.util.Locale.getDefault()).format(java.util.Date())) }
 
@@ -1059,7 +1055,7 @@ fun DashboardScreen(
             }
 
             // RECENTLY USED SECTION
-            item(span = StaggeredGridItemSpan.FullLine) {
+            item {
                 val recentlyUsed by viewModel.recentlyUsedTiles.collectAsStateWithLifecycle()
                 if (recentlyUsed.isNotEmpty()) {
                     com.example.ui.components.RecentlyUsedSection(
@@ -1071,7 +1067,7 @@ fun DashboardScreen(
             }
 
             // 2X2 QUICK TOGGLES GRID COMPONENT
-            item(span = StaggeredGridItemSpan.FullLine) {
+            item {
                 com.example.ui.components.QuickToggleGrid(
                     viewModel = viewModel,
                     isFlashlightActive = isFlashlightOn,
@@ -1089,7 +1085,7 @@ fun DashboardScreen(
             }
 
             // QUICK CONTROLS SECTION
-            item(span = StaggeredGridItemSpan.FullLine) {
+            item {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp),
@@ -1100,7 +1096,7 @@ fun DashboardScreen(
                         Text("Swipe for more", style = AppTypography.labelSmall, color = NtSecondary)
                     }
                     androidx.compose.foundation.lazy.LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
                         contentPadding = PaddingValues(horizontal = 4.dp)
                     ) {
                         item {
@@ -1390,7 +1386,7 @@ fun DashboardScreen(
 
             // PERMISSION BANNER
             if (!hasWriteSettingsPermission) {
-                item(span = StaggeredGridItemSpan.FullLine) {
+                item {
                     BentoCard(
                         title = "PERMISSION",
                         icon = Icons.Default.Warning,
@@ -1411,7 +1407,7 @@ fun DashboardScreen(
             }
 
             if (filteredOrder.isEmpty()) {
-                item(span = StaggeredGridItemSpan.FullLine) {
+                item {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1454,11 +1450,7 @@ fun DashboardScreen(
             } else {
                 items(
                     items = filteredOrder,
-                    key = { id -> id },
-                    span = { id ->
-                        if (id in listOf("CAFFEINE", "BATTERY", "BRIGHTNESS", "THEATER", "FOCUS", "GLYPH", "WEATHER")) StaggeredGridItemSpan.FullLine
-                        else StaggeredGridItemSpan.SingleLane
-                    }
+                    key = { id -> id }
                 ) { id ->
                     val index = remember(id, availableOrder) { availableOrder.indexOf(id) }
                 Box(modifier = Modifier.animateItem()) {

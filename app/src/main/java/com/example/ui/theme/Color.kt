@@ -2,6 +2,26 @@ package com.example.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
+// ── PRIMARY DESIGN PALETTE (new UI language) ──
+val HavenCyan = Color(0xFF49CBEB)          // Primary accent — cyan-blue
+val HavenMint = Color(0xFF00EBC7)          // Secondary accent — mint teal
+val HavenBgLight = Color(0xFFFFFFFF)       // Light bg
+val HavenBgNearWhite = Color(0xFFF4F5F6)   // Light surface
+val HavenDarkBg = Color(0xFF1C1C1E)        // Dark background
+val HavenDarkSurface = Color(0xFF2C2C2E)   // Dark card surface
+val HavenDarkSurface2 = Color(0xFF3A3A3C)  // Dark chip unselected
+val HavenTextDark = Color(0xFF000000)      // Primary text on light
+val HavenTextLight = Color(0xFFFFFFFF)     // Primary text on dark
+val HavenTextSecondary = Color(0xFF8A8A8E) // Secondary text
+val HavenBorder = Color(0xFFE5E5EA)        // Divider / border
+val HavenGreen = Color(0xFF34C759)         // Success green (iOS-style)
+val HavenRed = Color(0xFFFF3B30)           // Error/destructive red (iOS-style)
+val HavenOrange = Color(0xFFFF9500)        // Warning orange
+val HavenChipSelected = HavenCyan          // Active chip bg
+val HavenChipUnselectedDark = Color(0xFF3A3A3C) // Unselected chip on dark
+val HavenChipUnselectedLight = Color(0xFFE5E5EA) // Unselected chip on light
+
+// NATURAL PALETTE (Warm Grey / Sand)
 val NtBackground = Color(0xFFFDF8F6)
 val NtOnBackground = Color(0xFF1F1B1A)
 val NtSurface = Color(0xFFE7E1DE)
@@ -69,15 +89,15 @@ val NeonSecondary = Color(0xFFFF007F) // Hot Neon Pink Accent
 val NeonBorder = Color(0xFF1E293B)
 
 // Dummy mappings to existing names so we don't break usages where imported
-val PitchBlack = NtOnBackground 
-val DarkGray = NtSurface
-val PureWhite = NtBackground 
-val PaleGray = NtSurfaceVariant
-val NeutralGray = NtTextSecondary
-val BorderDark = NtBorder
-val BorderLight = NtBorder
-val NothingRed = NtSecondary
-val AccentRed = NtPrimary
-val SurfaceDark = NtSurface
-val SurfaceLight = NtSurfaceVariant
+val PitchBlack = HavenDarkBg
+val DarkGray = HavenDarkSurface
+val PureWhite = HavenBgLight
+val PaleGray = HavenBgNearWhite
+val NeutralGray = HavenTextSecondary
+val BorderDark = HavenDarkSurface2
+val BorderLight = HavenBorder
+val NothingRed = HavenCyan
+val AccentRed = HavenMint
+val SurfaceDark = HavenDarkSurface
+val SurfaceLight = HavenBgNearWhite
 

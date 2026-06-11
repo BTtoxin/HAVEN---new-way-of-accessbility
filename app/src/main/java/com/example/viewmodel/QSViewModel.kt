@@ -123,7 +123,7 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
     private val _isMonochrome = MutableStateFlow(false)
     val isMonochrome = _isMonochrome.asStateFlow()
 
-    private val _selectedPalette = MutableStateFlow("NATURAL")
+    private val _selectedPalette = MutableStateFlow("HAVEN")
     val selectedPalette = _selectedPalette.asStateFlow()
 
     private val _tileOrder = MutableStateFlow(emptyList<String>())
@@ -217,7 +217,19 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
     private val _recentlyUsedTiles = MutableStateFlow<List<String>>(listOf("TIMEOUT", "CAFFEINE", "WEATHER", "BATTERY"))
     val recentlyUsedTiles = _recentlyUsedTiles.asStateFlow()
 
-    private val _focusWhitelist = MutableStateFlow<Set<String>>(emptySet())
+    
+    private val _isFocusSandboxActive = MutableStateFlow(false)
+    val isFocusSandboxActive = _isFocusSandboxActive.asStateFlow()
+
+    private val _focusTimeLimit = MutableStateFlow("00:00")
+    val focusTimeLimit = _focusTimeLimit.asStateFlow()
+
+    fun updateFocusSandboxState(isActive: Boolean, remainingTime: String) {
+        _isFocusSandboxActive.value = isActive
+        _focusTimeLimit.value = remainingTime
+    }
+    
+private val _focusWhitelist = MutableStateFlow<Set<String>>(emptySet())
     val focusWhitelist = _focusWhitelist.asStateFlow()
 
     val focusSessionHistory = db.focusSessionDao().getAllSessions()
@@ -539,7 +551,7 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
             
             setThemeMode(tMode)
             setSelectedPalette(palette)
-            setMonochrome(palette != "NATURAL")
+            setMonochrome(palette != "HAVEN")
             setCustomShortcut(sTarget, sLabel)
 
             val dataStore = com.example.utils.SettingsDataStore(context)
@@ -579,7 +591,7 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             com.example.utils.SettingsDataStore(context).setMonochrome(active)
             _isMonochrome.value = active
-            val palette = if (active) "MONOCHROME" else "NATURAL"
+            val palette = if (active) "MONOCHROME" else "HAVEN"
             com.example.utils.SettingsDataStore(context).setSelectedPalette(palette)
             _selectedPalette.value = palette
             savePref("is_monochrome", active.toString())
@@ -591,7 +603,7 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             com.example.utils.SettingsDataStore(context).setSelectedPalette(palette)
             _selectedPalette.value = palette
-            val isMono = (palette != "NATURAL")
+            val isMono = (palette != "HAVEN")
             _isMonochrome.value = isMono
             com.example.utils.SettingsDataStore(context).setMonochrome(isMono)
             savePref("selected_palette", palette)

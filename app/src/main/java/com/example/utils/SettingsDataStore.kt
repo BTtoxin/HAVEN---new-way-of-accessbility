@@ -50,7 +50,7 @@ class SettingsDataStore(private val context: Context) {
     val focusStartTimeFlow: Flow<Long> = context.dataStore.data.map { it[FOCUS_START_TIME] ?: 0L }
     val focusAllowedAppsFlow: Flow<Set<String>> = context.dataStore.data.map { it[FOCUS_ALLOWED_APPS] ?: emptySet() }
     val isMonochromeFlow: Flow<Boolean> = context.dataStore.data.map { it[IS_MONOCHROME] ?: false }
-    val selectedPaletteFlow: Flow<String> = context.dataStore.data.map { it[SELECTED_PALETTE] ?: "NATURAL" }
+    val selectedPaletteFlow: Flow<String> = context.dataStore.data.map { it[SELECTED_PALETTE] ?: "HAVEN" }
     val tileOrderFlow: Flow<String> = context.dataStore.data.map { it[TILE_ORDER] ?: "" }
     val themeModeFlow: Flow<String> = context.dataStore.data.map { it[THEME_MODE] ?: "SYSTEM" }
     val hasSeenOnboardingFlow: Flow<Boolean> = context.dataStore.data.map { it[HAS_SEEN_ONBOARDING] ?: false }

@@ -103,65 +103,18 @@ class MainActivity : ComponentActivity() {
             }
             NothingTheme(darkTheme = isDark, palette = selectedPalette) {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    var currentScreen by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(initialScreen) }
-
                     if (!hasSeenOnboarding) {
                         com.example.ui.OnboardingScreen(onComplete = { viewModel.completeOnboarding() })
-                    } else if (currentScreen == "dashboard") {
-                        DashboardScreen(
+                    } else {
+                        com.example.ui.HavenScaffold(
                             viewModel = viewModel,
                             initialOpenFocus = openFocus,
-                            onNavigateToSettings = { currentScreen = "settings" },
-                            onNavigateToAutomation = { currentScreen = "automation" },
-                            onNavigateToClipboard = { currentScreen = "clipboard" },
-                            onNavigateToSensors = { currentScreen = "sensors" },
-                            onNavigateToFocusHistory = { currentScreen = "focus_history" },
                             onRequestPermission = {
-                                startActivity(
-                                    Intent(
-                                        Settings.ACTION_MANAGE_WRITE_SETTINGS,
-                                        Uri.parse("package:$packageName")
-                                    )
-                                )
+                                startActivity(Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, Uri.parse("package:$packageName")))
                             },
                             onRequestDndPermission = {
                                 startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
                             }
-                        )
-                    } else if (currentScreen == "permissions") {
-                        com.example.ui.PermissionScreen(
-                            onBack = { currentScreen = "dashboard" }
-                        )
-                    } else if (currentScreen == "automation") {
-                        com.example.ui.AutomationScreen(
-                            viewModel = viewModel,
-                            onBack = { currentScreen = "dashboard" }
-                        )
-                    } else if (currentScreen == "clipboard") {
-                        com.example.ui.ClipboardScreen(
-                            onBack = { currentScreen = "dashboard" }
-                        )
-                    } else if (currentScreen == "sensors") {
-                        com.example.ui.SensorScreen(
-                            onBack = { currentScreen = "dashboard" }
-                        )
-                    } else if (currentScreen == "focus_history") {
-                        com.example.ui.FocusHistoryScreen(
-                            viewModel = viewModel,
-                            onBack = { currentScreen = "dashboard" }
-                        )
-                    } else if (currentScreen == "changelog") {
-                        com.example.ui.ChangelogScreen(
-                            onBack = { currentScreen = "settings" }
-                        )
-                    } else {
-                        com.example.ui.SettingsScreen(
-                            viewModel = viewModel,
-                            onBack = { currentScreen = "dashboard" },
-                            onNavigateToPermissions = { currentScreen = "permissions" },
-                            onNavigateToChangelog = { currentScreen = "changelog" },
-                            onResetLayout = { viewModel.resetTileOrder() },
-                            onConfirm = { viewModel.checkAllStates() }
                         )
                     }
                 }
