@@ -30,7 +30,7 @@ import com.example.ui.theme.AppTypography
 import com.example.ui.theme.HavenCyan
 import com.example.viewmodel.QSViewModel
 
-data class TileInfo(val title: String, val icon: ImageVector, val isActiveState: State<Boolean>?, val actionId: String = "")
+data class TileInfo(val title: String, val icon: ImageVector, val isActiveState: State<Boolean>?)
 
 @Composable
 fun ControlsScreen(
@@ -108,69 +108,68 @@ fun ControlsScreen(
             
             // Reusing categories from prompt
             val displayTiles = listOf(
-                TileInfo("Brightness Lock", Icons.Default.BrightnessAuto, null, "brightness_lock"),
-                TileInfo("Grayscale", Icons.Default.FilterBAndW, viewModel.isMonochrome.collectAsStateWithLifecycle(), "grayscale"),
-                TileInfo("Night Light", Icons.Default.Nightlight, null, "night_light"),
-                TileInfo("AOD", Icons.Default.Aod, null, "aod"),
-                TileInfo("Refresh Rate", Icons.Default.Speed, null, "refresh_rate"),
-                TileInfo("Adaptive Brightness", Icons.Default.BrightnessAuto, null, "adaptive_brightness"),
-                TileInfo("Font Size", Icons.Default.FormatSize, null, "font_size"),
-                TileInfo("Auto-Rotate", Icons.Default.ScreenRotation, null, "auto_rotate")
+                TileInfo("Brightness Lock", Icons.Default.BrightnessAuto, null),
+                TileInfo("Grayscale", Icons.Default.FilterBAndW, viewModel.isMonochrome.collectAsStateWithLifecycle()),
+                TileInfo("Night Light", Icons.Default.Nightlight, null),
+                TileInfo("AOD", Icons.Default.Aod, null),
+                TileInfo("Refresh Rate", Icons.Default.Speed, null),
+                TileInfo("Adaptive Brightness", Icons.Default.BrightnessAuto, null),
+                TileInfo("Font Size", Icons.Default.FormatSize, null),
+                TileInfo("Auto-Rotate", Icons.Default.ScreenRotation, null)
             )
             
             val audioTiles = listOf(
-                TileInfo("Ringer Mode", Icons.Default.VolumeUp, null, "ringer_mode"),
-                TileInfo("Mute Mic", Icons.Default.MicOff, null, "mute_mic"),
-                TileInfo("App Audio", Icons.Default.AudioFile, viewModel.isAppAudioIsolated.collectAsStateWithLifecycle(), "app_audio"),
-                TileInfo("Sound Profile", Icons.Default.Hearing, null, "sound_profile")
+                TileInfo("Ringer Mode", Icons.Default.VolumeUp, null),
+                TileInfo("Mute Mic", Icons.Default.MicOff, null),
+                TileInfo("App Audio", Icons.Default.AudioFile, viewModel.isAppAudioIsolated.collectAsStateWithLifecycle()),
+                TileInfo("Sound Profile", Icons.Default.Hearing, null)
             )
             
             val networkTiles = listOf(
-                TileInfo("VPN", Icons.Default.VpnKey, null, "vpn"),
-                TileInfo("Private DNS", Icons.Default.Dns, viewModel.isDnsActive.collectAsStateWithLifecycle(), "dns"),
-                TileInfo("Hotspot", Icons.Default.WifiTethering, null, "hotspot"),
-                TileInfo("Flight + BT", Icons.Default.FlightTakeoff, null, "flight_bt"),
-                TileInfo("Wi-Fi Share", Icons.Default.QrCode, null, "wifi_share"),
-                TileInfo("NFC Toggle", Icons.Default.Nfc, null, "nfc"),
-                TileInfo("Wireless ADB", Icons.Default.DeveloperBoard, null, "adb"),
-                TileInfo("Network Prefs", Icons.Default.CellTower, null, "network_prefs")
+                TileInfo("VPN", Icons.Default.VpnKey, null),
+                TileInfo("Private DNS", Icons.Default.Dns, viewModel.isDnsActive.collectAsStateWithLifecycle()),
+                TileInfo("Hotspot", Icons.Default.WifiTethering, null),
+                TileInfo("Flight + BT", Icons.Default.FlightTakeoff, null),
+                TileInfo("Wi-Fi Share", Icons.Default.QrCode, null),
+                TileInfo("NFC Toggle", Icons.Default.Nfc, null),
+                TileInfo("Wireless ADB", Icons.Default.DeveloperBoard, null),
+                TileInfo("Network Prefs", Icons.Default.CellTower, null)
             )
             
             val powerTiles = listOf(
-                TileInfo("Caffeine", Icons.Default.LocalCafe, viewModel.isCaffeineActive.collectAsStateWithLifecycle(), "caffeine"),
-                TileInfo("Battery Saver", Icons.Default.BatterySaver, null, "battery_saver"),
-                TileInfo("Extreme Saver", Icons.Default.BatteryAlert, null, "extreme_saver"),
-                TileInfo("RAM Cleaner", Icons.Default.Memory, null, "ram_cleaner"),
-                TileInfo("Panic Clear", Icons.Default.Warning, null, "panic_clear")
+                TileInfo("Caffeine", Icons.Default.LocalCafe, viewModel.isCaffeineActive.collectAsStateWithLifecycle()),
+                TileInfo("Battery Saver", Icons.Default.BatterySaver, null),
+                TileInfo("Extreme Saver", Icons.Default.BatteryAlert, null),
+                TileInfo("RAM Cleaner", Icons.Default.Memory, null),
+                TileInfo("Panic Clear", Icons.Default.Warning, null)
             )
             
             val systemTiles = listOf(
-                TileInfo("Screen Timeout", Icons.Default.Timer, null, "screen_timeout"),
-                TileInfo("USB Mode", Icons.Default.Usb, null, "usb_mode"),
-                TileInfo("Dev Options", Icons.Default.DeveloperMode, null, "dev_options"),
-                TileInfo("Session Password", Icons.Default.Password, null, "session_password"),
-                TileInfo("Notif Filter", Icons.Default.NotificationsOff, null, "notif_filter"),
-                TileInfo("Theater Mode", Icons.Default.Theaters, viewModel.isTheaterActive.collectAsStateWithLifecycle(), "theater"),
-                TileInfo("Data Saver", Icons.Default.DataSaverOn, null, "data_saver"),
-                TileInfo("Purge Clipboard", Icons.Default.ContentPasteOff, null, "purge_clipboard"),
-                TileInfo("Custom Shortcut", Icons.Default.Shortcut, null, "custom_shortcut"),
-                TileInfo("Flashlight Intensity", Icons.Default.Highlight, null, "flashlight_intensity")
+                TileInfo("Screen Timeout", Icons.Default.Timer, null),
+                TileInfo("USB Mode", Icons.Default.Usb, null),
+                TileInfo("Dev Options", Icons.Default.DeveloperMode, null),
+                TileInfo("Session Password", Icons.Default.Password, null),
+                TileInfo("Notif Filter", Icons.Default.NotificationsOff, null),
+                TileInfo("Theater Mode", Icons.Default.Theaters, viewModel.isTheaterActive.collectAsStateWithLifecycle()),
+                TileInfo("Data Saver", Icons.Default.DataSaverOn, null),
+                TileInfo("Purge Clipboard", Icons.Default.ContentPasteOff, null),
+                TileInfo("Custom Shortcut", Icons.Default.Shortcut, null),
+                TileInfo("Flashlight Intensity", Icons.Default.Highlight, null)
             )
 
             Column(modifier = Modifier.padding(horizontal = 20.dp)) {
-                TileCategorySection("Display", displayTiles, viewModel)
-                TileCategorySection("Audio", audioTiles, viewModel)
-                TileCategorySection("Network & Security", networkTiles, viewModel)
-                TileCategorySection("Power & Battery", powerTiles, viewModel)
-                TileCategorySection("System & Tools", systemTiles, viewModel)
+                TileCategorySection("Display", displayTiles)
+                TileCategorySection("Audio", audioTiles)
+                TileCategorySection("Network & Security", networkTiles)
+                TileCategorySection("Power & Battery", powerTiles)
+                TileCategorySection("System & Tools", systemTiles)
             }
         }
     }
 }
 
 @Composable
-fun TileCategorySection(title: String, tiles: List<TileInfo>, viewModel: QSViewModel) {
-    val context = androidx.compose.ui.platform.LocalContext.current
+fun TileCategorySection(title: String, tiles: List<TileInfo>) {
     Text(title, style = AppTypography.labelLarge, color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.padding(vertical = 12.dp))
     
     // We replace LazyVerticalGrid inside a LazyColumn with a Grid implementation or Column/Row approach
@@ -184,21 +183,7 @@ fun TileCategorySection(title: String, tiles: List<TileInfo>, viewModel: QSViewM
                         modifier = Modifier.weight(1f),
                         icon = tile.icon,
                         name = tile.title,
-                        isActive = tile.isActiveState?.value ?: false,
-                        onClick = {
-                            com.example.utils.AudioHapticEngine.triggerClick(context)
-                            when (tile.actionId) {
-                                "grayscale" -> viewModel.setMonochrome(!(tile.isActiveState?.value ?: false))
-                                "theater" -> viewModel.toggleTheaterMode(!(tile.isActiveState?.value ?: false))
-                                "app_audio" -> viewModel.toggleAudioIsolation(!(tile.isActiveState?.value ?: false))
-                                "caffeine" -> viewModel.toggleCaffeine(!(tile.isActiveState?.value ?: false))
-                                "dns" -> viewModel.togglePrivateDns(!(tile.isActiveState?.value ?: false))
-                                else -> {
-                                    // Open mock settings for unimplemented toggles to prevent crashes and act responsive
-                                    android.widget.Toast.makeText(context, "${tile.title} action triggered.", android.widget.Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                        }
+                        isActive = tile.isActiveState?.value ?: false
                     )
                 }
                 if (row.size == 1) {
@@ -215,14 +200,12 @@ fun HavenTileChip(
     modifier: Modifier = Modifier,
     icon: ImageVector,
     name: String,
-    isActive: Boolean,
-    onClick: (() -> Unit)? = null
+    isActive: Boolean
 ) {
     Surface(
         modifier = modifier.height(64.dp),
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = if (isActive) 0.5f else 1f),
-        onClick = { onClick?.invoke() }
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),

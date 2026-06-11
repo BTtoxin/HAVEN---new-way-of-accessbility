@@ -475,26 +475,6 @@ fun SettingsScreen(
                                     context.getSharedPreferences("haven_prefs", android.content.Context.MODE_PRIVATE)
                                         .edit().putString("app_language", lang).apply()
                                     com.example.utils.AudioHapticEngine.triggerClick(context)
-                                    
-                                    val localeTag = when(lang) {
-                                        "Hindi" -> "hi"
-                                        "Bengali" -> "bn"
-                                        "Tamil" -> "ta"
-                                        "Telugu" -> "te"
-                                        "Kannada" -> "kn"
-                                        "Malayalam" -> "ml"
-                                        "Marathi" -> "mr"
-                                        "Gujarati" -> "gu"
-                                        "Punjabi" -> "pa"
-                                        else -> "en"
-                                    }
-                                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                                        context.getSystemService(android.app.LocaleManager::class.java)?.applicationLocales = android.os.LocaleList(java.util.Locale(localeTag))
-                                    } else {
-                                        val config = android.content.res.Configuration(context.resources.configuration)
-                                        config.setLocale(java.util.Locale(localeTag))
-                                        context.resources.updateConfiguration(config, context.resources.displayMetrics)
-                                    }
                                 }
                                 .padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically,

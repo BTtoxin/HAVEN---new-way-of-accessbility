@@ -34,19 +34,6 @@ fun FocusTab(
     val focusTimeLimitStr by viewModel.focusTimeLimit.collectAsStateWithLifecycle()
 
     var selectedDuration by remember { mutableIntStateOf(25) }
-    var selectedApps by remember { mutableStateOf(emptySet<String>()) }
-    var showAppSelector by remember { mutableStateOf(false) }
-
-    if (showAppSelector) {
-        com.example.ui.AppSelectorDialog(
-            preselectedApps = selectedApps,
-            onDismiss = { showAppSelector = false },
-            onConfirm = {
-                selectedApps = it
-                showAppSelector = false
-            }
-        )
-    }
 
     LazyColumn(
         modifier = Modifier
@@ -117,17 +104,16 @@ fun FocusTab(
                             }
                             Spacer(Modifier.height(24.dp))
                             OutlinedButton(
-                                onClick = { showAppSelector = true },
+                                onClick = { /* open AppSelectorDialog */ },
                                 shape = RoundedCornerShape(50.dp)
                             ) {
-                                val label = if (selectedApps.isEmpty()) "Apps Allowed: All" else "Apps Allowed: ${selectedApps.size}"
-                                Text(label, style = AppTypography.labelLarge, color = MaterialTheme.colorScheme.onBackground)
+                                Text("Apps Allowed", style = AppTypography.labelLarge, color = MaterialTheme.colorScheme.onBackground)
                             }
                             Spacer(Modifier.height(24.dp))
                             HavenPillButton(
                                 text = "Start Focus",
                                 modifier = Modifier.fillMaxWidth(),
-                                onClick = { viewModel.startFocusSandbox(selectedDuration, selectedApps) }
+                                onClick = { viewModel.startFocusSandbox(selectedDuration, emptySet()) }
                             )
                         }
                     }

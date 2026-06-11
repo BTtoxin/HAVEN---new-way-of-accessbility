@@ -95,7 +95,7 @@ fun QuickToggleGrid(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
-                    text = "QUICK ACTIONS",
+                    text = "NETWORK CONNECTIONS",
                     style = AppTypography.labelSmall.copy(letterSpacing = 1.sp, fontWeight = FontWeight.ExtraBold),
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
                 )

@@ -16,7 +16,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Modifier
 import com.example.ui.DashboardScreen
-import com.example.ui.theme.PremiumTheme
+import com.example.ui.theme.NothingTheme
 import com.example.viewmodel.QSViewModel
 
 class MainActivity : ComponentActivity() {
@@ -64,7 +64,7 @@ class MainActivity : ComponentActivity() {
                 "LIGHT" -> false
                 else -> systemDark
             }
-            PremiumTheme(darkTheme = isDark, palette = selectedPalette) {
+            NothingTheme(darkTheme = isDark, palette = selectedPalette) {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     if (!hasSeenOnboarding) {
                         com.example.ui.OnboardingScreen(onComplete = { viewModel.completeOnboarding() })

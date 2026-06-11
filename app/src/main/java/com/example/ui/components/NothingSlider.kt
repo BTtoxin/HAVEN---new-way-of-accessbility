@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.example.utils.AudioHapticEngine
 
 @Composable
-fun GenericSlider(
+fun NothingSlider(
     value: Float,
     onValueChange: (Float) -> Unit,
     valueRange: ClosedFloatingPointRange<Float>,

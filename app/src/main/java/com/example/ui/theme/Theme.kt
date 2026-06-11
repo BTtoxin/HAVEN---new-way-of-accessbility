@@ -236,7 +236,7 @@ private val AmethystColorScheme = lightColorScheme(
 )
 
 @Composable
-fun PremiumTheme(
+fun NothingTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     palette: String = "NATURAL",
     content: @Composable () -> Unit

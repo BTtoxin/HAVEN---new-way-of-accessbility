@@ -28,7 +28,7 @@ import com.example.utils.AudioHapticEngine
 import com.example.utils.SystemSettingsHelper
 import kotlin.math.roundToInt
 
-import com.example.ui.components.GenericSlider
+import com.example.ui.components.NothingSlider
 
 @Composable
 fun BrightnessSlider(
@@ -95,7 +95,7 @@ fun BrightnessSlider(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            GenericSlider(
+            NothingSlider(
                 value = brightnessState,
                 onValueChange = { newValue ->
                     val oldValInt = brightnessState.roundToInt()
@@ -134,7 +134,7 @@ fun BrightnessSlider(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            GenericSlider(
+            NothingSlider(
                 value = volumeState,
                 onValueChange = { newValue ->
                     val oldValInt = volumeState.roundToInt()

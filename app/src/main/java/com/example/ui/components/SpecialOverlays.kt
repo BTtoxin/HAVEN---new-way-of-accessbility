@@ -506,6 +506,22 @@ fun SystemDiagnosticsOverlay(onDismiss: () -> Unit) {
     var sensorY by remember { mutableStateOf(0f) }
     var sensorZ by remember { mutableStateOf(0f) }
 
+    val sensorManager = remember { context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager }
+    val gyroSensor = remember { sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) }
+
+    LaunchedEffect(Unit) {
+        // FPS simulator favoring 120Hz if available!
+        while (true) {
+            val runtime = Runtime.getRuntime()
+            memoryUsage = (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024)
+            maxHeap = runtime.maxMemory() / (1024 * 1024)
+            
+            // Random fluctuations
+            fpsValue = 118 + (Math.random() * 3).toInt()
+            delay(800)
+        }
+    }
+
     LaunchedEffect(Unit) {
         // Read actual battery changes via system broadcast intent
         val batteryFilter = android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED)
@@ -529,6 +545,28 @@ fun SystemDiagnosticsOverlay(onDismiss: () -> Unit) {
             }
         }
         context.registerReceiver(batteryReceiver, batteryFilter)
+    }
+
+    // Accelerometer listener
+    DisposableEffect(Unit) {
+        val listener = object : SensorEventListener {
+            override fun onSensorChanged(event: SensorEvent?) {
+                event?.let {
+                    sensorX = it.values[0]
+                    sensorY = it.values[1]
+                    sensorZ = it.values[2]
+                }
+            }
+            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+        }
+        if (sensorManager != null && gyroSensor != null) {
+            sensorManager.registerListener(listener, gyroSensor, SensorManager.SENSOR_DELAY_NORMAL)
+        }
+        onDispose {
+            if (sensorManager != null) {
+                sensorManager.unregisterListener(listener)
+            }
+        }
     }
 
     FullSheetOverlay(title = "SYSTEM DIAGNOSTICS & TELEMETRY", onDismiss = onDismiss) {
