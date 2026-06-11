@@ -52,7 +52,7 @@ class FocusSandboxService : Service() {
         monitorJob?.cancel()
         monitorJob = scope.launch(Dispatchers.IO) {
             val usageManager = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                createAttributionContext("default").getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+                getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
             } else {
                 getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
             }

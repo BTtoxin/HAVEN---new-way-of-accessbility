@@ -48,7 +48,7 @@ fun AppSelectorDialog(
 
     val recentAppPackages = remember {
         val attributionContext = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-            context.createAttributionContext("default")
+            context
         } else {
             context
         }

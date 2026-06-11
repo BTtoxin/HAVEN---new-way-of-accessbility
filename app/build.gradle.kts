@@ -8,12 +8,12 @@ plugins {
 
 android {
   namespace = "com.example"
-  compileSdk { version = release(36) { minorApiLevel = 1 } }
+  compileSdk = 35
 
   defaultConfig {
     applicationId = "com.aistudio.glyphqs.kjmz"
     minSdk = 24
-    targetSdk = 36
+    targetSdk = 35
     versionCode = 5
     versionName = "1.5.0"
 
@@ -82,7 +82,7 @@ android {
       isCrunchPngs = false
       isMinifyEnabled = false
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-      signingConfig = signingConfigs.getByName("release")
+      signingConfig = signingConfigs.getByName("debugConfig")
     }
     debug {
       signingConfig = signingConfigs.getByName("debugConfig")
@@ -100,9 +100,16 @@ android {
 }
 
 tasks.register<Copy>("copyApk") {
-    dependsOn("assembleDebug")
+    dependsOn("assembleDebug", "assembleRelease", "bundleRelease")
     from(layout.buildDirectory.dir("outputs/apk/debug")) {
         include("app-debug.apk")
+    }
+    from(layout.buildDirectory.dir("outputs/apk/release")) {
+        include("app-release.apk")
+    }
+    from(layout.buildDirectory.dir("outputs/bundle/release")) {
+        include("app-release.aab")
+        into("../bundle")
     }
     into(rootProject.layout.projectDirectory.dir("build-output/apk"))
 }
