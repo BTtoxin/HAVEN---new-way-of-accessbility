@@ -47,12 +47,7 @@ fun AppSelectorDialog(
     val filtered = allApps.filter { it.label.contains(searchQuery, ignoreCase = true) }
 
     val recentAppPackages = remember {
-        val attributionContext = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-            context
-        } else {
-            context
-        }
-        val usageStatsManager = attributionContext.getSystemService(Context.USAGE_STATS_SERVICE) as android.app.usage.UsageStatsManager
+        val usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as android.app.usage.UsageStatsManager
         val endTime = System.currentTimeMillis()
         val startTime = endTime - 1000 * 60 * 60 * 24 * 7 // 7 days window for recent
         val stats = usageStatsManager.queryUsageStats(android.app.usage.UsageStatsManager.INTERVAL_DAILY, startTime, endTime)

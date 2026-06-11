@@ -139,6 +139,9 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
     private val _themeMode = MutableStateFlow("SYSTEM")
     val themeMode = _themeMode.asStateFlow()
 
+    private val _currentLanguage = MutableStateFlow("English")
+    val currentLanguage = _currentLanguage.asStateFlow()
+
     private val _hasSeenOnboarding = MutableStateFlow(false)
     val hasSeenOnboarding = _hasSeenOnboarding.asStateFlow()
 
@@ -451,6 +454,7 @@ private val _focusWhitelist = MutableStateFlow<Set<String>>(emptySet())
             _activeUserId.collectLatest { userId ->
                 userRepository.getPreferencesForUser(userId).collect { prefMap ->
                     prefMap["theme_mode"]?.let { _themeMode.value = it }
+                    prefMap["app_language"]?.let { _currentLanguage.value = it }
                     prefMap["is_monochrome"]?.let { _isMonochrome.value = it.toBoolean() }
                     prefMap["selected_palette"]?.let { _selectedPalette.value = it }
                     prefMap["tile_order"]?.let { orderStr ->
@@ -655,6 +659,11 @@ private val _focusWhitelist = MutableStateFlow<Set<String>>(emptySet())
             _themeMode.value = mode
             savePref("theme_mode", mode)
         }
+    }
+
+    fun setLanguage(lang: String) {
+        _currentLanguage.value = lang
+        savePref("app_language", lang)
     }
 
     fun completeOnboarding() {

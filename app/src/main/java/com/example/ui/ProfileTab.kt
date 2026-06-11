@@ -45,7 +45,7 @@ fun ProfileTab(
 
     // Assuming we don't have an explicit language preference in VM yet, let's keep local state or use shared preferences.
     // For now we'll simulate language change with a Toast.
-    var currentLanguage by remember { mutableStateOf("English") }
+    val currentLanguage by viewModel.currentLanguage.collectAsStateWithLifecycle()
     val availableLanguages = listOf("English", "Hindi", "Bengali", "Tamil", "Telugu", "Kannada", "Malayalam", "Marathi", "Gujarati", "Punjabi")
 
     LazyColumn(
@@ -144,7 +144,7 @@ fun ProfileTab(
                         context.startActivity(intent)
                     }),
                     Triple(Icons.Default.Code, "GitHub Profile", {
-                        val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://github.com/ashumehta2004"))
+                        val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://github.com/BTtoxin"))
                         context.startActivity(intent)
                     })
                 )
@@ -276,7 +276,7 @@ fun ProfileTab(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    currentLanguage = lang
+                                    viewModel.setLanguage(lang)
                                     android.widget.Toast.makeText(context, "Language changed to $lang", android.widget.Toast.LENGTH_SHORT).show()
                                     showLanguageDialog = false
                                 }
