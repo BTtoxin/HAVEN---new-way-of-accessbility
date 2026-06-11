@@ -109,6 +109,12 @@ fun ProfileTab(
         item {
             HavenSectionHeader("Settings & Preferences")
             Column(Modifier.padding(horizontal = 20.dp)) {
+                val isCheckingUpdate by viewModel.isCheckingUpdate.collectAsStateWithLifecycle()
+                if (isCheckingUpdate) {
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp), color = HavenCyan)
+                }
+                
+                val context = androidx.compose.ui.platform.LocalContext.current
                 val settingsItems = listOf(
                     Triple(Icons.Default.Settings, "Settings", onNavigateToSettings),
                     Triple(Icons.Default.Palette, "Theme", {}),
@@ -116,11 +122,12 @@ fun ProfileTab(
                     Triple(Icons.Default.Notifications, "Notifications", {}),
                     Triple(Icons.Default.Lock, "Permissions", onNavigateToPermissions),
                     Triple(Icons.Default.History, "Changelog", onNavigateToChangelog),
+                    Triple(Icons.Default.SystemUpdate, "Check for Updates", { viewModel.checkForUpdatesExplicit(context) }),
                     Triple(Icons.Default.Help, "FAQ / Manual", {}),
                     Triple(Icons.Default.Info, "About", {})
                 )
 
-                settingsItems.forEach { (icon: ImageVector, title: String, action: () -> Unit) ->
+                settingsItems.forEach { (icon, title, action) ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()

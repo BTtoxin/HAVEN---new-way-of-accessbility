@@ -3,6 +3,16 @@
   "lastUpdated": "June 10, 2026",
   "history": [
     {
+      "version": "v1.5.0",
+      "date": "June 11, 2026, 08:00 AM",
+      "changes": [
+        {"text": "Unified and completely reorganized Dashboard Layout with live hardware telemetry chips.", "tag": "Feature", "details": "Redesigned the top layout combining the clock, date, and hardware metrics. Removed redundant cards and brought everything into a cleaner interface."},
+        {"text": "Background Updater and Auto-Updating Changelog from GitHub.", "tag": "Feature", "details": "The app now silently fetches new release info from GitHub and merges it into the Changelog dynamically."},
+        {"text": "Dynamic User Manual based on Changelog events.", "tag": "Feature", "details": "The User Manual now automatically adds a 'NEW IN' section based on the fetched or current version changelog."},
+        {"text": "Update Status Dialog.", "tag": "Feature", "details": "You can explicitly check for updates from the profile, leading to an aesthetic prompt to download the latest APK directly."}
+      ]
+    },
+    {
       "version": "v1.4.0",
       "date": "June 10, 2026, 13:24 PM",
       "changes": [

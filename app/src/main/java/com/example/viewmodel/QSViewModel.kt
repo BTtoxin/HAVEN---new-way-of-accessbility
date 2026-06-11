@@ -46,6 +46,13 @@ data class AppNotification(
     val id: String = java.util.UUID.randomUUID().toString()
 )
 
+data class UpdateInfo(
+    val version: String,
+    val changelog: String,
+    val apkUrl: String,
+    val isNewer: Boolean
+)
+
 class QSViewModel(application: Application) : AndroidViewModel(application) {
     private val context = application.applicationContext
     private val prefManager = QSPreferenceManager(context)
@@ -218,6 +225,73 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
     val recentlyUsedTiles = _recentlyUsedTiles.asStateFlow()
 
     
+        private val _updateInfo = kotlinx.coroutines.flow.MutableStateFlow<UpdateInfo?>(null)
+    val updateInfo = _updateInfo.asStateFlow()
+
+    private val _isCheckingUpdate = kotlinx.coroutines.flow.MutableStateFlow(false)
+    val isCheckingUpdate = _isCheckingUpdate.asStateFlow()
+
+    fun checkForUpdatesExplicit(context: Context) {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            _isCheckingUpdate.value = true
+            try {
+                val url = java.net.URL("https://api.github.com/repos/ashumehta2004/Haven/releases/latest")
+                val connection = url.openConnection() as java.net.HttpURLConnection
+                connection.requestMethod = "GET"
+                connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
+                connection.connectTimeout = 8000
+                connection.readTimeout = 8000
+
+                if (connection.responseCode == java.net.HttpURLConnection.HTTP_OK) {
+                    val json = org.json.JSONObject(connection.inputStream.bufferedReader().readText())
+                    val tagName = json.getString("tag_name")
+                    val body = json.optString("body", "No release notes available.")
+                    val currentVersion = "v${com.example.BuildConfig.APP_VERSION_NAME}"
+                    val cleanTag = tagName.replace("v", "").replace(".", "").toIntOrNull() ?: 0
+                    val cleanCurrent = currentVersion.replace("v", "").replace(".", "").toIntOrNull() ?: 0
+                    val isNewer = cleanTag > cleanCurrent
+
+                    val assets = json.optJSONArray("assets")
+                    var apkUrl = ""
+                    if (assets != null) {
+                        for (i in 0 until assets.length()) {
+                            val asset = assets.getJSONObject(i)
+                            if (asset.getString("name").endsWith(".apk")) {
+                                apkUrl = asset.getString("browser_download_url")
+                                break
+                            }
+                        }
+                    }
+
+                    _updateInfo.value = UpdateInfo(tagName, body, apkUrl, isNewer)
+
+                    context.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE).edit()
+                        .putString("latest_remote_version", tagName)
+                        .putString("latest_remote_changelog", body)
+                        .putString("latest_remote_apk_url", apkUrl)
+                        .apply()
+                } else {
+                    showToast("Could not reach GitHub. Check network connection.")
+                }
+            } catch (e: Exception) {
+                showToast("Update check failed: ${e.message}")
+            }
+            _isCheckingUpdate.value = false
+        }
+    }
+
+    fun downloadAndInstallUpdate(context: Context) {
+        val info = _updateInfo.value ?: return
+        if (info.apkUrl.isNotEmpty()) {
+            com.example.utils.GitHubUpdater.checkForUpdates(context, downloadIfAvailable = true, notifyUpToDate = false)
+        }
+        _updateInfo.value = null
+    }
+
+    fun dismissUpdateInfo() {
+        _updateInfo.value = null
+    }
+
     private val _isFocusSandboxActive = MutableStateFlow(false)
     val isFocusSandboxActive = _isFocusSandboxActive.asStateFlow()
 
@@ -363,6 +437,16 @@ private val _focusWhitelist = MutableStateFlow<Set<String>>(emptySet())
         viewModelScope.launch {
             checkAllStates()
         }
+        // Silent background changelog + update check on startup
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            kotlinx.coroutines.delay(3000L)
+            try {
+                com.example.utils.GitHubUpdater.fetchAndCacheLatestRelease(context)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
         viewModelScope.launch {
             _activeUserId.collectLatest { userId ->
                 userRepository.getPreferencesForUser(userId).collect { prefMap ->

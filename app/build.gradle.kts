@@ -14,8 +14,8 @@ android {
     applicationId = "com.aistudio.glyphqs.kjmz"
     minSdk = 24
     targetSdk = 36
-    versionCode = 4
-    versionName = "1.4.0"
+    versionCode = 5
+    versionName = "1.5.0"
 
     val metadataFile = project.rootProject.file("metadata.json")
     var metadataVersion = "1.4.0"
@@ -28,6 +28,35 @@ android {
         }
     }
     buildConfigField("String", "METADATA_VERSION", "\"${metadataVersion}\"")
+    buildConfigField("String", "APP_VERSION_NAME", "\"${versionName}\"")
+    buildConfigField("int", "APP_VERSION_CODE", "${versionCode}")
+
+    // Sync versionName → metadata.json automatically
+    val metadataJson = """
+    {
+      "name": "Haven",
+      "description": "Nothing Phone inspired Quick Settings dashboard with Natural Tones.",
+      "version": "${versionName}",
+      "requestFramePermissions": [],
+      "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+    }
+    """.trimIndent()
+    if (metadataFile.exists()) {
+        val existingContent = metadataFile.readText()
+        if (!existingContent.contains("\"version\": \"${versionName}\"")) {
+            metadataFile.writeText(metadataJson)
+        }
+    }
+
+    val changelogFile = project.file("src/main/assets/changelog.json")
+    if (changelogFile.exists()) {
+        val changelogText = changelogFile.readText()
+        val versionRegexForChangelog = "\"currentVersion\"\\s*:\\s*\"[^\"]+\"".toRegex()
+        val updatedText = versionRegexForChangelog.replace(changelogText, "\"currentVersion\": \"v${versionName}\"")
+        if (updatedText != changelogText) {
+            changelogFile.writeText(updatedText)
+        }
+    }
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }

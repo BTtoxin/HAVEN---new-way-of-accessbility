@@ -94,6 +94,52 @@ object GitHubUpdater {
         }
     }
 
+    /**
+     * Silently fetches the latest GitHub release metadata and caches it.
+     * Does NOT prompt for download. Called on app startup.
+     */
+    suspend fun fetchAndCacheLatestRelease(context: Context) {
+        try {
+            val url = URL(GITHUB_API_URL)
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "GET"
+            connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
+            connection.connectTimeout = 8000
+            connection.readTimeout = 8000
+
+            if (connection.responseCode == HttpURLConnection.HTTP_OK) {
+                val responseText = connection.inputStream.bufferedReader().readText()
+                val json = JSONObject(responseText)
+                val tagName = json.getString("tag_name")
+                val body = json.optString("body", "")
+                val publishedAt = json.optString("published_at", "")
+
+                val assets = json.optJSONArray("assets")
+                var apkUrl = ""
+                if (assets != null) {
+                    for (i in 0 until assets.length()) {
+                        val asset = assets.getJSONObject(i)
+                        if (asset.getString("name").endsWith(".apk")) {
+                            apkUrl = asset.getString("browser_download_url")
+                            break
+                        }
+                    }
+                }
+
+                val prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+                prefs.edit()
+                    .putString("latest_remote_version", tagName)
+                    .putString("latest_remote_changelog", body)
+                    .putString("latest_remote_published_at", publishedAt)
+                    .putString("latest_remote_apk_url", apkUrl)
+                    .putLong("latest_remote_fetched_at", System.currentTimeMillis())
+                    .apply()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     private fun downloadAndInstallApk(context: Context, url: String, versionTag: String) {
         with(context.applicationContext) {
             val downloadManager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager

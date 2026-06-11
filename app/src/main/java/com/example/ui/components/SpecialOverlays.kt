@@ -161,7 +161,8 @@ fun AboutOverlay(onDismiss: () -> Unit) {
                     Text("APPLICATION DETAILS", style = AppTypography.labelSmall, color = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.height(8.dp))
                     InfoRow(label = "Developer", value = "Ashu Mehta")
-                    InfoRow(label = "Version Name", value = "1.2.0")
+                    val (ver, lastUpd) = remember { com.example.utils.VersionManager.getAppVersion(context) }
+                    InfoRow(label = "Version Name", value = com.example.utils.VersionManager.getFullVersionString(context))
                     InfoRow(label = "Target Year", value = "June 2026")
                     InfoRow(label = "Platform", value = "Kotlin & Compose 1.7")
                     InfoRow(label = "Status", value = "Production Ready")
@@ -327,46 +328,158 @@ fun ChangelogOverlay(onDismiss: () -> Unit) {
 
 @Composable
 fun UserManualOverlay(onDismiss: () -> Unit) {
-    val manuals = listOf(
-        ManualItem("CAFFEINE WAKE MODE", Icons.Default.Coffee, "Prevents your screen from going to sleep arbitrarily. You can adjust the standby timer between 1 to 120 minutes in deep settings. Toggle this when reviewing documents, reading books, or showing slideshows."),
-        ManualItem("DEEP FOCUS LOCK", Icons.Default.Lock, "Enforces high-efficiency focus. Allows you to set a focus timer and run an overlay sandbox block. Select specifically allowed apps to lock out notification and gaming disruptions. Displays real-time minutes and seconds count remaining in the UI."),
-        ManualItem("PRIVATE DNS OVERRIDE", Icons.Default.Dns, "Controls private DNS hostname. Safe indicators confirm when activated or standby. If your Android system requires secure manual intervention, click the 'DEEP SETTINGS' link inside the bento card to directly access system settings."),
-        ManualItem("COLOR PALETTES", Icons.Default.Palette, "Allows user theme overrides. Switch between Cream Natural light backgrounds, Slate Monochrome pitch black, Amber Gold dark, deep Forest Green dark, and Ocean Lagoon dark palettes in the settings dial."),
-        ManualItem("TILE LAYOUT CUSTOMIZER", Icons.Default.Edit, "Modify the home page grid setup. Click the Edit pencil icon in the top header. Press Left/Right arrow controllers on any card to slide assets. Press Check icon to lock current arrangement."),
-        ManualItem("SYSTEM DIAGNOSTICS", Icons.Default.BarChart, "Pinch screen header or double click the 'HAVEN' banner to launch real-time diagnostics. Use this to review frame rate stability, hardware sensors, and memory heap status.")
-    )
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val sections = androidx.compose.runtime.remember { com.example.utils.ManualContent.getSections(context) }
+    val (version, _) = androidx.compose.runtime.remember { com.example.utils.VersionManager.getAppVersion(context) }
 
-    FullSheetOverlay(title = "USER MANUAL", onDismiss = onDismiss) {
-        LazyColumn(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            items(manuals) { item ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(BorderDark.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
-                        .padding(16.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(item.icon, contentDescription = null, tint = NothingRed, modifier = Modifier.size(20.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(item.title, style = AppTypography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(item.description, style = AppTypography.bodyMedium, color = NeutralGray)
-                }
+    var expandedSection by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<String?>(sections.firstOrNull()?.sectionTitle) }
+    var searchQuery by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
+
+    val filteredSections = androidx.compose.runtime.remember(searchQuery, sections) {
+        if (searchQuery.isBlank()) sections
+        else sections.mapNotNull { section ->
+            val matchingFeatures = section.features.filter {
+                it.title.contains(searchQuery, ignoreCase = true) ||
+                it.description.contains(searchQuery, ignoreCase = true) ||
+                it.tip.contains(searchQuery, ignoreCase = true)
             }
-        }
-        Spacer(modifier = Modifier.height(12.dp))
-        Button(
-            onClick = onDismiss,
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.onSurface)
-        ) {
-            Text("CLOSE BOOK", style = AppTypography.labelSmall, color = MaterialTheme.colorScheme.surface)
+            if (matchingFeatures.isNotEmpty() || section.sectionTitle.contains(searchQuery, ignoreCase = true))
+                section.copy(features = if (matchingFeatures.isNotEmpty()) matchingFeatures else section.features)
+            else null
         }
     }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.background,
+        shape = RoundedCornerShape(24.dp),
+        modifier = Modifier.fillMaxHeight(0.92f),
+        title = {
+            Column {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.MenuBook, contentDescription = null, tint = NothingRed, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("USER MANUAL", style = AppTypography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 2.sp, fontSize = 13.sp))
+                    Spacer(Modifier.weight(1f))
+                    Text(version, style = AppTypography.labelSmall.copy(fontSize = 10.sp), color = NeutralGray)
+                }
+                Spacer(Modifier.height(10.dp))
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("Search manual...", style = AppTypography.bodySmall, color = NeutralGray) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Default.Close, contentDescription = "Clear", modifier = Modifier.size(16.dp))
+                            }
+                        }
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = NothingRed,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                    )
+                )
+            }
+        },
+        text = {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                filteredSections.forEach { section ->
+                    val isExpanded = expandedSection == section.sectionTitle || searchQuery.isNotBlank()
+
+                    item(key = section.sectionTitle) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isExpanded && searchQuery.isBlank())
+                                    NothingRed.copy(alpha = 0.05f)
+                                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            ),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Column {
+                                // Section header (tappable to expand/collapse)
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            com.example.utils.AudioHapticEngine.triggerClick(context)
+                                            expandedSection = if (expandedSection == section.sectionTitle) null else section.sectionTitle
+                                        }
+                                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        section.sectionTitle,
+                                        style = AppTypography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp),
+                                        color = if (isExpanded && searchQuery.isBlank()) NothingRed else MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    if (searchQuery.isBlank()) {
+                                        Icon(
+                                            if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                            contentDescription = null,
+                                            tint = NeutralGray,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
+
+                                // Feature list (animated)
+                                AnimatedVisibility(visible = isExpanded) {
+                                    Column(modifier = Modifier.padding(bottom = 8.dp)) {
+                                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
+                                        section.features.forEach { feature ->
+                                            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    if (feature.isNew) {
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .background(NothingRed.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
+                                                                .padding(horizontal = 4.dp, vertical = 1.dp)
+                                                        ) {
+                                                            Text("NEW", style = AppTypography.labelSmall.copy(fontSize = 8.sp), color = NothingRed)
+                                                        }
+                                                        Spacer(Modifier.width(6.dp))
+                                                    }
+                                                    Text(feature.title, style = AppTypography.bodyMedium.copy(fontWeight = FontWeight.Bold))
+                                                }
+                                                Spacer(Modifier.height(4.dp))
+                                                Text(feature.description, style = AppTypography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f), lineHeight = 18.sp)
+                                                if (feature.tip.isNotBlank()) {
+                                                    Spacer(Modifier.height(4.dp))
+                                                    Row(verticalAlignment = Alignment.Top) {
+                                                        Icon(Icons.Default.TipsAndUpdates, contentDescription = null, tint = NothingRed, modifier = Modifier.size(12.dp).padding(top = 2.dp))
+                                                        Spacer(Modifier.width(4.dp))
+                                                        Text(feature.tip, style = AppTypography.labelSmall.copy(fontSize = 10.sp, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic), color = NeutralGray, lineHeight = 14.sp)
+                                                    }
+                                                }
+                                            }
+                                            if (feature != section.features.last()) {
+                                                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("CLOSE", style = AppTypography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp))
+            }
+        }
+    )
 }
 
 @Composable

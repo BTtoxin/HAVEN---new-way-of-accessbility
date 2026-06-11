@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -147,7 +148,7 @@ fun ChangelogScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text("CURRENT BUILD", style = AppTypography.labelSmall, color = NeutralGray)
-                    Text(currentVersion, style = AppTypography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                    Text(remember { VersionManager.getFullVersionString(context) }, style = AppTypography.labelSmall, color = MaterialTheme.colorScheme.primary)
                 }
                 Spacer(modifier = Modifier.height(16.dp))
                 
@@ -213,14 +214,26 @@ fun ChangelogScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text(
-                                    text = entry.version,
-                                    style = AppTypography.bodySmall.copy(
-                                        fontSize = 18.sp,
-                                        fontWeight = FontWeight.Bold
-                                    ),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = entry.version,
+                                        style = AppTypography.bodySmall.copy(
+                                            fontSize = 18.sp,
+                                            fontWeight = FontWeight.Bold
+                                        ),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    if (entry.date.contains("Remote") || (entries.isNotEmpty() && entry == entries.first() && entry.date != entries.getOrNull(1)?.date)) {
+                                        Spacer(Modifier.width(8.dp))
+                                        Box(
+                                            modifier = Modifier
+                                                .background(NothingRed.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
+                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                        ) {
+                                            Text("REMOTE", style = AppTypography.labelSmall.copy(fontSize = 9.sp, letterSpacing = 1.sp), color = NothingRed)
+                                        }
+                                    }
+                                }
                                 Text(
                                     text = entry.date,
                                     style = AppTypography.labelSmall,
