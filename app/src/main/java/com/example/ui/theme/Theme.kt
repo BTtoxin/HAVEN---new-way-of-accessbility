@@ -235,6 +235,25 @@ private val AmethystColorScheme = lightColorScheme(
     onSurfaceVariant = AmethystOnBackground
 )
 
+private fun createLightVariant(darkScheme: androidx.compose.material3.ColorScheme): androidx.compose.material3.ColorScheme {
+    return lightColorScheme(
+        primary = darkScheme.primary,
+        onPrimary = androidx.compose.ui.graphics.Color.White,
+        primaryContainer = darkScheme.primary,
+        onPrimaryContainer = androidx.compose.ui.graphics.Color.White,
+        secondary = darkScheme.secondary,
+        onSecondary = androidx.compose.ui.graphics.Color.White,
+        surface = androidx.compose.ui.graphics.Color(0xFFFCFCFC),
+        onSurface = androidx.compose.ui.graphics.Color(0xFF1A1A1A),
+        background = androidx.compose.ui.graphics.Color(0xFFF0F0F0),
+        onBackground = androidx.compose.ui.graphics.Color(0xFF121212),
+        error = darkScheme.error,
+        outline = androidx.compose.ui.graphics.Color(0xFFCCCCCC),
+        surfaceVariant = androidx.compose.ui.graphics.Color(0xFFE6E6E6),
+        onSurfaceVariant = androidx.compose.ui.graphics.Color(0xFF444444)
+    )
+}
+
 @Composable
 fun PremiumTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -269,14 +288,14 @@ fun PremiumTheme(
                 onSurfaceVariant = androidx.compose.ui.graphics.Color.Gray
             )
         }
-        "AMBER" -> AmberColorScheme
-        "FOREST" -> ForestColorScheme
-        "OCEAN" -> OceanColorScheme
-        "NEON" -> NeonColorScheme
-        "ROYAL GOLD" -> GoldColorScheme
-        "SAPPHIRE BLUE" -> SapphireColorScheme
-        "EMERALD GREEN" -> EmeraldColorScheme
-        "AMETHYST PURPLE" -> AmethystColorScheme
+        "AMBER" -> if (darkTheme) AmberColorScheme else createLightVariant(AmberColorScheme)
+        "FOREST" -> if (darkTheme) ForestColorScheme else createLightVariant(ForestColorScheme)
+        "OCEAN" -> if (darkTheme) OceanColorScheme else createLightVariant(OceanColorScheme)
+        "NEON" -> if (darkTheme) NeonColorScheme else createLightVariant(NeonColorScheme)
+        "ROYAL GOLD" -> if (darkTheme) GoldColorScheme else createLightVariant(GoldColorScheme)
+        "SAPPHIRE BLUE" -> if (darkTheme) SapphireColorScheme else createLightVariant(SapphireColorScheme)
+        "EMERALD GREEN" -> if (darkTheme) EmeraldColorScheme else createLightVariant(EmeraldColorScheme)
+        "AMETHYST PURPLE" -> if (darkTheme) AmethystColorScheme else createLightVariant(AmethystColorScheme)
         "NATURAL" -> {
             if (darkTheme) NaturalDarkColorScheme else NaturalColorScheme
         }

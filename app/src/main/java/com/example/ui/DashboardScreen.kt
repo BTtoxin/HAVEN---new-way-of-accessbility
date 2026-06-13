@@ -322,8 +322,8 @@ fun DashboardScreen(
             .statusBarsPadding()
     ) {
         LazyColumn(
-            contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 100.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(start = 24.dp, top = 24.dp, end = 24.dp, bottom = 120.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer {
@@ -351,7 +351,7 @@ fun DashboardScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
-                    shape = RoundedCornerShape(24.dp)
+                    shape = RoundedCornerShape(32.dp)
                 ) {
                     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
                         Row(
@@ -516,7 +516,7 @@ fun DashboardScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-                    shape = RoundedCornerShape(20.dp)
+                    shape = RoundedCornerShape(32.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(
@@ -610,7 +610,7 @@ fun DashboardScreen(
                     }
                     Card(
                         modifier = Modifier.fillMaxWidth().height(100.dp).clickable { onNavigateToFocus() },
-                        shape = RoundedCornerShape(24.dp),
+                        shape = RoundedCornerShape(32.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
                     ) {
                         Row(
@@ -637,302 +637,22 @@ fun DashboardScreen(
 
             // QUICK CONTROLS SECTION
             item {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("Device Management", style = AppTypography.bodyLarge, color = MaterialTheme.colorScheme.onBackground)
-                        Text("Swipe for more", style = AppTypography.labelSmall, color = NtSecondary)
-                    }
-                    androidx.compose.foundation.lazy.LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        contentPadding = PaddingValues(horizontal = 4.dp)
-                    ) {
-                        item {
-                            QuickControlTile(
-                                title = "Wi-Fi",
-                                subtitle = "Network Options",
-                                icon = Icons.Default.Wifi,
-                                containerColor = NtSurfaceVariant,
-                                iconColor = NtSecondary,
-                                subtitleColor = NtTextTertiary,
-                                modifier = Modifier.width(140.dp),
-                                index = 0,
-                                onClick = {
-                                    try {
-                                        context.startActivity(Intent(Settings.Panel.ACTION_WIFI))
-                                    } catch(e: Exception) {
-                                        context.startActivity(Intent(Settings.ACTION_WIFI_SETTINGS))
-                                    }
-                                },
-                                onLongClick = { activeTileSettings = "Wi-Fi" }
-                            )
-                        }
-                        item {
-                            QuickControlTile(
-                                title = "Network",
-                                subtitle = "Configuration",
-                                icon = Icons.Default.CellTower,
-                                containerColor = NtSurface,
-                                iconColor = NtTextSecondary,
-                                subtitleColor = NtTextSecondary,
-                                modifier = Modifier.width(140.dp),
-                                index = 1,
-                                onClick = {
-                                    val intent = Intent(Settings.ACTION_NETWORK_OPERATOR_SETTINGS)
-                                    try { context.startActivity(intent.apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { }
-                                },
-                                onLongClick = { activeTileSettings = "Network" }
-                            )
-                        }
-                        item {
-                            QuickControlTile(
-                                title = "DNS Settings",
-                                subtitle = "Private DNS",
-                                icon = Icons.Default.Dns,
-                                containerColor = NtSurfaceVariant,
-                                iconColor = NtSecondary,
-                                subtitleColor = NtTextTertiary,
-                                modifier = Modifier.width(140.dp),
-                                index = 2,
-                                onClick = {
-                                    val intent = Intent("android.settings.PRIVATE_DNS_SETTINGS")
-                                    try { context.startActivity(intent.apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { }
-                                },
-                                onLongClick = { activeTileSettings = "DNS Settings" }
-                            )
-                        }
-                        item {
-                            QuickControlTile(
-                                title = "Bluetooth",
-                                subtitle = "Devices",
-                                icon = Icons.Default.Bluetooth,
-                                containerColor = NtSurface,
-                                iconColor = NtTextSecondary,
-                                subtitleColor = NtTextSecondary,
-                                modifier = Modifier.width(140.dp),
-                                index = 3,
-                                onClick = {
-                                    val intent = Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
-                                    try { context.startActivity(intent.apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { }
-                                },
-                                onLongClick = { activeTileSettings = "Bluetooth" }
-                            )
-                        }
-                        item {
-                            QuickControlTile(
-                                title = "Do Not Disturb",
-                                subtitle = if (hasDndPermission) "Active" else "Off",
-                                icon = if (hasDndPermission) Icons.Default.DoNotDisturbOn else Icons.Default.DoNotDisturbOff,
-                                containerColor = NtGreen,
-                                iconColor = NtGreenText,
-                                subtitleColor = NtGreenText,
-                                modifier = Modifier.width(140.dp),
-                                index = 4,
-                                onClick = {
-                                    if (!hasDndPermission) onRequestDndPermission()
-                                    else {
-                                        val intent = Intent(Settings.ACTION_ZEN_MODE_PRIORITY_SETTINGS)
-                                        try { context.startActivity(intent.apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { }
-                                    }
-                                },
-                                onLongClick = { activeTileSettings = "Do Not Disturb" }
-                            )
-                        }
-                        item {
-                            QuickControlTile(
-                                title = "Flashlight",
-                                subtitle = if (isFlashlightOn) "On" else "Off",
-                                icon = if (isFlashlightOn) Icons.Default.FlashlightOn else Icons.Default.FlashlightOff,
-                                containerColor = NtSurface,
-                                iconColor = NtTextSecondary,
-                                subtitleColor = NtTextSecondary,
-                                modifier = Modifier.width(140.dp),
-                                index = 5,
-                                onClick = {
-                                    try {
-                                        val cameraId = cameraManager?.cameraIdList?.firstOrNull()
-                                        if (cameraId != null) {
-                                            cameraManager.setTorchMode(cameraId, !isFlashlightOn)
-                                            isFlashlightOn = !isFlashlightOn
-                                        }
-                                    } catch (e: Exception) { }
-                                },
-                                onLongClick = { activeTileSettings = "Flashlight" }
-                            )
-                        }
-                        item {
-                            QuickControlTile(
-                                title = "Display",
-                                subtitle = "Settings",
-                                icon = Icons.Default.DisplaySettings,
-                                containerColor = NtSurfaceVariant,
-                                iconColor = NtSecondary,
-                                subtitleColor = NtTextTertiary,
-                                modifier = Modifier.width(140.dp),
-                                index = 6,
-                                onClick = { try { context.startActivity(Intent(Settings.ACTION_DISPLAY_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } },
-                                onLongClick = { activeTileSettings = "Display" }
-                            )
-                        }
-                        item {
-                            QuickControlTile(
-                                title = "Sound",
-                                subtitle = "Volume levels",
-                                icon = Icons.Default.VolumeUp,
-                                containerColor = NtSurface,
-                                iconColor = NtTextSecondary,
-                                subtitleColor = NtTextSecondary,
-                                modifier = Modifier.width(140.dp),
-                                index = 7,
-                                onClick = { try { context.startActivity(Intent(Settings.ACTION_SOUND_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } },
-                                onLongClick = { activeTileSettings = "Sound" }
-                            )
-                        }
-                        item {
-                            QuickControlTile(
-                                title = "Location",
-                                subtitle = "GPS",
-                                icon = Icons.Default.LocationOn,
-                                containerColor = NtSurfaceVariant,
-                                iconColor = NtSecondary,
-                                subtitleColor = NtTextTertiary,
-                                modifier = Modifier.width(140.dp),
-                                index = 8,
-                                onClick = { try { context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } },
-                                onLongClick = { activeTileSettings = "Location" }
-                            )
-                        }
-                        item {
-                            QuickControlTile(
-                                title = "Battery",
-                                subtitle = "Usage",
-                                icon = Icons.Default.BatteryFull,
-                                containerColor = NtSurface,
-                                iconColor = NtTextSecondary,
-                                subtitleColor = NtTextSecondary,
-                                modifier = Modifier.width(140.dp),
-                                index = 9,
-                                onClick = { try { context.startActivity(Intent(Intent.ACTION_POWER_USAGE_SUMMARY).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } },
-                                onLongClick = { activeTileSettings = "Battery" }
-                            )
-                        }
-                        item {
-                            QuickControlTile(
-                                title = "Data Saver",
-                                subtitle = "Network",
-                                icon = Icons.Default.DataUsage,
-                                containerColor = NtSurfaceVariant,
-                                iconColor = NtSecondary,
-                                subtitleColor = NtTextTertiary,
-                                modifier = Modifier.width(140.dp),
-                                index = 10,
-                                onClick = { try { context.startActivity(Intent(Settings.ACTION_DATA_ROAMING_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } },
-                                onLongClick = { activeTileSettings = "Data Saver" }
-                            )
-                        }
-                        item {
-                            QuickControlTile(
-                                title = "Security",
-                                subtitle = "Lock screen",
-                                icon = Icons.Default.Security,
-                                containerColor = NtSurface,
-                                iconColor = NtTextSecondary,
-                                subtitleColor = NtTextSecondary,
-                                modifier = Modifier.width(140.dp),
-                                index = 11,
-                                onClick = { try { context.startActivity(Intent(Settings.ACTION_SECURITY_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } },
-                                onLongClick = { activeTileSettings = "Security" }
-                            )
-                        }
-                        item {
-                            QuickControlTile(
-                                title = "Apps",
-                                subtitle = "Manage",
-                                icon = Icons.Default.Apps,
-                                containerColor = NtSurfaceVariant,
-                                iconColor = NtSecondary,
-                                subtitleColor = NtTextTertiary,
-                                modifier = Modifier.width(140.dp),
-                                index = 12,
-                                onClick = { try { context.startActivity(Intent(Settings.ACTION_APPLICATION_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } },
-                                onLongClick = { activeTileSettings = "Apps" }
-                            )
-                        }
-                        item {
-                            QuickControlTile(
-                                title = "Storage",
-                                subtitle = "Space",
-                                icon = Icons.Default.Storage,
-                                containerColor = NtSurface,
-                                iconColor = NtTextSecondary,
-                                subtitleColor = NtTextSecondary,
-                                modifier = Modifier.width(140.dp),
-                                index = 13,
-                                onClick = { try { context.startActivity(Intent(Settings.ACTION_INTERNAL_STORAGE_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } },
-                                onLongClick = { activeTileSettings = "Storage" }
-                            )
-                        }
-                        item {
-                            QuickControlTile(
-                                title = "Language",
-                                subtitle = "Locale",
-                                icon = Icons.Default.Translate,
-                                containerColor = NtSurfaceVariant,
-                                iconColor = NtSecondary,
-                                subtitleColor = NtTextTertiary,
-                                modifier = Modifier.width(140.dp),
-                                index = 14,
-                                onClick = { try { context.startActivity(Intent(Settings.ACTION_LOCALE_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } },
-                                onLongClick = { activeTileSettings = "Language" }
-                            )
-                        }
-                        item {
-                            QuickControlTile(
-                                title = "Date & Time",
-                                subtitle = "Clock",
-                                icon = Icons.Default.Schedule,
-                                containerColor = NtSurface,
-                                iconColor = NtTextSecondary,
-                                subtitleColor = NtTextSecondary,
-                                modifier = Modifier.width(140.dp),
-                                index = 15,
-                                onClick = { try { context.startActivity(Intent(Settings.ACTION_DATE_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } },
-                                onLongClick = { activeTileSettings = "Date & Time" }
-                            )
-                        }
-                        item {
-                            QuickControlTile(
-                                title = "NFC",
-                                subtitle = "Connections",
-                                icon = Icons.Default.Nfc,
-                                containerColor = NtSurfaceVariant,
-                                iconColor = NtSecondary,
-                                subtitleColor = NtTextTertiary,
-                                modifier = Modifier.width(140.dp),
-                                index = 16,
-                                onClick = { try { context.startActivity(Intent(Settings.ACTION_NFC_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } },
-                                onLongClick = { activeTileSettings = "NFC" }
-                            )
-                        }
-                        item {
-                            QuickControlTile(
-                                title = "Print",
-                                subtitle = "Services",
-                                icon = Icons.Default.Print,
-                                containerColor = NtSurface,
-                                iconColor = NtTextSecondary,
-                                subtitleColor = NtTextSecondary,
-                                modifier = Modifier.width(140.dp),
-                                index = 17,
-                                onClick = { try { context.startActivity(Intent(Settings.ACTION_PRINT_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }) } catch (e: Exception) { } },
-                                onLongClick = { activeTileSettings = "Print" }
-                            )
-                        }
-                    }
-                }
+                com.example.ui.components.CategorizedQuickSettingsSection(
+                    viewModel = viewModel,
+                    hasDndPermission = hasDndPermission,
+                    onRequestDndPermission = onRequestDndPermission,
+                    isFlashlightOn = isFlashlightOn,
+                    onToggleFlashlight = {
+                        try {
+                            val cameraId = cameraManager?.cameraIdList?.firstOrNull()
+                            if (cameraId != null) {
+                                cameraManager.setTorchMode(cameraId, !isFlashlightOn)
+                                isFlashlightOn = !isFlashlightOn
+                            }
+                        } catch (e: Exception) { }
+                    },
+                    onLongClickTile = { tileName -> activeTileSettings = tileName }
+                )
             }
 
             // PERMISSION BANNER
@@ -1885,7 +1605,7 @@ private fun DeviceStatusChip(
     Surface(
         onClick = onClick,
         modifier = modifier,
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(24.dp),
         color = if (isExpanded) NothingRed.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surface,
         border = androidx.compose.foundation.BorderStroke(
             width = if (isExpanded) 1.dp else 0.5.dp,

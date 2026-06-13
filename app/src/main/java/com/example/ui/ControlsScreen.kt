@@ -235,7 +235,7 @@ fun HavenTileChip(
         modifier = modifier
             .height(64.dp)
             .scale(scale),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(32.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = if (isActive) 0.5f else 1f),
         onClick = { onClick?.invoke() },
         interactionSource = interactionSource

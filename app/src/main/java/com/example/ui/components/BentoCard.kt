@@ -75,13 +75,13 @@ fun BentoCard(
             )
     ) {
         Card(
-            shape = RoundedCornerShape(24.dp),
-            border = null,
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+            shape = RoundedCornerShape(32.dp),
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05f)),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f)),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.padding(20.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(icon, contentDescription = title, tint = tint, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(4.dp))

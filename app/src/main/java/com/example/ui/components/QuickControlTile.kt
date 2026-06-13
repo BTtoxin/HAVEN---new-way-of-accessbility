@@ -87,9 +87,9 @@ fun QuickControlTile(
             .alpha(popAlpha)
             .scale(popScale * scale)
             .alpha(opacity)
-            .clip(RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(32.dp))
             .background(containerColor)
-            .border(1.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f), RoundedCornerShape(20.dp))
+            .border(1.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = 0.15f), RoundedCornerShape(32.dp))
             .hoverable(interactionSource = interactionSource)
             .combinedClickable(
                 interactionSource = interactionSource,
@@ -98,10 +98,13 @@ fun QuickControlTile(
                     com.example.utils.AudioHapticEngine.triggerClick(context)
                     onClick()
                 },
-                onLongClick = onLongClick
+                onLongClick = {
+                    com.example.utils.AudioHapticEngine.triggerClick(context)
+                    onLongClick?.invoke()
+                }
             )
-            .padding(16.dp)
-            .height(110.dp) // Giving some fixed height to match HTML design roughly
+            .padding(18.dp)
+            .height(100.dp) // Giving some fixed height to match HTML design roughly
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),

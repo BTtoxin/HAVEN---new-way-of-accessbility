@@ -48,6 +48,7 @@ fun SettingsScreen(
     val initialThemeMode by viewModel.themeMode.collectAsStateWithLifecycle()
     val initialShortcutLabel by viewModel.customShortcutLabel.collectAsStateWithLifecycle()
     val initialShortcutTarget by viewModel.customShortcutTarget.collectAsStateWithLifecycle()
+    val initialGridLayoutColumns by viewModel.gridLayoutColumns.collectAsStateWithLifecycle()
 
     var tempCaffeineDuration by remember { mutableIntStateOf(30) }
     var theaterBrightness by remember { mutableIntStateOf(5) }
@@ -561,6 +562,24 @@ fun SettingsScreen(
                     ) {
                         Text("CHECK UPDATE", style = AppTypography.labelSmall)
                     }
+                }
+            }
+
+            // SECTION 8: GRID DENSITY
+            SettingsCard(title = "GRID DENSITY") {
+                Row(
+                    modifier = Modifier.fillMaxWidth().clickable { viewModel.setGridLayoutColumns(if (initialGridLayoutColumns == 2) 3 else 2) }.padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Spacious Layout", style = AppTypography.bodyMedium, color = NtTextSecondary)
+                    Switch(
+                        checked = initialGridLayoutColumns == 2,
+                        onCheckedChange = { isSpacious ->
+                            viewModel.setGridLayoutColumns(if (isSpacious) 2 else 3)
+                        },
+                        colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary)
+                    )
                 }
             }
 

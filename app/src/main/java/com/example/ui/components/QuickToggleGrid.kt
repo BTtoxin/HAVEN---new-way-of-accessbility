@@ -592,7 +592,7 @@ fun QuickToggleTile(
                         AudioHapticEngine.triggerClick(context)
                     }
                 ),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(32.dp),
         colors = CardDefaults.cardColors(
             containerColor = animatedContainerColor
         ),

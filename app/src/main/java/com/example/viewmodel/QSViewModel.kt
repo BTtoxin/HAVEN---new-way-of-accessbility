@@ -136,6 +136,12 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
     private val _tileOrder = MutableStateFlow(emptyList<String>())
     val tileOrder = _tileOrder.asStateFlow()
 
+    private val _tileCategories = MutableStateFlow(defaultTileCategories())
+    val tileCategories = _tileCategories.asStateFlow()
+
+    private val _categoryNames = MutableStateFlow(mapOf<String, String>())
+    val categoryNames = _categoryNames.asStateFlow()
+
     private val _themeMode = MutableStateFlow("SYSTEM")
     val themeMode = _themeMode.asStateFlow()
 
@@ -457,6 +463,24 @@ private val _focusWhitelist = MutableStateFlow<Set<String>>(emptySet())
                     prefMap["app_language"]?.let { _currentLanguage.value = it }
                     prefMap["is_monochrome"]?.let { _isMonochrome.value = it.toBoolean() }
                     prefMap["selected_palette"]?.let { _selectedPalette.value = it }
+                    prefMap["tile_categories"]?.let { catStr ->
+                        if (catStr.isNotEmpty()) {
+                            val map = catStr.split(",").associate {
+                                val parts = it.split(":")
+                                parts[0] to parts[1]
+                            }
+                            _tileCategories.value = map
+                        }
+                    }
+                    prefMap["category_names"]?.let { catNamesStr ->
+                        if (catNamesStr.isNotEmpty()) {
+                            val map = catNamesStr.split(",").associate {
+                                val parts = it.split(":")
+                                parts[0] to parts[1]
+                            }
+                            _categoryNames.value = map
+                        }
+                    }
                     prefMap["tile_order"]?.let { orderStr ->
                         val savedOrder = if (orderStr.isNotEmpty()) orderStr.split(",") else defaultTileOrder()
                         _tileOrder.value = savedOrder
@@ -603,6 +627,22 @@ private val _focusWhitelist = MutableStateFlow<Set<String>>(emptySet())
             _theaterDnd.value = dataStore.theaterDndFlow.first()
             _clipboardInterval.value = dataStore.clipboardIntervalFlow.first()
             _privateDns.value = dataStore.privateDnsFlow.first()
+            val catStr = dataStore.tileCategoriesFlow.first()
+            if (catStr.isNotEmpty()) {
+                val map = catStr.split(",").associate {
+                    val parts = it.split(":")
+                    parts[0] to parts[1]
+                }
+                _tileCategories.value = map
+            }
+            val catNamesStr = dataStore.categoryNamesFlow.first()
+            if (catNamesStr.isNotEmpty()) {
+                val map = catNamesStr.split(",").associate {
+                    val parts = it.split(":")
+                    parts[0] to parts[1]
+                }
+                _categoryNames.value = map
+            }
             val orderString = dataStore.tileOrderFlow.first()
             val savedOrder = if (orderString.isNotEmpty()) orderString.split(",") else defaultTileOrder()
             _tileOrder.value = savedOrder
@@ -715,15 +755,63 @@ private val _focusWhitelist = MutableStateFlow<Set<String>>(emptySet())
     fun resetTileOrder() {
         val order = defaultTileOrder()
         _tileOrder.value = order
+        val cats = defaultTileCategories()
+        _tileCategories.value = cats
+        _categoryNames.value = mapOf()
         viewModelScope.launch {
             com.example.utils.SettingsDataStore(context).setTileOrder("")
             savePref("tile_order", "")
+            com.example.utils.SettingsDataStore(context).setTileCategories("")
+            savePref("tile_categories", "")
+            com.example.utils.SettingsDataStore(context).setCategoryNames("")
+            savePref("category_names", "")
         }
     }
     
     private fun defaultTileOrder() = listOf(
         "TIMEOUT", "CAFFEINE", "BATTERY", "BRIGHTNESS", "DNS", "THEATER", "CLIPBOARD", "FOCUS", "SHORTCUT", "APP_AUDIO", "OPERATOR", "GLYPH", "MANUAL", "CHANGELOG", "ABOUT"
     )
+
+    private fun defaultTileCategories() = mapOf(
+        "Wi-Fi" to "Connectivity",
+        "Network" to "Connectivity",
+        "DNS Settings" to "Connectivity",
+        "Bluetooth" to "Connectivity",
+        "NFC" to "Connectivity",
+        "Data Saver" to "Connectivity",
+        "Flashlight" to "Display",
+        "Display" to "Display",
+        "Do Not Disturb" to "System",
+        "Sound" to "System",
+        "Location" to "System",
+        "Battery" to "System",
+        "Security" to "System",
+        "Apps" to "System",
+        "Storage" to "System",
+        "Language" to "System",
+        "Date & Time" to "System",
+        "Print" to "System"
+    )
+
+    fun updateCategoryNames(originalName: String, newName: String) {
+        val current = _categoryNames.value.toMutableMap()
+        current[originalName] = newName
+        _categoryNames.value = current
+        viewModelScope.launch {
+            val str = current.entries.joinToString(",") { "${it.key}:${it.value}" }
+            com.example.utils.SettingsDataStore(context).setCategoryNames(str)
+            savePref("category_names", str)
+        }
+    }
+
+    fun updateTileCategories(newCategories: Map<String, String>) {
+        _tileCategories.value = newCategories
+        viewModelScope.launch {
+            val str = newCategories.entries.joinToString(",") { "${it.key}:${it.value}" }
+            com.example.utils.SettingsDataStore(context).setTileCategories(str)
+            savePref("tile_categories", str)
+        }
+    }
 
     fun cycleScreenTimeout() {
         val next = prefManager.getNextTimeoutPreset(_currentSystemTimeout.value)

@@ -29,6 +29,8 @@ class SettingsDataStore(private val context: Context) {
         val IS_MONOCHROME = booleanPreferencesKey("is_monochrome")
         val SELECTED_PALETTE = stringPreferencesKey("selected_palette")
         val TILE_ORDER = stringPreferencesKey("tile_order")
+        val TILE_CATEGORIES = stringPreferencesKey("tile_categories")
+        val CATEGORY_NAMES = stringPreferencesKey("category_names")
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val HAS_SEEN_ONBOARDING = booleanPreferencesKey("has_seen_onboarding")
         val GRID_LAYOUT_COLUMNS = intPreferencesKey("grid_layout_columns")
@@ -52,6 +54,8 @@ class SettingsDataStore(private val context: Context) {
     val isMonochromeFlow: Flow<Boolean> = context.dataStore.data.map { it[IS_MONOCHROME] ?: false }
     val selectedPaletteFlow: Flow<String> = context.dataStore.data.map { it[SELECTED_PALETTE] ?: "HAVEN" }
     val tileOrderFlow: Flow<String> = context.dataStore.data.map { it[TILE_ORDER] ?: "" }
+    val tileCategoriesFlow: Flow<String> = context.dataStore.data.map { it[TILE_CATEGORIES] ?: "" }
+    val categoryNamesFlow: Flow<String> = context.dataStore.data.map { it[CATEGORY_NAMES] ?: "" }
     val themeModeFlow: Flow<String> = context.dataStore.data.map { it[THEME_MODE] ?: "SYSTEM" }
     val hasSeenOnboardingFlow: Flow<Boolean> = context.dataStore.data.map { it[HAS_SEEN_ONBOARDING] ?: false }
     val gridLayoutColumnsFlow: Flow<Int> = context.dataStore.data.map { it[GRID_LAYOUT_COLUMNS] ?: 2 }
@@ -74,6 +78,8 @@ class SettingsDataStore(private val context: Context) {
     suspend fun setMonochrome(isActive: Boolean) { context.dataStore.edit { it[IS_MONOCHROME] = isActive } }
     suspend fun setSelectedPalette(palette: String) { context.dataStore.edit { it[SELECTED_PALETTE] = palette } }
     suspend fun setTileOrder(order: String) { context.dataStore.edit { it[TILE_ORDER] = order } }
+    suspend fun setTileCategories(categories: String) { context.dataStore.edit { it[TILE_CATEGORIES] = categories } }
+    suspend fun setCategoryNames(names: String) { context.dataStore.edit { it[CATEGORY_NAMES] = names } }
     suspend fun setThemeMode(mode: String) { context.dataStore.edit { it[THEME_MODE] = mode } }
     suspend fun setHasSeenOnboarding(hasSeen: Boolean) { context.dataStore.edit { it[HAS_SEEN_ONBOARDING] = hasSeen } }
     suspend fun setGridLayoutColumns(columns: Int) { context.dataStore.edit { it[GRID_LAYOUT_COLUMNS] = columns } }
