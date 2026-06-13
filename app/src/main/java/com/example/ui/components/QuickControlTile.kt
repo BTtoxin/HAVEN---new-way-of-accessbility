@@ -82,13 +82,19 @@ fun QuickControlTile(
         label = "tileOpacity"
     )
 
+    val animatedContainerColor by androidx.compose.animation.animateColorAsState(
+        targetValue = containerColor,
+        animationSpec = androidx.compose.animation.core.tween(durationMillis = 300),
+        label = "containerColor"
+    )
+
     Box(
         modifier = modifier
             .alpha(popAlpha)
             .scale(popScale * scale)
             .alpha(opacity)
             .clip(RoundedCornerShape(32.dp))
-            .background(containerColor)
+            .background(animatedContainerColor)
             .border(1.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = 0.15f), RoundedCornerShape(32.dp))
             .hoverable(interactionSource = interactionSource)
             .combinedClickable(

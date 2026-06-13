@@ -6,6 +6,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import java.util.Collections
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -220,10 +221,10 @@ fun CategorizedQuickSettingsSection(
         ) { page ->
             val items = groupedTiles[categories[page]] ?: emptyList()
             LazyVerticalGrid(
-                columns = GridCells.Fixed(gridLayoutColumns),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth().height(if (gridLayoutColumns > 2) 200.dp else 300.dp),
+                columns = GridCells.Adaptive(minSize = if (gridLayoutColumns > 2) 100.dp else 140.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.fillMaxWidth().height(if (gridLayoutColumns > 2) 200.dp else 300.dp).animateContentSize(),
                 contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp)
             ) {
                 items(items) { config ->
