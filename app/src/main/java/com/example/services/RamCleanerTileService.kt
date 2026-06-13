@@ -11,6 +11,7 @@ class RamCleanerTileService : BaseTileService() {
         updateTileState(Tile.STATE_INACTIVE, "RAM Clean", "Tap to Free")
     }
 
+    @android.annotation.SuppressLint("MissingPermission")
     override fun onClick() {
         super.onClick()
         triggerHapticClick()

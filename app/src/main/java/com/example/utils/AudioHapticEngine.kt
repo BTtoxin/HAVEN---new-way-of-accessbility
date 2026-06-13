@@ -9,28 +9,30 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 
 object AudioHapticEngine {
+    var vibrateIntensityMultiplier: Float = 1.0f
+
     fun triggerSuccess(context: Context) {
-        val intensity = getIntensity(context)
+        val intensity = (2 * vibrateIntensityMultiplier).toInt().coerceIn(0, 3)
         if (intensity == 0) return
         val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         if (Build.VERSION.SDK_INT >= 26) {
             vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 40 * intensity.toLong(), 60, 20 * intensity.toLong()), -1))
         }
-        playSynthClick(1500.0, 30, 0.4)
+        playSynthClick(1500.0, 30, 0.4 * vibrateIntensityMultiplier)
     }
 
     fun triggerError(context: Context) {
-        val intensity = getIntensity(context)
+        val intensity = (2 * vibrateIntensityMultiplier).toInt().coerceIn(0, 3)
         if (intensity == 0) return
         val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         if (Build.VERSION.SDK_INT >= 26) {
             vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 100 * intensity.toLong(), 50, 100 * intensity.toLong()), -1))
         }
-        playSynthClick(600.0, 80, 0.5)
+        playSynthClick(600.0, 80, 0.5 * vibrateIntensityMultiplier)
     }
 
     fun triggerClick(context: Context) {
-        val intensity = getIntensity(context)
+        val intensity = (2 * vibrateIntensityMultiplier).toInt().coerceIn(0, 3)
         if (intensity == 0) return
         val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         val amplitude = when (intensity) {
@@ -49,12 +51,7 @@ object AudioHapticEngine {
         } else {
             vibrator.vibrate(duration)
         }
-        playSynthClick(1800.0, 15, 0.35)
-    }
-
-    private fun getIntensity(context: Context): Int {
-        val prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-        return prefs.getInt("haptic_intensity", 2)
+        playSynthClick(1800.0, 15, 0.35 * vibrateIntensityMultiplier)
     }
 
     private fun playSynthClick(frequencyHz: Double, durationMs: Int, volume: Double) {

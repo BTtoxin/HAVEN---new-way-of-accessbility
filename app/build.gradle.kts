@@ -12,10 +12,10 @@ android {
 
   defaultConfig {
     applicationId = "com.aistudio.glyphqs.kjmz"
-    minSdk = 24
+    minSdk = 29
     targetSdk = 35
-    versionCode = 5
-    versionName = "1.5.0"
+    versionCode = 6
+    versionName = "3.0.0"
 
     val metadataFile = project.rootProject.file("metadata.json")
     var metadataVersion = "1.4.0"
@@ -147,6 +147,7 @@ dependencies {
   implementation(libs.moshi.kotlin)
   implementation(libs.okhttp)
   implementation(libs.retrofit)
+  implementation("androidx.appcompat:appcompat:1.6.1")
   
   // Custom requested dependencies
   implementation("androidx.work:work-runtime-ktx:2.9.0")

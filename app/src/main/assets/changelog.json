@@ -1,7 +1,19 @@
 {
-  "currentVersion": "v1.5.0",
-  "lastUpdated": "June 10, 2026",
+  "currentVersion": "v3.0.0",
+  "lastUpdated": "June 13, 2026",
   "history": [
+    {
+      "version": "v3.0.0",
+      "date": "June 13, 2026, 09:00 AM",
+      "changes": [
+        {"text": "Deep Work Environment.", "tag": "Feature", "details": "Flagship productivity feature that blocks apps, minimizes notifications, activates DND and more."},
+        {"text": "Focus Lock & Emergency Exam Mode.", "tag": "Feature", "details": "Advanced anti-distraction features preventing accidental exits with PIN and Biometric verifications."},
+        {"text": "AI Study Planner & Study Room.", "tag": "Feature", "details": "Intelligent study organizer for exams like MBBS, NEET PG, UPSC, JEE."},
+        {"text": "Smart Alarm & Dopamine Detox.", "tag": "Feature", "details": "Smart challenge-based alarms, and a dopamine detox protocol."},
+        {"text": "Battery Guardian & Charging Assistant.", "tag": "Feature", "details": "Track charging habits, estimate full charge time, and monitor battery wear."},
+        {"text": "Advanced Widgets & Visual Upgrades.", "tag": "Feature", "details": "Widgets with Material You, premium micro-interactions, haptics, and Nothing-inspired performance boosts."}
+      ]
+    },
     {
       "version": "v1.5.0",
       "date": "June 11, 2026, 08:00 AM",

@@ -34,6 +34,8 @@ class SettingsDataStore(private val context: Context) {
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val HAS_SEEN_ONBOARDING = booleanPreferencesKey("has_seen_onboarding")
         val GRID_LAYOUT_COLUMNS = intPreferencesKey("grid_layout_columns")
+        val HAPTIC_INTENSITY = floatPreferencesKey("haptic_intensity")
+        val DAILY_FOCUS_GOAL = intPreferencesKey("daily_focus_goal")
     }
 
     val caffeineDurationFlow: Flow<Int> = context.dataStore.data.map { it[CAFFEINE_DURATION] ?: -1 }
@@ -59,6 +61,8 @@ class SettingsDataStore(private val context: Context) {
     val themeModeFlow: Flow<String> = context.dataStore.data.map { it[THEME_MODE] ?: "SYSTEM" }
     val hasSeenOnboardingFlow: Flow<Boolean> = context.dataStore.data.map { it[HAS_SEEN_ONBOARDING] ?: false }
     val gridLayoutColumnsFlow: Flow<Int> = context.dataStore.data.map { it[GRID_LAYOUT_COLUMNS] ?: 2 }
+    val hapticIntensityFlow: Flow<Float> = context.dataStore.data.map { it[HAPTIC_INTENSITY] ?: 1.0f }
+    val dailyFocusGoalFlow: Flow<Int> = context.dataStore.data.map { it[DAILY_FOCUS_GOAL] ?: 120 }
 
     suspend fun setCaffeineDuration(duration: Int) { context.dataStore.edit { it[CAFFEINE_DURATION] = duration } }
     suspend fun setCaffeineActive(isActive: Boolean) { context.dataStore.edit { it[IS_CAFFEINE_ACTIVE] = isActive } }
@@ -83,6 +87,8 @@ class SettingsDataStore(private val context: Context) {
     suspend fun setThemeMode(mode: String) { context.dataStore.edit { it[THEME_MODE] = mode } }
     suspend fun setHasSeenOnboarding(hasSeen: Boolean) { context.dataStore.edit { it[HAS_SEEN_ONBOARDING] = hasSeen } }
     suspend fun setGridLayoutColumns(columns: Int) { context.dataStore.edit { it[GRID_LAYOUT_COLUMNS] = columns } }
+    suspend fun setHapticIntensity(intensity: Float) { context.dataStore.edit { it[HAPTIC_INTENSITY] = intensity } }
+    suspend fun setDailyFocusGoal(goal: Int) { context.dataStore.edit { it[DAILY_FOCUS_GOAL] = goal } }
 
     suspend fun setDnsActive(active: Boolean) { context.dataStore.edit { it[IS_DNS_ACTIVE] = active } }
     suspend fun setAppAudioIsolated(isIsolated: Boolean) { context.dataStore.edit { it[IS_APP_AUDIO_ISOLATED] = isIsolated } }

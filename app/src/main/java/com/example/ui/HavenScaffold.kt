@@ -107,34 +107,44 @@ fun HavenScaffold(
                 }
             }
         ) { paddingValues ->
-            Box(modifier = Modifier.padding(paddingValues)) {
-                when (selectedTab) {
-                    0 -> DashboardScreen(
-                        viewModel = viewModel,
-                        initialOpenFocus = initialOpenFocus,
-                        onNavigateToSettings = { currentDetailScreen = "settings" },
-                        onNavigateToAutomation = { currentDetailScreen = "automation" },
-                        onNavigateToClipboard = { currentDetailScreen = "clipboard" },
-                        onNavigateToSensors = { currentDetailScreen = "sensors" },
-                        onNavigateToFocus = { selectedTab = 2 },
-                        onNavigateToFocusHistory = { currentDetailScreen = "focus_history" },
-                        onRequestPermission = onRequestPermission,
-                        onRequestDndPermission = onRequestDndPermission
-                    )
-                    1 -> ControlsScreen(
-                        viewModel = viewModel,
-                        onNavigateToAutomation = { currentDetailScreen = "automation" }
-                    )
-                    2 -> FocusTab(
-                        viewModel = viewModel,
-                        onNavigateToFocusHistory = { currentDetailScreen = "focus_history" }
-                    )
-                    3 -> ProfileTab(
-                        viewModel = viewModel,
-                        onNavigateToSettings = { currentDetailScreen = "settings" },
-                        onNavigateToPermissions = { currentDetailScreen = "permissions" },
-                        onNavigateToChangelog = { currentDetailScreen = "changelog" }
-                    )
+            Box(
+                modifier = Modifier
+                    .padding(paddingValues)
+                    .fillMaxSize(),
+                contentAlignment = Alignment.TopCenter
+            ) {
+                Box(modifier = Modifier.fillMaxWidth().widthIn(max = 600.dp)) {
+                    when (selectedTab) {
+                        0 -> DashboardScreen(
+                            viewModel = viewModel,
+                            initialOpenFocus = initialOpenFocus,
+                            onNavigateToSettings = { currentDetailScreen = "settings" },
+                            onNavigateToAutomation = { currentDetailScreen = "automation" },
+                            onNavigateToClipboard = { currentDetailScreen = "clipboard" },
+                            onNavigateToSensors = { currentDetailScreen = "sensors" },
+                            onNavigateToFocus = { selectedTab = 2 },
+                            onNavigateToFocusHistory = { currentDetailScreen = "focus_history" },
+                            onNavigateToDeviceHealth = { currentDetailScreen = "device_health" },
+                            onNavigateToAnalytics = { currentDetailScreen = "analytics" },
+                            onNavigateToStudentMode = { currentDetailScreen = "student_mode" },
+                            onRequestPermission = onRequestPermission,
+                            onRequestDndPermission = onRequestDndPermission
+                        )
+                        1 -> ControlsScreen(
+                            viewModel = viewModel,
+                            onNavigateToAutomation = { currentDetailScreen = "automation" }
+                        )
+                        2 -> FocusTab(
+                            viewModel = viewModel,
+                            onNavigateToFocusHistory = { currentDetailScreen = "focus_history" }
+                        )
+                        3 -> ProfileTab(
+                            viewModel = viewModel,
+                            onNavigateToSettings = { currentDetailScreen = "settings" },
+                            onNavigateToPermissions = { currentDetailScreen = "permissions" },
+                            onNavigateToChangelog = { currentDetailScreen = "changelog" }
+                        )
+                    }
                 }
             }
         }
@@ -148,37 +158,66 @@ fun HavenScaffold(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
+                    .background(MaterialTheme.colorScheme.background),
+                contentAlignment = Alignment.TopCenter
             ) {
-                when (currentDetailScreen) {
-                    "settings" -> SettingsScreen(
-                        viewModel = viewModel,
-                        onBack = { currentDetailScreen = null },
-                        onNavigateToPermissions = { currentDetailScreen = "permissions" },
-                        onNavigateToChangelog = { currentDetailScreen = "changelog" },
-                        onResetLayout = { viewModel.resetTileOrder() },
-                        onConfirm = { viewModel.checkAllStates() }
-                    )
-                    "automation" -> AutomationScreen(
-                        viewModel = viewModel,
-                        onBack = { currentDetailScreen = null }
-                    )
-                    "clipboard" -> ClipboardScreen(
-                        onBack = { currentDetailScreen = null }
-                    )
-                    "sensors" -> SensorScreen(
-                        onBack = { currentDetailScreen = null }
-                    )
-                    "focus_history" -> FocusHistoryScreen(
-                        viewModel = viewModel,
-                        onBack = { currentDetailScreen = null }
-                    )
-                    "permissions" -> PermissionScreen(
-                        onBack = { currentDetailScreen = null }
-                    )
-                    "changelog" -> ChangelogScreen(
-                        onBack = { currentDetailScreen = "settings" }
-                    )
+                Box(modifier = Modifier.fillMaxWidth().widthIn(max = 600.dp)) {
+                    when (currentDetailScreen) {
+                        "settings" -> SettingsScreen(
+                            viewModel = viewModel,
+                            onBack = { currentDetailScreen = null },
+                            onNavigateToPermissions = { currentDetailScreen = "permissions" },
+                            onNavigateToChangelog = { currentDetailScreen = "changelog" },
+                            onResetLayout = { viewModel.resetTileOrder() },
+                            onConfirm = { viewModel.checkAllStates() }
+                        )
+                        "automation" -> AutomationScreen(
+                            viewModel = viewModel,
+                            onBack = { currentDetailScreen = null }
+                        )
+                        "clipboard" -> ClipboardScreen(
+                            onBack = { currentDetailScreen = null }
+                        )
+                        "sensors" -> SensorScreen(
+                            onBack = { currentDetailScreen = null }
+                        )
+                        "focus_history" -> FocusHistoryScreen(
+                            viewModel = viewModel,
+                            onBack = { currentDetailScreen = null }
+                        )
+                        "permissions" -> PermissionScreen(
+                            onBack = { currentDetailScreen = null }
+                        )
+                        "changelog" -> ChangelogScreen(
+                            onBack = { currentDetailScreen = "settings" }
+                        )
+                        "device_health" -> DeviceHealthScreen(
+                            onBack = { currentDetailScreen = null }
+                        )
+                        "analytics" -> StudyAnalyticsScreen(
+                            viewModel = viewModel,
+                            onBack = { currentDetailScreen = null }
+                        )
+                        "student_mode" -> StudentModeScreen(
+                            onBack = { currentDetailScreen = null },
+                            onNavigateToPlanner = { currentDetailScreen = "study_planner" },
+                            onNavigateToDeepWork = { currentDetailScreen = "deep_work" },
+                            onNavigateToDopamineDetox = { currentDetailScreen = "dopamine_detox" },
+                            onNavigateToEmergencyMode = { currentDetailScreen = "emergency_mode" }
+                        )
+                        "study_planner" -> StudyPlannerScreen(
+                            onBack = { currentDetailScreen = "student_mode" }
+                        )
+                        "deep_work" -> DeepWorkScreen(
+                            onBack = { currentDetailScreen = "student_mode" }
+                        )
+                        "dopamine_detox" -> DopamineDetoxScreen(
+                            onBack = { currentDetailScreen = "student_mode" }
+                        )
+                        "emergency_mode" -> EmergencyExamModeScreen(
+                            onBack = { currentDetailScreen = "student_mode" }
+                        )
+                    }
                 }
             }
         }

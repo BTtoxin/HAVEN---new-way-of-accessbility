@@ -58,6 +58,40 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
     private val prefManager = QSPreferenceManager(context)
     private val settingsHelper = SystemSettingsHelper
 
+    private val havenDb = com.example.data.HavenDatabase.getDatabase(context)
+    val studySessionDao = havenDb.studySessionDao()
+
+    val allStudySessions = studySessionDao.getAllSessions().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    private val _totalWeeklyFocus = MutableStateFlow<Long>(0L)
+    val totalWeeklyFocus = _totalWeeklyFocus.asStateFlow()
+
+    private val _todayFocusTime = MutableStateFlow<Long>(0L)
+    val todayFocusTime = _todayFocusTime.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            val oneWeekAgo = System.currentTimeMillis() - (7 * 24 * 60 * 60 * 1000L)
+            studySessionDao.getTotalFocusTimeSince(oneWeekAgo).collect { sum ->
+                _totalWeeklyFocus.value = sum ?: 0L
+            }
+        }
+        viewModelScope.launch {
+            val cal = java.util.Calendar.getInstance()
+            cal.set(java.util.Calendar.HOUR_OF_DAY, 0)
+            cal.set(java.util.Calendar.MINUTE, 0)
+            cal.set(java.util.Calendar.SECOND, 0)
+            cal.set(java.util.Calendar.MILLISECOND, 0)
+            studySessionDao.getTotalFocusTimeSince(cal.timeInMillis).collect { sum ->
+                _todayFocusTime.value = sum ?: 0L
+            }
+        }
+    }
+
     private val db = UserPrefDatabase.getDatabase(context)
     val userRepository = UserRepository(db)
 
@@ -153,6 +187,12 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _gridLayoutColumns = MutableStateFlow(2)
     val gridLayoutColumns = _gridLayoutColumns.asStateFlow()
+
+    private val _hapticIntensity = MutableStateFlow(1.0f)
+    val hapticIntensity = _hapticIntensity.asStateFlow()
+
+    private val _dailyFocusGoal = MutableStateFlow(120)
+    val dailyFocusGoal = _dailyFocusGoal.asStateFlow()
 
     private val _caffeineDuration = MutableStateFlow(30)
     val caffeineDuration = _caffeineDuration.asStateFlow()
@@ -357,6 +397,18 @@ private val _focusWhitelist = MutableStateFlow<Set<String>>(emptySet())
             }
             streak
         }
+    }.stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000), 0)
+
+    val todayFocusTimeMinutes = focusSessionHistory.map { history ->
+        val today = java.util.Calendar.getInstance()
+        today.set(java.util.Calendar.HOUR_OF_DAY, 0)
+        today.set(java.util.Calendar.MINUTE, 0)
+        today.set(java.util.Calendar.SECOND, 0)
+        today.set(java.util.Calendar.MILLISECOND, 0)
+        
+        val todayStart = today.timeInMillis
+        val todaySessions = history.filter { it.startTime >= todayStart }
+        todaySessions.sumOf { ((it.endTime - it.startTime) / 60000).toInt() }.coerceAtLeast(0)
     }.stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000), 0)
 
     val automationRules = db.automationRuleDao().getAllRules()
@@ -620,6 +672,8 @@ private val _focusWhitelist = MutableStateFlow<Set<String>>(emptySet())
             _themeMode.value = dataStore.themeModeFlow.first()
             _hasSeenOnboarding.value = dataStore.hasSeenOnboardingFlow.first()
             _gridLayoutColumns.value = dataStore.gridLayoutColumnsFlow.first()
+            _hapticIntensity.value = dataStore.hapticIntensityFlow.first()
+            _dailyFocusGoal.value = dataStore.dailyFocusGoalFlow.first()
             _caffeineDuration.value = dataStore.caffeineDurationFlow.first().let { if(it<0) 30 else it }
             _theaterBrightness.value = dataStore.theaterBrightnessFlow.first()
             _theaterSystemAudio.value = dataStore.theaterSystemAudioFlow.first()
@@ -666,7 +720,8 @@ private val _focusWhitelist = MutableStateFlow<Set<String>>(emptySet())
         palette: String,
         tMode: String,
         sLabel: String,
-        sTarget: String
+        sTarget: String,
+        hapticsInt: Float = 1.0f
     ) {
         viewModelScope.launch {
             _caffeineDuration.value = caffeineDur
@@ -681,6 +736,7 @@ private val _focusWhitelist = MutableStateFlow<Set<String>>(emptySet())
             setSelectedPalette(palette)
             setMonochrome(palette != "HAVEN")
             setCustomShortcut(sTarget, sLabel)
+            setHapticIntensity(hapticsInt)
 
             val dataStore = com.example.utils.SettingsDataStore(context)
             dataStore.setCaffeineDuration(caffeineDur)
@@ -717,6 +773,21 @@ private val _focusWhitelist = MutableStateFlow<Set<String>>(emptySet())
         viewModelScope.launch {
             com.example.utils.SettingsDataStore(context).setGridLayoutColumns(columns)
             _gridLayoutColumns.value = columns
+        }
+    }
+
+    fun setHapticIntensity(intensity: Float) {
+        viewModelScope.launch {
+            com.example.utils.SettingsDataStore(context).setHapticIntensity(intensity)
+            _hapticIntensity.value = intensity
+            com.example.utils.AudioHapticEngine.vibrateIntensityMultiplier = intensity
+        }
+    }
+
+    fun setDailyFocusGoal(goal: Int) {
+        viewModelScope.launch {
+            com.example.utils.SettingsDataStore(context).setDailyFocusGoal(goal)
+            _dailyFocusGoal.value = goal
         }
     }
     

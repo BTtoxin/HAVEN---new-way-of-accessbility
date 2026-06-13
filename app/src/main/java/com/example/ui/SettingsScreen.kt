@@ -49,6 +49,7 @@ fun SettingsScreen(
     val initialShortcutLabel by viewModel.customShortcutLabel.collectAsStateWithLifecycle()
     val initialShortcutTarget by viewModel.customShortcutTarget.collectAsStateWithLifecycle()
     val initialGridLayoutColumns by viewModel.gridLayoutColumns.collectAsStateWithLifecycle()
+    val initialHapticIntensity by viewModel.hapticIntensity.collectAsStateWithLifecycle()
 
     var tempCaffeineDuration by remember { mutableIntStateOf(30) }
     var theaterBrightness by remember { mutableIntStateOf(5) }
@@ -59,6 +60,7 @@ fun SettingsScreen(
     var tempDns by remember { mutableStateOf("") }
     var tempPalette by remember { mutableStateOf("NATURAL") }
     var tempThemeMode by remember { mutableStateOf("SYSTEM") }
+    var tempHapticIntensity by remember { mutableFloatStateOf(1.0f) }
     
     var tempShortcutLabel by remember { mutableStateOf("") }
     var tempShortcutTarget by remember { mutableStateOf("") }
@@ -66,7 +68,7 @@ fun SettingsScreen(
     LaunchedEffect(
         initialCaffeine, initialBrightness, initialSysAudio, initialAppAudio, initialDnd,
         initialClipInterval, initialDns, initialPalette, initialThemeMode, 
-        initialShortcutLabel, initialShortcutTarget
+        initialShortcutLabel, initialShortcutTarget, initialHapticIntensity
     ) {
         tempCaffeineDuration = initialCaffeine.let { if(it<0) 30 else it }
         theaterBrightness = initialBrightness
@@ -79,6 +81,7 @@ fun SettingsScreen(
         tempThemeMode = initialThemeMode
         tempShortcutLabel = initialShortcutLabel
         tempShortcutTarget = initialShortcutTarget
+        tempHapticIntensity = initialHapticIntensity
     }
 
     Scaffold(
@@ -151,7 +154,8 @@ fun SettingsScreen(
                                 palette = tempPalette,
                                 tMode = tempThemeMode,
                                 sLabel = tempShortcutLabel,
-                                sTarget = tempShortcutTarget
+                                sTarget = tempShortcutTarget,
+                                hapticsInt = tempHapticIntensity
                             )
                             onConfirm()
                             onBack()
@@ -492,9 +496,7 @@ fun SettingsScreen(
                                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
                                         context.getSystemService(android.app.LocaleManager::class.java)?.applicationLocales = android.os.LocaleList(java.util.Locale(localeTag))
                                     } else {
-                                        val config = android.content.res.Configuration(context.resources.configuration)
-                                        config.setLocale(java.util.Locale(localeTag))
-                                        context.resources.updateConfiguration(config, context.resources.displayMetrics)
+                                        androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(androidx.core.os.LocaleListCompat.forLanguageTags(localeTag))
                                     }
                                 }
                                 .padding(16.dp),
@@ -565,6 +567,32 @@ fun SettingsScreen(
                 }
             }
 
+            // ADVANCED PREFERENCES
+            SettingsCard(title = "ADVANCED PREFERENCES") {
+                Text(
+                    text = "Haptic Feedback Intensity",
+                    style = AppTypography.bodyMedium,
+                    color = NtTextSecondary,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                Slider(
+                    value = tempHapticIntensity,
+                    onValueChange = { tempHapticIntensity = it },
+                    onValueChangeFinished = { 
+                        viewModel.setHapticIntensity(tempHapticIntensity)
+                        com.example.utils.AudioHapticEngine.triggerClick(context)
+                    },
+                    valueRange = 0f..5f,
+                    steps = 4,
+                    colors = SliderDefaults.colors(
+                        thumbColor = MaterialTheme.colorScheme.primary,
+                        activeTrackColor = MaterialTheme.colorScheme.primary
+                    )
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
             // SECTION 8: GRID DENSITY
             SettingsCard(title = "GRID DENSITY") {
                 Row(
@@ -581,6 +609,18 @@ fun SettingsScreen(
                         colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary)
                     )
                 }
+            }
+
+            // SECTION 9: ADVANCED PREFERENCES
+            val hapticIntensity by viewModel.hapticIntensity.collectAsStateWithLifecycle()
+            SettingsCard(title = "ADVANCED PREFERENCES") {
+                GlyphSlider(
+                    value = hapticIntensity,
+                    onValueChange = { viewModel.setHapticIntensity(it) },
+                    valueRange = 0f..1.5f,
+                    label = "Haptic Feedback Intensity",
+                    valueDisplay = "${(hapticIntensity * 100).toInt()}%"
+                )
             }
 
             Spacer(modifier = Modifier.height(24.dp))

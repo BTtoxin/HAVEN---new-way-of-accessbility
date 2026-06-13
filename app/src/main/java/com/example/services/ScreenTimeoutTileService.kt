@@ -33,7 +33,7 @@ class ScreenTimeoutTileService : BaseTileService() {
         triggerHapticClick()
         if (!settingsHelper.hasWriteSettingsPermission(this)) {
             val intent = Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            startActivityAndCollapse(intent)
+            launchSafeIntentAndCollapse(intent)
             return
         }
         val current = settingsHelper.getScreenOffTimeout(this)

@@ -133,6 +133,25 @@ fun FocusTab(
                     }
                 }
             }
+            
+            item {
+                val dailyGoal by viewModel.dailyFocusGoal.collectAsStateWithLifecycle()
+                Box(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
+                    HavenCard {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Text("Daily Focus Goal", style = AppTypography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
+                            Spacer(Modifier.height(8.dp))
+                            com.example.ui.components.GlyphSlider(
+                                value = dailyGoal.toFloat(),
+                                onValueChange = { viewModel.setDailyFocusGoal(it.toInt()) },
+                                valueRange = 10f..300f,
+                                label = "Target Duration",
+                                valueDisplay = "$dailyGoal min"
+                            )
+                        }
+                    }
+                }
+            }
         }
 
         item {

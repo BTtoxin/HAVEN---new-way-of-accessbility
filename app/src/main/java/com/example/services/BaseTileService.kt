@@ -55,6 +55,7 @@ abstract class BaseTileService : TileService() {
                 startActivityAndCollapse(pendingIntent)
             } else {
                 @Suppress("DEPRECATION")
+                @android.annotation.SuppressLint("StartActivityAndCollapseDeprecated")
                 startActivityAndCollapse(intent)
             }
         } catch (e: Exception) {

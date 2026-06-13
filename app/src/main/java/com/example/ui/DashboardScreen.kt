@@ -189,6 +189,9 @@ fun DashboardScreen(
     onNavigateToSensors: () -> Unit = {},
     onNavigateToFocus: () -> Unit = {},
     onNavigateToFocusHistory: () -> Unit = {},
+    onNavigateToDeviceHealth: () -> Unit = {},
+    onNavigateToAnalytics: () -> Unit = {},
+    onNavigateToStudentMode: () -> Unit = {},
     onRequestPermission: () -> Unit,
     onRequestDndPermission: () -> Unit
 ) {
@@ -285,6 +288,9 @@ fun DashboardScreen(
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val aiLayoutSuggestion by viewModel.aiLayoutSuggestion.collectAsStateWithLifecycle()
     val gridLayoutColumns by viewModel.gridLayoutColumns.collectAsStateWithLifecycle()
+    val dailyFocusGoal by viewModel.dailyFocusGoal.collectAsStateWithLifecycle()
+    val todayFocusTime by viewModel.todayFocusTime.collectAsStateWithLifecycle()
+
     val filteredOrder = remember(availableOrder, searchQuery) {
         if (searchQuery.isBlank()) {
             availableOrder
@@ -598,42 +604,75 @@ fun DashboardScreen(
                 )
             }
 
-            // PRODUCTIVITY SHORTCUT SECTION
+            // NEW DASHBOARD 2.0 SECTIONS
             item {
-                Column(modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("Productivity Shortcut", style = AppTypography.bodyLarge, color = MaterialTheme.colorScheme.onBackground)
-                    }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     Card(
-                        modifier = Modifier.fillMaxWidth().height(100.dp).clickable { onNavigateToFocus() },
-                        shape = RoundedCornerShape(32.dp),
+                        modifier = Modifier.weight(1f).height(120.dp).clickable { onNavigateToAnalytics() },
+                        shape = RoundedCornerShape(24.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxSize().padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f), CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Default.SelfImprovement, contentDescription = "Deep Focus Center", tint = MaterialTheme.colorScheme.primary)
-                            }
-                            Spacer(Modifier.width(16.dp))
-                            Column {
-                                Text("Deep Focus Center", style = AppTypography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                                Text("Enter Pomodoro timer & block distractions", style = AppTypography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Icon(Icons.Default.QueryStats, contentDescription = "Analytics", tint = MaterialTheme.colorScheme.primary)
+                            Spacer(modifier = Modifier.weight(1f))
+                            Text("Study Analytics", style = AppTypography.bodyMedium, fontWeight = FontWeight.Bold)
+                            Text("View weekly focus", style = AppTypography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    Card(
+                        modifier = Modifier.weight(1f).height(120.dp).clickable { onNavigateToStudentMode() },
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Icon(Icons.Default.School, contentDescription = "Student Mode", tint = MaterialTheme.colorScheme.primary)
+                            Spacer(modifier = Modifier.weight(1f))
+                            Text("Student Companion", style = AppTypography.bodyMedium, fontWeight = FontWeight.Bold)
+                            Text("Timers & Tracking", style = AppTypography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                val dailyGoal by viewModel.dailyFocusGoal.collectAsStateWithLifecycle()
+                val focusHistory by viewModel.focusSessionHistory.collectAsStateWithLifecycle()
+                val todayProgressMinutes = remember(focusHistory) {
+                    val startOfDay = java.util.Calendar.getInstance().apply {
+                        set(java.util.Calendar.HOUR_OF_DAY, 0)
+                        set(java.util.Calendar.MINUTE, 0)
+                        set(java.util.Calendar.SECOND, 0)
+                    }.timeInMillis
+                    focusHistory.filter { it.startTime >= startOfDay }.sumOf { (it.endTime - it.startTime) / 60000 }.toFloat()
+                }
+                val progress = if (dailyGoal > 0) (todayProgressMinutes / dailyGoal.toFloat()).coerceIn(0f, 1f) else 0f
+
+                Card(
+                    modifier = Modifier.fillMaxWidth().clickable { onNavigateToFocus() },
+                    shape = RoundedCornerShape(32.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 20.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column {
+                            Text("Deep Focus Mode", style = AppTypography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text("${todayProgressMinutes.toInt()} / $dailyGoal min today", style = AppTypography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Box(contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(
+                                progress = { progress },
+                                color = MaterialTheme.colorScheme.primary,
+                                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                                strokeWidth = 6.dp,
+                                modifier = Modifier.size(48.dp)
+                            )
+                            Icon(Icons.Default.Lock, contentDescription = "Focus", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
                         }
                     }
                 }
             }
+
 
             // QUICK CONTROLS SECTION
             item {
