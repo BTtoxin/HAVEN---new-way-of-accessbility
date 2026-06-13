@@ -116,6 +116,7 @@ fun HavenScaffold(
                         onNavigateToAutomation = { currentDetailScreen = "automation" },
                         onNavigateToClipboard = { currentDetailScreen = "clipboard" },
                         onNavigateToSensors = { currentDetailScreen = "sensors" },
+                        onNavigateToFocus = { selectedTab = 2 },
                         onNavigateToFocusHistory = { currentDetailScreen = "focus_history" },
                         onRequestPermission = onRequestPermission,
                         onRequestDndPermission = onRequestDndPermission

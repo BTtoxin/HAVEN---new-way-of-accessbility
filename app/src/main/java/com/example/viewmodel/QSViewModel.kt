@@ -139,6 +139,9 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
     private val _themeMode = MutableStateFlow("SYSTEM")
     val themeMode = _themeMode.asStateFlow()
 
+    private val _currentLanguage = MutableStateFlow("English")
+    val currentLanguage = _currentLanguage.asStateFlow()
+
     private val _hasSeenOnboarding = MutableStateFlow(false)
     val hasSeenOnboarding = _hasSeenOnboarding.asStateFlow()
 
@@ -451,6 +454,7 @@ private val _focusWhitelist = MutableStateFlow<Set<String>>(emptySet())
             _activeUserId.collectLatest { userId ->
                 userRepository.getPreferencesForUser(userId).collect { prefMap ->
                     prefMap["theme_mode"]?.let { _themeMode.value = it }
+                    prefMap["app_language"]?.let { _currentLanguage.value = it }
                     prefMap["is_monochrome"]?.let { _isMonochrome.value = it.toBoolean() }
                     prefMap["selected_palette"]?.let { _selectedPalette.value = it }
                     prefMap["tile_order"]?.let { orderStr ->
@@ -655,6 +659,11 @@ private val _focusWhitelist = MutableStateFlow<Set<String>>(emptySet())
             _themeMode.value = mode
             savePref("theme_mode", mode)
         }
+    }
+
+    fun setLanguage(lang: String) {
+        _currentLanguage.value = lang
+        savePref("app_language", lang)
     }
 
     fun completeOnboarding() {
@@ -994,10 +1003,10 @@ private val _focusWhitelist = MutableStateFlow<Set<String>>(emptySet())
                 95, 96, 99 -> "THUNDERSTORM"
                 else -> "CLEAR SKY"
             }
-            val prompt = "Provide a short, witty, 1-sentence weather forecast for $cityName: $label, ${temp.toInt()}°C. Format: Nothing Tech OS minimal tone. No markdown, no quotes, maximum 12 words."
+            val prompt = "Provide a short, witty, 1-sentence weather forecast for $cityName: $label, ${temp.toInt()}°C. Format: Premium minimalist style tone. No markdown, no quotes, maximum 12 words."
             val summary = com.example.data.GeminiService.generateContent(
                 prompt = prompt,
-                systemInstruction = "You are Nothing Assistant. Speak in an ultra-short, minimalist, cybernetic, intelligent tone."
+                systemInstruction = "You are a Premium Smart Assistant. Speak in an ultra-short, minimalist, cybernetic, intelligent tone."
             )
             _weatherAiSummary.value = if (summary.isNotBlank()) summary.trim() else "AI: COLD INTEL. ${label.uppercase()} - STABLE CONDITIONS."
         }
@@ -1049,7 +1058,7 @@ private val _focusWhitelist = MutableStateFlow<Set<String>>(emptySet())
             val currentTogglesDesc = "Current states are: WiFi=${_isWifiActive.value}, Bluetooth=${_isBluetoothActive.value}, Data=${_isDataActive.value}, Hotspot=${_isHotspotActive.value}, Caffeine=${_isCaffeineActive.value}, TheaterMode=${_isTheaterActive.value}, Monochrome=${_isMonochrome.value}."
             
             val systemInstruction = """
-                You are the smart voice interpreter for a Nothing Phone settings panel. 
+                You are the smart voice interpreter for a Premium settings panel. 
                 Interpret the natural language command and decide on a single action. 
                 Respond ONLY with a valid JSON object matching this schema:
                 {
@@ -1058,7 +1067,7 @@ private val _focusWhitelist = MutableStateFlow<Set<String>>(emptySet())
                   "value": "ON" | "OFF" | "CYCLE",
                   "duration_mins": 30,
                   "weather_city_index": 2,
-                  "reply": "A concise, witty confirm message in Nothing OS tech style, e.g. 'Isolating cell wave frequencies. Personal Hotspot terminated.'"
+                  "reply": "A concise, witty confirm message in tech style, e.g. 'Isolating cell wave frequencies. Personal Hotspot terminated.'"
                 }
                 Current settings state context: $currentTogglesDesc.
                 If the instruction is ambiguous, output action "UNKNOWN" and success false. Output ONLY raw JSON, do not include code blocks or Markdown tags.
@@ -1177,7 +1186,7 @@ private val _focusWhitelist = MutableStateFlow<Set<String>>(emptySet())
                 val pointsList = list.map { it.toInt().toString() }.joinToString(", ")
 
                 val systemInstruction = """
-                    You are the Nothing OS Intelligence Engine.
+                    You are the Premium Intelligence Engine.
                     Analyze the historic 24h battery drain data and current percentage.
                     Provide a highly compact, professional, one-sentence prediction of the remaining runtime or time-to-full.
                     Strict design rules:

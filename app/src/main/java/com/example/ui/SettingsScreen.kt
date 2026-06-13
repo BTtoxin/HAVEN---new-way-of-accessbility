@@ -383,14 +383,14 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             // SECTION 7: THEMING
-            SettingsCard(title = "NOTHING COLOR SCHEME PALETTE") {
+            SettingsCard(title = "LUXURY THEME PALETTE") {
                 val paletteList = listOf(
-                    Triple("NATURAL", "Cream", androidx.compose.ui.graphics.Color(0xFFFDF8F6)),
-                    Triple("MONOCHROME", "Mono", androidx.compose.ui.graphics.Color(0xFF1C1C1C)),
-                    Triple("NEON", "Neon", androidx.compose.ui.graphics.Color(0xFF39FF14)),
-                    Triple("AMBER", "Amber", androidx.compose.ui.graphics.Color(0xFFFFB300)),
-                    Triple("FOREST", "Forest", androidx.compose.ui.graphics.Color(0xFF81C784)),
-                    Triple("OCEAN", "Ocean", androidx.compose.ui.graphics.Color(0xFF4FC3F7))
+                    Triple("NATURAL", "Natural", androidx.compose.ui.graphics.Color(0xFFFDF8F6)),
+                    Triple("ROYAL GOLD", "Royal Gold", androidx.compose.ui.graphics.Color(0xFFD4AF37)),
+                    Triple("SAPPHIRE BLUE", "Sapphire", androidx.compose.ui.graphics.Color(0xFF0F52BA)),
+                    Triple("EMERALD GREEN", "Emerald", androidx.compose.ui.graphics.Color(0xFF50C878)),
+                    Triple("AMETHYST PURPLE", "Amethyst", androidx.compose.ui.graphics.Color(0xFF9966CC)),
+                    Triple("MONOCHROME", "Mono", androidx.compose.ui.graphics.Color(0xFF1C1C1C))
                 )
 
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -429,7 +429,7 @@ fun SettingsScreen(
                                             Icon(
                                                 Icons.Default.Check,
                                                 contentDescription = "Selected",
-                                                tint = if (id == "NATURAL" || id == "AMBER" || id == "FOREST" || id == "OCEAN" || id == "NEON") androidx.compose.ui.graphics.Color.Black else androidx.compose.ui.graphics.Color.White,
+                                                tint = if (id == "NATURAL") androidx.compose.ui.graphics.Color.Black else androidx.compose.ui.graphics.Color.White,
                                                 modifier = Modifier.size(16.dp)
                                             )
                                         }
@@ -449,7 +449,67 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // SECTION 8: ABOUT
+            // SECTION 7.5: LANGUAGE SELECTION (PREVIEW)
+            var tempLanguage by remember { mutableStateOf(context.getSharedPreferences("haven_prefs", android.content.Context.MODE_PRIVATE).getString("app_language", "English") ?: "English") }
+            val languages = listOf("English", "Hindi", "Bengali", "Tamil", "Telugu", "Kannada", "Malayalam", "Marathi", "Gujarati", "Punjabi")
+            
+            SettingsCard(title = "APP LANGUAGE") {
+                Text("Select your preferred language. (Restart may be required for full effect)", style = AppTypography.bodySmall, color = NeutralGray)
+                Spacer(modifier = Modifier.height(12.dp))
+                Column(
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 200.dp).verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    languages.forEach { lang ->
+                        val isSelected = tempLanguage == lang
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(
+                                    width = if (isSelected) 2.dp else 1.dp,
+                                    color = if (isSelected) NothingRed else BorderDark,
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .clickable {
+                                    tempLanguage = lang
+                                    context.getSharedPreferences("haven_prefs", android.content.Context.MODE_PRIVATE)
+                                        .edit().putString("app_language", lang).apply()
+                                    com.example.utils.AudioHapticEngine.triggerClick(context)
+                                    
+                                    val localeTag = when(lang) {
+                                        "Hindi" -> "hi"
+                                        "Bengali" -> "bn"
+                                        "Tamil" -> "ta"
+                                        "Telugu" -> "te"
+                                        "Kannada" -> "kn"
+                                        "Malayalam" -> "ml"
+                                        "Marathi" -> "mr"
+                                        "Gujarati" -> "gu"
+                                        "Punjabi" -> "pa"
+                                        else -> "en"
+                                    }
+                                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                                        context.getSystemService(android.app.LocaleManager::class.java)?.applicationLocales = android.os.LocaleList(java.util.Locale(localeTag))
+                                    } else {
+                                        val config = android.content.res.Configuration(context.resources.configuration)
+                                        config.setLocale(java.util.Locale(localeTag))
+                                        context.resources.updateConfiguration(config, context.resources.displayMetrics)
+                                    }
+                                }
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(lang, style = AppTypography.labelSmall, color = if (isSelected) NothingRed else MaterialTheme.colorScheme.onSurface)
+                            if (isSelected) {
+                                Icon(Icons.Default.Check, contentDescription = "Selected", tint = NothingRed, modifier = Modifier.size(16.dp))
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
             val appVersion = remember { com.example.utils.VersionManager.getAppVersion(context).first }
             val hasDiscrepancy = remember { com.example.utils.VersionManager.checkVersionDiscrepancy(context) }
             

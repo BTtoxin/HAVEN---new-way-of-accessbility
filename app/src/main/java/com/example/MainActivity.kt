@@ -16,52 +16,15 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Modifier
 import com.example.ui.DashboardScreen
-import com.example.ui.theme.NothingTheme
+import com.example.ui.theme.PremiumTheme
 import com.example.viewmodel.QSViewModel
 
 class MainActivity : ComponentActivity() {
     private val viewModel: QSViewModel by viewModels()
 
-    private var sensorManager: android.hardware.SensorManager? = null
-    private var accelSensor: android.hardware.Sensor? = null
-    private var lastUpdate: Long = 0
-    private var last_x = 0f
-    private var last_y = 0f
-    private var last_z = 0f
-    private val SHAKE_THRESHOLD = 800
-
-    private val shakeListener = object : android.hardware.SensorEventListener {
-        override fun onSensorChanged(event: android.hardware.SensorEvent) {
-            val curTime = System.currentTimeMillis()
-            if ((curTime - lastUpdate) > 100) {
-                val diffTime = curTime - lastUpdate
-                lastUpdate = curTime
-                val x = event.values[0]
-                val y = event.values[1]
-                val z = event.values[2]
-                val speed = Math.abs(x + y + z - last_x - last_y - last_z) / diffTime * 10000
-                if (speed > SHAKE_THRESHOLD) {
-                    val clipboard = getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                    clipboard.setPrimaryClip(android.content.ClipData.newPlainText("", ""))
-                    android.widget.Toast.makeText(this@MainActivity, "Clipboard Purged (Shake)", android.widget.Toast.LENGTH_SHORT).show()
-                }
-                last_x = x
-                last_y = y
-                last_z = z
-            }
-        }
-        override fun onAccuracyChanged(sensor: android.hardware.Sensor, accuracy: Int) {}
-    }
-
-    private fun setupShakeToPurgeClipboard() {
-        sensorManager = getSystemService(android.content.Context.SENSOR_SERVICE) as android.hardware.SensorManager
-        accelSensor = sensorManager?.getDefaultSensor(android.hardware.Sensor.TYPE_ACCELEROMETER)
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setupShakeToPurgeClipboard()
 
         // Force Choreographer/Window display mode to prefer 120Hz peak performance
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
@@ -101,7 +64,7 @@ class MainActivity : ComponentActivity() {
                 "LIGHT" -> false
                 else -> systemDark
             }
-            NothingTheme(darkTheme = isDark, palette = selectedPalette) {
+            PremiumTheme(darkTheme = isDark, palette = selectedPalette) {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     if (!hasSeenOnboarding) {
                         com.example.ui.OnboardingScreen(onComplete = { viewModel.completeOnboarding() })
@@ -125,11 +88,5 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         viewModel.checkAllStates()
-        accelSensor?.let { sensorManager?.registerListener(shakeListener, it, android.hardware.SensorManager.SENSOR_DELAY_NORMAL) }
-    }
-
-    override fun onPause() {
-        super.onPause()
-        sensorManager?.unregisterListener(shakeListener)
     }
 }
