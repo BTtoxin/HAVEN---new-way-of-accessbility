@@ -1,6 +1,7 @@
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.kotlin.compose)
+  alias(libs.plugins.kotlin.serialization)
   alias(libs.plugins.google.devtools.ksp)
   alias(libs.plugins.roborazzi)
   alias(libs.plugins.secrets)
@@ -147,6 +148,8 @@ dependencies {
   implementation(libs.moshi.kotlin)
   implementation(libs.okhttp)
   implementation(libs.retrofit)
+  implementation(libs.kotlinx.serialization.json)
+  implementation("com.squareup.retrofit2:converter-kotlinx-serialization:2.11.0")
   implementation("androidx.appcompat:appcompat:1.6.1")
   
   // Custom requested dependencies

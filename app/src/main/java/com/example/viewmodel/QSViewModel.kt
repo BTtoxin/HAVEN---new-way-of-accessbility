@@ -191,6 +191,12 @@ class QSViewModel(application: Application) : AndroidViewModel(application) {
     private val _hapticIntensity = MutableStateFlow(1.0f)
     val hapticIntensity = _hapticIntensity.asStateFlow()
 
+    private val _hapticRhythm = MutableStateFlow("Crisp")
+    val hapticRhythm = _hapticRhythm.asStateFlow()
+
+    private val _aiVoiceProfile = MutableStateFlow("Professional")
+    val aiVoiceProfile = _aiVoiceProfile.asStateFlow()
+
     private val _dailyFocusGoal = MutableStateFlow(120)
     val dailyFocusGoal = _dailyFocusGoal.asStateFlow()
 
@@ -494,6 +500,40 @@ private val _focusWhitelist = MutableStateFlow<Set<String>>(emptySet())
     }
 
     init {
+        viewModelScope.launch {
+            var previousCount = -1
+            focusSessionHistory.collect { sessions ->
+                val completedCount = sessions.count { it.completed }
+                if (previousCount == -1) {
+                    previousCount = completedCount
+                    return@collect
+                }
+                
+                if (completedCount > previousCount) {
+                    // Get newly added minutes
+                    val newSessions = sessions.takeLast(completedCount - previousCount)
+                    val addedMinutes = newSessions.sumOf { ((it.endTime - it.startTime) / 60000).toInt() }.coerceAtLeast(0)
+                    
+                    val goalReached = com.example.services.FocusStreakService.updateDailyGoal(context, addedMinutes, _dailyFocusGoal.value)
+                    
+                    if (goalReached) {
+                        com.example.services.FocusStreakService.checkStreakMilestone(context) { streak ->
+                            showToast("MILESTONE: $streak Day Focus Streak!", isError = false)
+                        }
+                    } else {
+                        if (completedCount % 5 == 0) {
+                            showToast("MILESTONE: $completedCount Focus Sessions Completed!", isError = false)
+                        } else if (completedCount == 1) {
+                            showToast("MILESTONE: Your first Focus Session!", isError = false)
+                        }
+                    }
+                    previousCount = completedCount
+                }
+            }
+        }
+    }
+
+    init {
         context.registerReceiver(batteryReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
         viewModelScope.launch {
             checkAllStates()
@@ -673,6 +713,10 @@ private val _focusWhitelist = MutableStateFlow<Set<String>>(emptySet())
             _hasSeenOnboarding.value = dataStore.hasSeenOnboardingFlow.first()
             _gridLayoutColumns.value = dataStore.gridLayoutColumnsFlow.first()
             _hapticIntensity.value = dataStore.hapticIntensityFlow.first()
+            _hapticRhythm.value = dataStore.hapticRhythmFlow.first()
+            com.example.utils.AudioHapticEngine.currentRhythm = _hapticRhythm.value
+            com.example.utils.AudioHapticEngine.vibrateIntensityMultiplier = _hapticIntensity.value
+            _aiVoiceProfile.value = dataStore.aiVoiceProfileFlow.first()
             _dailyFocusGoal.value = dataStore.dailyFocusGoalFlow.first()
             _caffeineDuration.value = dataStore.caffeineDurationFlow.first().let { if(it<0) 30 else it }
             _theaterBrightness.value = dataStore.theaterBrightnessFlow.first()
@@ -781,6 +825,21 @@ private val _focusWhitelist = MutableStateFlow<Set<String>>(emptySet())
             com.example.utils.SettingsDataStore(context).setHapticIntensity(intensity)
             _hapticIntensity.value = intensity
             com.example.utils.AudioHapticEngine.vibrateIntensityMultiplier = intensity
+        }
+    }
+
+    fun setHapticRhythm(rhythm: String) {
+        viewModelScope.launch {
+            com.example.utils.SettingsDataStore(context).setHapticRhythm(rhythm)
+            _hapticRhythm.value = rhythm
+            com.example.utils.AudioHapticEngine.currentRhythm = rhythm
+        }
+    }
+
+    fun setAiVoiceProfile(profile: String) {
+        viewModelScope.launch {
+            com.example.utils.SettingsDataStore(context).setAiVoiceProfile(profile)
+            _aiVoiceProfile.value = profile
         }
     }
 

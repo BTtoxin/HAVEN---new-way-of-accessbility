@@ -18,6 +18,7 @@ import com.example.ui.theme.HavenCyan
 import com.example.utils.AudioHapticEngine
 import com.example.viewmodel.QSViewModel
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
 fun HavenScaffold(
@@ -216,6 +217,84 @@ fun HavenScaffold(
                         )
                         "emergency_mode" -> EmergencyExamModeScreen(
                             onBack = { currentDetailScreen = "student_mode" }
+                        )
+                        "ai_assistant" -> AiAssistantScreen(
+                            viewModel = viewModel,
+                            modifier = Modifier,
+                        )
+                    }
+                }
+                
+                if (currentDetailScreen == "ai_assistant") {
+                    IconButton(
+                        onClick = { currentDetailScreen = null },
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(top = 8.dp, start = 8.dp)
+                    ) {
+                        Icon(Icons.Filled.Close, contentDescription = "Close AI")
+                    }
+                }
+            }
+        }
+        
+        // Universal AI FAB
+        if (currentDetailScreen == null || currentDetailScreen == "student_mode") {
+            Box(modifier = Modifier.fillMaxSize()) {
+                FloatingActionButton(
+                    onClick = { currentDetailScreen = "ai_assistant" },
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(bottom = 90.dp, end = 24.dp),
+                    containerColor = HavenCyan,
+                    contentColor = Color.Black // Assuming HavenCyan is light/bright
+                ) {
+                    Icon(Icons.Filled.AutoAwesome, contentDescription = "Haven AI")
+                }
+            }
+        }
+
+        val currentToast by viewModel.toastMessage.collectAsStateWithLifecycle()
+        var activeToastMessage by remember { mutableStateOf<com.example.viewmodel.ToastMessage?>(null) }
+        
+        LaunchedEffect(currentToast) {
+            currentToast?.let {
+                activeToastMessage = it
+                AudioHapticEngine.triggerAchievement(context) // Sound-enabled format for milestone
+                kotlinx.coroutines.delay(3000)
+                if (activeToastMessage == it) {
+                    activeToastMessage = null
+                }
+            }
+        }
+
+        AnimatedVisibility(
+            visible = activeToastMessage != null,
+            enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
+            exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = 48.dp)
+        ) {
+            activeToastMessage?.let { toast ->
+                Surface(
+                    shape = RoundedCornerShape(24.dp),
+                    color = if (toast.isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primaryContainer,
+                    shadowElevation = 8.dp,
+                    modifier = Modifier.padding(horizontal = 24.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = if (toast.isError) Icons.Filled.Warning else Icons.Filled.Stars,
+                            contentDescription = "Toast Icon",
+                            tint = if (toast.isError) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = toast.message,
+                            style = AppTypography.bodyMedium,
+                            color = if (toast.isError) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
                 }

@@ -235,6 +235,44 @@ private val AmethystColorScheme = lightColorScheme(
     onSurfaceVariant = AmethystOnBackground
 )
 
+private val AmoledColorScheme = androidx.compose.material3.darkColorScheme(
+    primary = androidx.compose.ui.graphics.Color(0xFFFFFFFF),
+    onPrimary = androidx.compose.ui.graphics.Color(0xFF000000),
+    primaryContainer = androidx.compose.ui.graphics.Color(0xFF222222),
+    onPrimaryContainer = androidx.compose.ui.graphics.Color(0xFFFFFFFF),
+    secondary = androidx.compose.ui.graphics.Color(0xFFAAAAAA),
+    onSecondary = androidx.compose.ui.graphics.Color(0xFF000000),
+    surface = androidx.compose.ui.graphics.Color(0xFF000000),
+    onSurface = androidx.compose.ui.graphics.Color(0xFFFFFFFF),
+    surfaceVariant = androidx.compose.ui.graphics.Color(0xFF000000),
+    onSurfaceVariant = androidx.compose.ui.graphics.Color(0xFF999999),
+    background = androidx.compose.ui.graphics.Color(0xFF000000),
+    onBackground = androidx.compose.ui.graphics.Color(0xFFFFFFFF),
+    error = androidx.compose.ui.graphics.Color(0xFFFF5555),
+    onError = androidx.compose.ui.graphics.Color(0xFF000000),
+    outline = androidx.compose.ui.graphics.Color(0xFF444444),
+    outlineVariant = androidx.compose.ui.graphics.Color(0xFF111111),
+)
+
+private val CyberColorScheme = androidx.compose.material3.darkColorScheme(
+    primary = androidx.compose.ui.graphics.Color(0xFF00FFCC),
+    onPrimary = androidx.compose.ui.graphics.Color(0xFF000000),
+    primaryContainer = androidx.compose.ui.graphics.Color(0xFF003322),
+    onPrimaryContainer = androidx.compose.ui.graphics.Color(0xFF00FFCC),
+    secondary = androidx.compose.ui.graphics.Color(0xFFFF007F),
+    onSecondary = androidx.compose.ui.graphics.Color(0xFF000000),
+    surface = androidx.compose.ui.graphics.Color(0xFF0A0A1A),
+    onSurface = androidx.compose.ui.graphics.Color(0xFFE0E0FF),
+    surfaceVariant = androidx.compose.ui.graphics.Color(0xFF111126),
+    onSurfaceVariant = androidx.compose.ui.graphics.Color(0xFF8888AA),
+    background = androidx.compose.ui.graphics.Color(0xFF05050F),
+    onBackground = androidx.compose.ui.graphics.Color(0xFFE0E0FF),
+    error = androidx.compose.ui.graphics.Color(0xFFFF3333),
+    onError = androidx.compose.ui.graphics.Color(0xFF000000),
+    outline = androidx.compose.ui.graphics.Color(0xFF00FFCC),
+    outlineVariant = androidx.compose.ui.graphics.Color(0xFF004433),
+)
+
 private fun createLightVariant(darkScheme: androidx.compose.material3.ColorScheme): androidx.compose.material3.ColorScheme {
     return lightColorScheme(
         primary = darkScheme.primary,
@@ -296,6 +334,8 @@ fun PremiumTheme(
         "SAPPHIRE BLUE" -> if (darkTheme) SapphireColorScheme else createLightVariant(SapphireColorScheme)
         "EMERALD GREEN" -> if (darkTheme) EmeraldColorScheme else createLightVariant(EmeraldColorScheme)
         "AMETHYST PURPLE" -> if (darkTheme) AmethystColorScheme else createLightVariant(AmethystColorScheme)
+        "CYBER" -> if (darkTheme) CyberColorScheme else createLightVariant(CyberColorScheme)
+        "AMOLED" -> AmoledColorScheme
         "NATURAL" -> {
             if (darkTheme) NaturalDarkColorScheme else NaturalColorScheme
         }

@@ -390,6 +390,9 @@ fun SettingsScreen(
             // SECTION 7: THEMING
             SettingsCard(title = "LUXURY THEME PALETTE") {
                 val paletteList = listOf(
+                    Triple("HAVEN", "Nothing", androidx.compose.ui.graphics.Color(0xFF888888)),
+                    Triple("AMOLED", "AMOLED", androidx.compose.ui.graphics.Color(0xFF000000)),
+                    Triple("CYBER", "Cyber", androidx.compose.ui.graphics.Color(0xFF00FFCC)),
                     Triple("NATURAL", "Natural", androidx.compose.ui.graphics.Color(0xFFFDF8F6)),
                     Triple("ROYAL GOLD", "Royal Gold", androidx.compose.ui.graphics.Color(0xFFD4AF37)),
                     Triple("SAPPHIRE BLUE", "Sapphire", androidx.compose.ui.graphics.Color(0xFF0F52BA)),
@@ -399,6 +402,45 @@ fun SettingsScreen(
                 )
 
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    
+                    // Live Theme Engine Preview Box
+                    com.example.ui.theme.PremiumTheme(
+                        darkTheme = tempThemeMode == "DARK" || (tempThemeMode == "SYSTEM" && androidx.compose.foundation.isSystemInDarkTheme()) || tempPalette == "AMOLED",
+                        palette = tempPalette
+                    ) {
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(100.dp)
+                                .border(1.dp, BorderDark, RoundedCornerShape(12.dp)),
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.background
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text("Dashboard Preview", style = AppTypography.bodySmall, color = MaterialTheme.colorScheme.onBackground)
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Box(modifier = Modifier.width(100.dp).height(20.dp).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp)))
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Box(modifier = Modifier.width(60.dp).height(12.dp).background(MaterialTheme.colorScheme.primary, RoundedCornerShape(2.dp)))
+                                }
+                                Box(
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .background(MaterialTheme.colorScheme.primaryContainer, androidx.compose.foundation.shape.CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(Icons.Default.Check, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                                }
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+
                     paletteList.chunked(3).forEach { rowList ->
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -613,7 +655,9 @@ fun SettingsScreen(
 
             // SECTION 9: ADVANCED PREFERENCES
             val hapticIntensity by viewModel.hapticIntensity.collectAsStateWithLifecycle()
-            SettingsCard(title = "ADVANCED PREFERENCES") {
+            val hapticRhythm by viewModel.hapticRhythm.collectAsStateWithLifecycle()
+
+            SettingsCard(title = "HAPTIC FEEDBACK") {
                 GlyphSlider(
                     value = hapticIntensity,
                     onValueChange = { viewModel.setHapticIntensity(it) },
@@ -621,6 +665,36 @@ fun SettingsScreen(
                     label = "Haptic Feedback Intensity",
                     valueDisplay = "${(hapticIntensity * 100).toInt()}%"
                 )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Haptic Rhythm", style = AppTypography.labelSmall, color = NeutralGray)
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf("Crisp", "Smooth", "Bouncy").forEach { rhythm ->
+                        val isSelected = hapticRhythm == rhythm
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .border(
+                                    width = if (isSelected) 2.dp else 1.dp,
+                                    color = if (isSelected) NothingRed else BorderDark,
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .clickable { viewModel.setHapticRhythm(rhythm) }
+                                .padding(vertical = 10.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = rhythm,
+                                style = AppTypography.labelSmall.copy(fontSize = 11.sp),
+                                color = if (isSelected) NothingRed else MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
