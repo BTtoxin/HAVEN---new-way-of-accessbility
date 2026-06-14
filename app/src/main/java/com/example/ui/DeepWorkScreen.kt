@@ -13,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.background
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
 import com.example.ui.theme.AppTypography
@@ -64,77 +65,136 @@ fun DeepWorkScreen(onBack: () -> Unit) {
     }
 
     if (isDeepWorkActive) {
-        Scaffold(
-            containerColor = MaterialTheme.colorScheme.background
-        ) { padding ->
-            Column(
-                modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text("DEEP WORK", style = AppTypography.titleLarge, color = MaterialTheme.colorScheme.primary)
-                Spacer(Modifier.height(32.dp))
-                
-                // Timer Display
-                val minutes = timeRemaining / 60
-                val seconds = timeRemaining % 60
-                Text(
-                    String.format("%02d:%02d", minutes, seconds),
-                    style = MaterialTheme.typography.displayLarge.copy(color = MaterialTheme.colorScheme.onBackground)
-                )
-                
-                Spacer(Modifier.height(32.dp))
-
-                // Pause/Play
-                Button(
-                    onClick = { isPaused = !isPaused },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
-                ) {
-                    Icon(if (isPaused) Icons.Filled.PlayArrow else Icons.Filled.Pause, contentDescription = "Toggle")
-                    Spacer(Modifier.width(8.dp))
-                    Text(if (isPaused) "RESUME" else "PAUSE")
+        val view = androidx.compose.ui.platform.LocalView.current
+        DisposableEffect(Unit) {
+            var window: android.view.Window? = null
+            var context = view.context
+            while (context is android.content.ContextWrapper) {
+                if (context is android.app.Activity) {
+                    window = context.window
+                    break
                 }
-
-                Spacer(Modifier.height(32.dp))
-
-                // Ambient Music Selection
-                Text("Ambient Music", style = AppTypography.titleMedium)
-                Spacer(Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("None", "Lo-Fi", "Waves", "Calm").forEach { track ->
-                        FilterChip(
-                            selected = selectedMusic == track,
-                            onClick = { selectedMusic = track },
-                            label = { Text(track) }
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(32.dp))
-
-                // Whitelisted Apps dummy list
-                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
-                    Column(Modifier.padding(16.dp)) {
-                        Text("Whitelisted Apps Available:", style = AppTypography.labelLarge)
-                        Text("• Dictionary\n• Calculator\n• Notes", style = AppTypography.bodyMedium)
-                    }
-                }
-
-                Spacer(Modifier.height(48.dp))
-
-                // Emergency Exit
-                Button(
-                    onClick = {
-                        deepWorkManager.deactivateDeepWork()
-                        isDeepWorkActive = false
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Icon(Icons.Filled.Warning, contentDescription = "Emergency Exit")
-                    Spacer(Modifier.width(8.dp))
-                    Text("EMERGENCY EXIT")
+                context = context.baseContext
+            }
+            
+            val layoutParams = window?.attributes
+            val originalBrightness = layoutParams?.screenBrightness ?: -1f
+            
+            if (window != null) {
+                window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                layoutParams?.screenBrightness = 0.05f
+                window.attributes = layoutParams
+            }
+            
+            onDispose {
+                if (window != null && layoutParams != null) {
+                    window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    layoutParams.screenBrightness = originalBrightness
+                    window.attributes = layoutParams
                 }
             }
+        }
+
+        Box(modifier = Modifier.fillMaxSize()) {
+            Scaffold(
+                containerColor = androidx.compose.ui.graphics.Color.Black
+            ) { padding ->
+                Column(
+                    modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text("DEEP WORK", style = AppTypography.titleLarge, color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f))
+                    Spacer(Modifier.height(16.dp))
+                    
+                    Text(
+                        "\"Focus is a matter of deciding what things you're not going to do.\"",
+                        style = AppTypography.bodyMedium,
+                        color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.6f),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                    
+                    Spacer(Modifier.height(32.dp))
+                    
+                    // Timer Display
+                    val minutes = timeRemaining / 60
+                    val seconds = timeRemaining % 60
+                    Text(
+                        String.format("%02d:%02d", minutes, seconds),
+                        style = MaterialTheme.typography.displayLarge.copy(color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.9f))
+                    )
+                    
+                    Spacer(Modifier.height(32.dp))
+
+                    // Pause/Play
+                    Button(
+                        onClick = { isPaused = !isPaused },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f))
+                    ) {
+                        Icon(if (isPaused) Icons.Filled.PlayArrow else Icons.Filled.Pause, contentDescription = "Toggle", tint = androidx.compose.ui.graphics.Color.White)
+                        Spacer(Modifier.width(8.dp))
+                        Text(if (isPaused) "RESUME" else "PAUSE", color = androidx.compose.ui.graphics.Color.White)
+                    }
+
+                    Spacer(Modifier.height(32.dp))
+
+                    // Ambient Music Selection
+                    Text("Ambient Music", style = AppTypography.titleMedium, color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.8f))
+                    Spacer(Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("None", "Lo-Fi", "Waves", "Calm").forEach { track ->
+                            FilterChip(
+                                selected = selectedMusic == track,
+                                onClick = { selectedMusic = track },
+                                label = { Text(track, color = androidx.compose.ui.graphics.Color.White) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                                    containerColor = androidx.compose.ui.graphics.Color.Transparent
+                                )
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(32.dp))
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Sessions", style = AppTypography.bodySmall, color = androidx.compose.ui.graphics.Color.Gray)
+                            Text("3", style = AppTypography.titleMedium, color = androidx.compose.ui.graphics.Color.White)
+                        }
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Focus Time", style = AppTypography.bodySmall, color = androidx.compose.ui.graphics.Color.Gray)
+                            Text("132m", style = AppTypography.titleMedium, color = androidx.compose.ui.graphics.Color.White)
+                        }
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Streak", style = AppTypography.bodySmall, color = androidx.compose.ui.graphics.Color.Gray)
+                            Text("5 Days", style = AppTypography.titleMedium, color = androidx.compose.ui.graphics.Color.White)
+                        }
+                    }
+
+                    Spacer(Modifier.height(48.dp))
+
+                    // Emergency Exit
+                    Button(
+                        onClick = {
+                            deepWorkManager.deactivateDeepWork()
+                            isDeepWorkActive = false
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.3f))
+                    ) {
+                        Icon(Icons.Filled.Warning, contentDescription = "Emergency Exit", tint = androidx.compose.ui.graphics.Color.Red.copy(alpha = 0.8f))
+                        Spacer(Modifier.width(8.dp))
+                        Text("EMERGENCY EXIT", color = androidx.compose.ui.graphics.Color.Red.copy(alpha = 0.8f))
+                    }
+                }
+            }
+            
+            // Optional overlay to simulate even dimmer screen
+            Box(modifier = Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.2f)))
         }
     } else {
         Scaffold(

@@ -196,7 +196,7 @@ fun DashboardScreen(
     onRequestDndPermission: () -> Unit
 ) {
     val context = LocalContext.current
-    val cameraManager = remember { context.getSystemService(android.content.Context.CAMERA_SERVICE) as? CameraManager }
+    val cameraManager = remember { context.applicationContext.getSystemService(android.content.Context.CAMERA_SERVICE) as? CameraManager }
     var isFlashlightOn by remember { mutableStateOf(false) }
 
     var isBooted by remember { mutableStateOf(true) }
@@ -464,50 +464,55 @@ fun DashboardScreen(
                 var expandedChip by remember { mutableStateOf<String?>(null) } // "BATTERY", "RAM", "STORAGE", or null
 
                 LaunchedEffect(Unit) {
-                    val filter = android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED)
-                    while (true) {
-                        val intent = context.registerReceiver(null, filter)
-                        if (intent != null) {
-                            val level = intent.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1)
-                            val scale = intent.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1)
-                            if (level != -1 && scale != -1) batteryPct = level * 100 / scale.toFloat()
-                            batteryTemp = intent.getIntExtra(android.os.BatteryManager.EXTRA_TEMPERATURE, 0) / 10f
-                            batteryVoltage = intent.getIntExtra(android.os.BatteryManager.EXTRA_VOLTAGE, 0)
-                            
-                            val healthInt = intent.getIntExtra(android.os.BatteryManager.EXTRA_HEALTH, 0)
-                            batteryHealth = when (healthInt) {
-                                android.os.BatteryManager.BATTERY_HEALTH_GOOD -> "Good"
-                                android.os.BatteryManager.BATTERY_HEALTH_OVERHEAT -> "Overheat"
-                                android.os.BatteryManager.BATTERY_HEALTH_DEAD -> "Dead"
-                                android.os.BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE -> "Over Voltage"
-                                android.os.BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE -> "Failure"
-                                android.os.BatteryManager.BATTERY_HEALTH_COLD -> "Cold"
-                                else -> "Unknown"
+                        val appContext = context.applicationContext
+                        val filter = android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED)
+                        while (true) {
+                            val intent = appContext.registerReceiver(null, filter)
+                            if (intent != null) {
+                                val level = intent.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1)
+                                val scale = intent.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1)
+                                if (level != -1 && scale != -1) batteryPct = level * 100 / scale.toFloat()
+                                batteryTemp = intent.getIntExtra(android.os.BatteryManager.EXTRA_TEMPERATURE, 0) / 10f
+                                batteryVoltage = intent.getIntExtra(android.os.BatteryManager.EXTRA_VOLTAGE, 0)
+                                
+                                val healthInt = intent.getIntExtra(android.os.BatteryManager.EXTRA_HEALTH, 0)
+                                batteryHealth = when (healthInt) {
+                                    android.os.BatteryManager.BATTERY_HEALTH_GOOD -> "Good"
+                                    android.os.BatteryManager.BATTERY_HEALTH_OVERHEAT -> "Overheat"
+                                    android.os.BatteryManager.BATTERY_HEALTH_DEAD -> "Dead"
+                                    android.os.BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE -> "Over Voltage"
+                                    android.os.BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE -> "Failure"
+                                    android.os.BatteryManager.BATTERY_HEALTH_COLD -> "Cold"
+                                    else -> "Unknown"
+                                }
+                                val status = intent.getIntExtra(android.os.BatteryManager.EXTRA_STATUS, -1)
+                                isCharging = status == android.os.BatteryManager.BATTERY_STATUS_CHARGING || status == android.os.BatteryManager.BATTERY_STATUS_FULL
+                                
+                                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                                    try {
+                                        val bm = appContext.getSystemService(android.os.BatteryManager::class.java)
+                                        timeToFull = bm?.computeChargeTimeRemaining() ?: -1L
+                                    } catch (e: Exception) {}
+                                }
+                                
+                                try {
+                                    val bm = appContext.getSystemService(android.os.BatteryManager::class.java)
+                                    val currentMicroAmps = bm?.getLongProperty(android.os.BatteryManager.BATTERY_PROPERTY_CURRENT_NOW) ?: 0L
+                                    if (currentMicroAmps > 0) {
+                                        chargeRateW = (batteryVoltage.toFloat() * currentMicroAmps.toFloat()) / 1_000_000_000f
+                                    } else {
+                                        chargeRateW = 0f
+                                    }
+                                } catch (e: Exception) {}
                             }
-                            val status = intent.getIntExtra(android.os.BatteryManager.EXTRA_STATUS, -1)
-                            isCharging = status == android.os.BatteryManager.BATTERY_STATUS_CHARGING || status == android.os.BatteryManager.BATTERY_STATUS_FULL
-                            
-                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-                                val bm = context.getSystemService(android.os.BatteryManager::class.java)
-                                timeToFull = bm.computeChargeTimeRemaining()
-                            }
-                            
-                            val bm = context.getSystemService(android.os.BatteryManager::class.java)
-                            val currentMicroAmps = bm.getLongProperty(android.os.BatteryManager.BATTERY_PROPERTY_CURRENT_NOW)
-                            if (currentMicroAmps > 0) {
-                                chargeRateW = (batteryVoltage.toFloat() * currentMicroAmps.toFloat()) / 1_000_000_000f
-                            } else {
-                                chargeRateW = 0f
-                            }
-                        }
 
-                        try {
-                            val am = context.getSystemService(android.content.Context.ACTIVITY_SERVICE) as android.app.ActivityManager
-                            val memoryInfo = android.app.ActivityManager.MemoryInfo()
-                            am.getMemoryInfo(memoryInfo)
-                            availRam = memoryInfo.availMem / (1024 * 1024)
-                            totalRam = memoryInfo.totalMem / (1024 * 1024)
-                        } catch (e: Exception) {}
+                            try {
+                                val am = appContext.getSystemService(android.content.Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+                                val memoryInfo = android.app.ActivityManager.MemoryInfo()
+                                am.getMemoryInfo(memoryInfo)
+                                availRam = memoryInfo.availMem / (1024 * 1024)
+                                totalRam = memoryInfo.totalMem / (1024 * 1024)
+                            } catch (e: Exception) {}
 
                         try {
                             val stat = android.os.StatFs(android.os.Environment.getExternalStorageDirectory().path)
